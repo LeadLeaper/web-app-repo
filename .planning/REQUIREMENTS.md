@@ -81,13 +81,40 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (To be populated during roadmap creation) | | |
+| NAV-01 | Phase 1 | Pending |
+| NAV-02 | Phase 1 | Pending |
+| NAV-03 | Phase 1 | Pending |
+| NAV-04 | Phase 1 | Pending |
+| VISUAL-01 | Phase 1 | Pending |
+| VISUAL-02 | Phase 1 | Pending |
+| VISUAL-03 | Phase 1 | Pending |
+| VISUAL-04 | Phase 1 | Pending |
+| COMPAT-01 | Phase 1 | Pending |
+| COMPAT-02 | Phase 1 | Pending |
+| COMPAT-03 | Phase 1 | Pending |
+| PROF-01 | Phase 2 | Pending |
+| PROF-02 | Phase 2 | Pending |
+| PROF-03 | Phase 2 | Pending |
+| PROF-04 | Phase 2 | Pending |
+| PROF-05 | Phase 2 | Pending |
+| PROF-06 | Phase 2 | Pending |
+| PROF-07 | Phase 2 | Pending |
+| PROF-08 | Phase 2 | Pending |
+| SECTION-01 | Phase 3 | Pending |
+| SECTION-02 | Phase 3 | Pending |
+| SECTION-03 | Phase 3 | Pending |
+| SECTION-04 | Phase 3 | Pending |
+| SECTION-05 | Phase 3 | Pending |
+| SECTION-06 | Phase 3 | Pending |
+| SECTION-07 | Phase 3 | Pending |
+| SECTION-08 | Phase 3 | Pending |
+| SECTION-09 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 25 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 25 ⚠️
+- v1 requirements: 28 total
+- Mapped to phases: 28/28 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after initial definition*
+*Last updated: 2026-03-01 after roadmap creation*
