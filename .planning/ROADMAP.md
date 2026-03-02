@@ -28,10 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Application displays modern neutral color palette and typography throughout
   4. Layout adapts correctly to desktop (1920+) and laptop (1366-1920) viewports using flexbox
   5. All existing functionality works without breaking changes
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- TBD
+- [ ] 01-01-PLAN.md — Left navigation structure & behavior
+- [ ] 01-02-PLAN.md — Visual theme & typography
+- [ ] 01-03-PLAN.md — Integration & verification
 
 ### Phase 2: Profile System
 **Goal**: Users can view contact/lead details in right-hand slide panel instead of modal popups
@@ -68,6 +70,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/3 | Not started | - |
 | 2. Profile System | 0/TBD | Not started | - |
 | 3. Section Rollout | 0/TBD | Not started | - |
