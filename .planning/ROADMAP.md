@@ -31,8 +31,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Left navigation structure & behavior
-- [ ] 01-02-PLAN.md — Visual theme & typography
+- [x] 01-01-PLAN.md — Left navigation structure & behavior
+- [x] 01-02-PLAN.md — Visual theme & typography
 - [ ] 01-03-PLAN.md — Integration & verification
 
 ### Phase 2: Profile System
@@ -70,6 +70,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 2/3 | In progress | - |
 | 2. Profile System | 0/TBD | Not started | - |
 | 3. Section Rollout | 0/TBD | Not started | - |
