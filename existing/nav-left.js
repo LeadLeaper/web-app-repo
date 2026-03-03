@@ -77,10 +77,14 @@
 
             // Show popover on hover with delay
             $link.on('mouseenter', function() {
+                console.log('MOUSEENTER on nav link for section:', section);
+
                 if (popoverTimer) {
                     clearTimeout(popoverTimer);
+                    console.log('Cleared existing popover timer');
                 }
 
+                console.log('Starting popover timer (600ms delay)...');
                 popoverTimer = setTimeout(function() {
                     console.log('Popover timer fired for:', section);
 
@@ -107,8 +111,11 @@
 
             // Hide popover when leaving both link and popover
             $link.on('mouseleave', function() {
+                console.log('MOUSELEAVE from nav link for section:', section);
+
                 if (popoverTimer) {
                     clearTimeout(popoverTimer);
+                    console.log('Cancelled popover timer due to mouseleave');
                 }
 
                 setTimeout(function() {
