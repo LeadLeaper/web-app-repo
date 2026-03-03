@@ -34,13 +34,34 @@
             const $item = $(this);
             const $link = $item.find('.nav-link');
             const section = $item.data('section');
-            const subsections = $item.data('subsections'); // e.g., ['settings', 'profile', 'team']
-            const lists = $item.data('lists'); // e.g., ['My Leads', 'Hot Prospects', 'Follow-ups']
+
+            // Parse JSON data attributes (jQuery .data() should auto-parse, but be explicit)
+            let subsections = $item.data('subsections');
+            let lists = $item.data('lists');
+
+            // If they're strings, parse them
+            if (typeof subsections === 'string') {
+                try {
+                    subsections = JSON.parse(subsections);
+                } catch(e) {
+                    subsections = null;
+                }
+            }
+
+            if (typeof lists === 'string') {
+                try {
+                    lists = JSON.parse(lists);
+                } catch(e) {
+                    lists = null;
+                }
+            }
 
             // Only show popover if there are subsections or lists
             if (!subsections && !lists) {
                 return;
             }
+
+            console.log('Setting up popover for:', section, 'subsections:', subsections, 'lists:', lists);
 
             // Create popover element
             const $popover = createPopover(section, subsections, lists);
@@ -212,8 +233,18 @@
             const $link = $(this);
             const $item = $link.closest('.nav-item');
             const section = $item.data('section');
-            const subsections = $item.data('subsections');
-            const lists = $item.data('lists');
+
+            // Parse JSON data attributes
+            let subsections = $item.data('subsections');
+            let lists = $item.data('lists');
+
+            if (typeof subsections === 'string') {
+                try { subsections = JSON.parse(subsections); } catch(e) { subsections = null; }
+            }
+
+            if (typeof lists === 'string') {
+                try { lists = JSON.parse(lists); } catch(e) { lists = null; }
+            }
 
             // Remove active class from all items
             $navItems.removeClass(CLASS_ACTIVE);
