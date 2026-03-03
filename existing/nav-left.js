@@ -274,11 +274,21 @@
 
     /**
      * Position popover next to the nav item (using fixed positioning)
-     * Offset by 10px to center caret with icon
+     * Caret centered with icon
      */
     function positionPopover($popover, $link) {
         const linkOffset = $link.offset();
-        const topPos = linkOffset.top + 10; // +10px to center caret with icon
+        const linkHeight = $link.outerHeight();
+
+        // Calculate icon center position
+        const iconCenterY = linkOffset.top + (linkHeight / 2);
+
+        // Caret is positioned at ~17px from top of popover (see CSS ::before/::after)
+        const caretOffsetFromPopoverTop = 17;
+
+        // Position popover so caret aligns with icon center
+        const topPos = iconCenterY - caretOffsetFromPopoverTop;
+
         $popover.css({
             top: topPos + 'px',
             left: '65px'
