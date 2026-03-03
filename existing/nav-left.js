@@ -303,23 +303,24 @@
         // Calculate icon center position
         const iconCenterY = linkOffset.top + (linkHeight / 2);
 
-        // Caret is positioned at ~17px from top of popover (see CSS ::before/::after)
-        const caretOffsetFromPopoverTop = 17;
+        // Caret is positioned at ~17px from edge of popover (see CSS ::before/::after)
+        const caretOffset = 17;
 
         // Initial position (downward popover) - adjusted by 5px
-        let topPos = iconCenterY - caretOffsetFromPopoverTop - 5;
+        let topPos = iconCenterY - caretOffset - 5;
 
         // Make popover visible temporarily to measure height
         $popover.css({ visibility: 'hidden', display: 'block' });
         const popoverHeight = $popover.outerHeight();
         $popover.css({ visibility: '', display: '' });
 
-        // Check if popover would go off bottom of screen
-        const wouldOverflowBottom = (topPos + popoverHeight) > (windowHeight - 20);
+        // Check if popover would go off bottom of screen (with 40px buffer for status bar)
+        const wouldOverflowBottom = (topPos + popoverHeight) > (windowHeight - 40);
 
         if (wouldOverflowBottom) {
             // Position popover ABOVE the icon
-            topPos = linkOffset.top - popoverHeight + 5;
+            // For upward popovers, caret is at bottom: 17px, so align it with icon center
+            topPos = iconCenterY - popoverHeight + caretOffset - 5;
             $popover.addClass('popover-upward');
         } else {
             $popover.removeClass('popover-upward');
