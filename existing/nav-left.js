@@ -26,43 +26,132 @@
     let popoverTimer = null;
 
     /**
-     * Set up icon popover with delay
-     * Prevents accidental popover triggers when mouse traverses icons
+     * Set up icon popovers with delay
+     * Shows subsections or lists when hovering over icons
      */
     function setupIconPopovers() {
         $navItems.each(function() {
             const $item = $(this);
-            const $icon = $item.find('.nav-icon');
-            const sectionName = $item.data('section');
+            const $link = $item.find('.nav-link');
+            const section = $item.data('section');
+            const subsections = $item.data('subsections'); // e.g., ['settings', 'profile', 'team']
+            const lists = $item.data('lists'); // e.g., ['My Leads', 'Hot Prospects', 'Follow-ups']
 
-            $icon.on('mouseenter', function() {
-                // Clear any existing timer
+            // Only show popover if there are subsections or lists
+            if (!subsections && !lists) {
+                return;
+            }
+
+            // Create popover element
+            const $popover = createPopover(section, subsections, lists);
+            $item.append($popover);
+
+            // Show popover on hover with delay
+            $link.on('mouseenter', function() {
                 if (popoverTimer) {
                     clearTimeout(popoverTimer);
                 }
 
-                // Set new timer with delay
                 popoverTimer = setTimeout(function() {
-                    // Show popover with section name (if tippy or similar library is available)
-                    if (typeof tippy !== 'undefined') {
-                        tippy($icon[0], {
-                            content: sectionName.charAt(0).toUpperCase() + sectionName.slice(1),
-                            delay: [0, 0],
-                            theme: 'nav-popover',
-                            placement: 'right',
-                            arrow: true
-                        });
-                    }
+                    // Hide all other popovers first
+                    $('.nav-popover').removeClass('visible');
+
+                    // Position and show this popover
+                    positionPopover($popover, $link);
+                    $popover.addClass('visible');
                 }, POPOVER_DELAY);
             });
 
-            $icon.on('mouseleave', function() {
-                // Clear timer if mouse leaves before delay completes
+            // Keep popover visible when hovering over it
+            $popover.on('mouseenter', function() {
                 if (popoverTimer) {
                     clearTimeout(popoverTimer);
-                    popoverTimer = null;
                 }
+                $popover.addClass('visible');
             });
+
+            // Hide popover when leaving both link and popover
+            $link.on('mouseleave', function() {
+                if (popoverTimer) {
+                    clearTimeout(popoverTimer);
+                }
+
+                setTimeout(function() {
+                    if (!$popover.is(':hover') && !$link.is(':hover')) {
+                        $popover.removeClass('visible');
+                    }
+                }, 100);
+            });
+
+            $popover.on('mouseleave', function() {
+                setTimeout(function() {
+                    if (!$popover.is(':hover') && !$link.is(':hover')) {
+                        $popover.removeClass('visible');
+                    }
+                }, 100);
+            });
+        });
+    }
+
+    /**
+     * Create popover element with subsections or lists
+     */
+    function createPopover(section, subsections, lists) {
+        const $popover = $('<div class="nav-popover"></div>');
+        const $list = $('<ul class="nav-popover-list"></ul>');
+
+        // Add header
+        const headerText = subsections ? 'Subsections' : 'Lists';
+        $popover.append(`<div class="nav-popover-header">${headerText}</div>`);
+
+        // Add items
+        const items = subsections || lists || [];
+        items.forEach(function(item, index) {
+            const itemId = typeof item === 'object' ? item.id : item;
+            const itemName = typeof item === 'object' ? item.name : item;
+
+            const $listItem = $(`
+                <li class="nav-popover-item">
+                    <a href="#" class="nav-popover-link" data-section="${section}" data-item-id="${itemId}" data-item-index="${index}">
+                        ${itemName}
+                    </a>
+                </li>
+            `);
+
+            $list.append($listItem);
+        });
+
+        $popover.append($list);
+
+        // Handle popover link clicks
+        $popover.on('click', '.nav-popover-link', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const itemId = $(this).data('item-id');
+            const itemIndex = $(this).data('item-index');
+
+            // Hide popover
+            $popover.removeClass('visible');
+
+            // Load the selected item
+            if (subsections) {
+                loadSubsection(section, itemId, itemIndex);
+            } else {
+                loadList(section, itemId);
+            }
+        });
+
+        return $popover;
+    }
+
+    /**
+     * Position popover next to the nav item
+     */
+    function positionPopover($popover, $link) {
+        const linkPos = $link.position();
+        $popover.css({
+            top: linkPos.top + 'px'
         });
     }
 
@@ -112,18 +201,19 @@
     }
 
     /**
-     * Set up click handlers for navigation items with smart behavior:
+     * Set up click handlers for navigation items with smart default behavior:
      * 4a: No subsections/lists -> immediately load content
-     * 4b: Has subsections (not lists) -> load first subsection
-     * 4c: Has lists -> load previously-selected list or refresh current
+     * 4b2: Has subsections -> load first subsection (no popover selection needed)
+     * 4c2: Has lists -> load last-selected list or refresh current
      */
     function setupNavItemClicks() {
-        $navItems.on('click', function(e) {
+        $navItems.on('click', '.nav-link', function(e) {
             e.preventDefault();
-            const $item = $(this);
+            const $link = $(this);
+            const $item = $link.closest('.nav-item');
             const section = $item.data('section');
-            const hasSubsections = $item.data('has-subsections') || false;
-            const hasLists = $item.data('has-lists') || false;
+            const subsections = $item.data('subsections');
+            const lists = $item.data('lists');
 
             // Remove active class from all items
             $navItems.removeClass(CLASS_ACTIVE);
@@ -135,15 +225,15 @@
             sessionStorage.setItem(ACTIVE_SECTION_KEY, section);
 
             // Smart loading behavior
-            if (!hasSubsections && !hasLists) {
+            if (!subsections && !lists) {
                 // 4a: No subsections or lists - load content immediately
                 loadSectionContent(section);
-            } else if (hasSubsections && !hasLists) {
-                // 4b: Has subsections - load first subsection
-                loadFirstSubsection(section);
-            } else if (hasLists) {
-                // 4c: Has lists - load previous or refresh current
-                loadListContent(section);
+            } else if (subsections) {
+                // 4b2: Has subsections - load first subsection
+                loadSubsection(section, subsections[0], 0);
+            } else if (lists) {
+                // 4c2: Has lists - load previous or refresh current
+                loadListContentSmart(section, lists);
             }
         });
     }
@@ -160,32 +250,56 @@
     }
 
     /**
-     * Load first subsection (4b)
+     * Load specific subsection (from popover or default first)
      */
-    function loadFirstSubsection(section) {
-        // Trigger custom event with first subsection flag
+    function loadSubsection(section, subsectionId, subsectionIndex) {
+        // Trigger custom event
         $(document).trigger('nav:subsection:load', {
             section: section,
-            subsection: 'first'
+            subsection: subsectionId,
+            subsectionIndex: subsectionIndex
         });
+
+        // Update URL hash
+        window.location.hash = section + '/' + subsectionId;
     }
 
     /**
-     * Load list content - previous or current (4c)
+     * Load specific list (from popover selection)
      */
-    function loadListContent(section) {
+    function loadList(section, listId) {
+        // Store this list as last-selected
+        const lastListKey = LAST_SELECTED_LIST_KEY + ':' + section;
+        localStorage.setItem(lastListKey, listId);
+
+        // Trigger custom event
+        $(document).trigger('nav:list:load', {
+            section: section,
+            listId: listId,
+            action: 'load'
+        });
+
+        // Update URL hash
+        window.location.hash = section + '/list/' + listId;
+    }
+
+    /**
+     * Load list with smart behavior (4c2)
+     * Load last-selected list or refresh current list
+     */
+    function loadListContentSmart(section, lists) {
         const lastListKey = LAST_SELECTED_LIST_KEY + ':' + section;
         const lastListId = localStorage.getItem(lastListKey);
 
         if (lastListId) {
             // Load previously-selected list
-            $(document).trigger('nav:list:load', {
-                section: section,
-                listId: lastListId,
-                action: 'load'
-            });
+            loadList(section, lastListId);
+        } else if (lists && lists.length > 0) {
+            // No previous list - load first list as default
+            const firstListId = typeof lists[0] === 'object' ? lists[0].id : lists[0];
+            loadList(section, firstListId);
         } else {
-            // No previous list - trigger refresh of current or show list selector
+            // Trigger refresh of current list
             $(document).trigger('nav:list:load', {
                 section: section,
                 listId: null,
@@ -202,7 +316,7 @@
         localStorage.setItem(lastListKey, listId);
     }
 
-    // Expose storeSelectedList globally for main app to use
+    // Expose functions globally for main app to use
     window.navStoreSelectedList = storeSelectedList;
 
     /**

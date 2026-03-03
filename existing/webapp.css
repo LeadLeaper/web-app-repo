@@ -11922,10 +11922,10 @@ body {
     background-color: #f5f5f5 !important;
 }
 
-/* Main content area - Fixed margin for 250px nav */
+/* Main content area - Fixed margin for 60px icon-only nav */
 .main-content {
     flex: 1;
-    margin-left: 250px;
+    margin-left: 60px;
     padding: 20px;
     background-color: #f5f5f5;
 }
@@ -11962,17 +11962,17 @@ body {
     z-index: 1050;
 }
 
-/* Responsive adjustments - Fixed nav width on all viewports */
+/* Responsive adjustments - Icon-only nav on all viewports */
 @media (min-width: 1366px) and (max-width: 1919px) {
     .main-content {
-        margin-left: 250px;
+        margin-left: 60px;
     }
 }
 
 /* Desktop viewports (1920+) */
 @media (min-width: 1920px) {
     .main-content {
-        margin-left: 250px;
+        margin-left: 60px;
     }
 }
 
