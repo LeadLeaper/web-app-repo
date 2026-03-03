@@ -2,82 +2,67 @@
  * Left Navigation Panel - Interaction Logic
  *
  * Features:
- * - Hover-to-expand behavior
- * - Pin/unpin functionality with localStorage persistence
+ * - Fixed-width navigation (no expanding)
  * - Active section highlighting
+ * - Icon popover with delay
+ * - Smart click behavior (immediate load, first subsection, or list selection)
  */
 
 (function($) {
     'use strict';
 
     // Constants
-    const NAV_STORAGE_KEY = 'navPinned';
-    const CLASS_NAV_PINNED = 'nav-pinned';
-    const CLASS_NAV_COLLAPSED = 'nav-collapsed';
-    const CLASS_NAV_EXPANDED = 'nav-expanded';
     const CLASS_ACTIVE = 'active';
+    const POPOVER_DELAY = 600; // ms delay before showing popover
+    const ACTIVE_SECTION_KEY = 'activeNavSection';
+    const LAST_SELECTED_LIST_KEY = 'lastSelectedList'; // Format: section:listId
 
     // Selectors
     const $body = $('body');
     const $leftNav = $('#left-nav');
-    const $pinBtn = $('#nav-pin-btn');
     const $navItems = $('.nav-item');
 
-    /**
-     * Initialize navigation state from localStorage
-     */
-    function initNavState() {
-        const isPinned = localStorage.getItem(NAV_STORAGE_KEY) === 'true';
-
-        if (isPinned) {
-            $body.removeClass(CLASS_NAV_COLLAPSED).addClass(CLASS_NAV_PINNED);
-            $leftNav.removeClass(CLASS_NAV_COLLAPSED);
-        } else {
-            $body.removeClass(CLASS_NAV_PINNED).addClass(CLASS_NAV_COLLAPSED);
-            $leftNav.addClass(CLASS_NAV_COLLAPSED);
-        }
-    }
+    // Popover delay timer
+    let popoverTimer = null;
 
     /**
-     * Set up hover-to-expand behavior
+     * Set up icon popover with delay
+     * Prevents accidental popover triggers when mouse traverses icons
      */
-    function setupHoverBehavior() {
-        $leftNav.on('mouseenter', function() {
-            // Only expand on hover if not pinned
-            if (!$body.hasClass(CLASS_NAV_PINNED)) {
-                $(this).addClass(CLASS_NAV_EXPANDED);
-            }
-        });
+    function setupIconPopovers() {
+        $navItems.each(function() {
+            const $item = $(this);
+            const $icon = $item.find('.nav-icon');
+            const sectionName = $item.data('section');
 
-        $leftNav.on('mouseleave', function() {
-            // Remove expanded class when mouse leaves (unless pinned)
-            if (!$body.hasClass(CLASS_NAV_PINNED)) {
-                $(this).removeClass(CLASS_NAV_EXPANDED);
-            }
-        });
-    }
+            $icon.on('mouseenter', function() {
+                // Clear any existing timer
+                if (popoverTimer) {
+                    clearTimeout(popoverTimer);
+                }
 
-    /**
-     * Set up pin/unpin button functionality
-     */
-    function setupPinButton() {
-        $pinBtn.on('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+                // Set new timer with delay
+                popoverTimer = setTimeout(function() {
+                    // Show popover with section name (if tippy or similar library is available)
+                    if (typeof tippy !== 'undefined') {
+                        tippy($icon[0], {
+                            content: sectionName.charAt(0).toUpperCase() + sectionName.slice(1),
+                            delay: [0, 0],
+                            theme: 'nav-popover',
+                            placement: 'right',
+                            arrow: true
+                        });
+                    }
+                }, POPOVER_DELAY);
+            });
 
-            const isPinned = $body.hasClass(CLASS_NAV_PINNED);
-
-            if (isPinned) {
-                // Unpin the navigation
-                $body.removeClass(CLASS_NAV_PINNED).addClass(CLASS_NAV_COLLAPSED);
-                $leftNav.addClass(CLASS_NAV_COLLAPSED).removeClass(CLASS_NAV_EXPANDED);
-                localStorage.setItem(NAV_STORAGE_KEY, 'false');
-            } else {
-                // Pin the navigation
-                $body.removeClass(CLASS_NAV_COLLAPSED).addClass(CLASS_NAV_PINNED);
-                $leftNav.removeClass(CLASS_NAV_COLLAPSED).removeClass(CLASS_NAV_EXPANDED);
-                localStorage.setItem(NAV_STORAGE_KEY, 'true');
-            }
+            $icon.on('mouseleave', function() {
+                // Clear timer if mouse leaves before delay completes
+                if (popoverTimer) {
+                    clearTimeout(popoverTimer);
+                    popoverTimer = null;
+                }
+            });
         });
     }
 
@@ -127,22 +112,98 @@
     }
 
     /**
-     * Set up click handlers for navigation items
+     * Set up click handlers for navigation items with smart behavior:
+     * 4a: No subsections/lists -> immediately load content
+     * 4b: Has subsections (not lists) -> load first subsection
+     * 4c: Has lists -> load previously-selected list or refresh current
      */
     function setupNavItemClicks() {
-        $navItems.on('click', function() {
-            const section = $(this).data('section');
+        $navItems.on('click', function(e) {
+            e.preventDefault();
+            const $item = $(this);
+            const section = $item.data('section');
+            const hasSubsections = $item.data('has-subsections') || false;
+            const hasLists = $item.data('has-lists') || false;
 
             // Remove active class from all items
             $navItems.removeClass(CLASS_ACTIVE);
 
             // Add active class to clicked item
-            $(this).addClass(CLASS_ACTIVE);
+            $item.addClass(CLASS_ACTIVE);
 
-            // Store active section in sessionStorage for page transitions
-            sessionStorage.setItem('activeNavSection', section);
+            // Store active section
+            sessionStorage.setItem(ACTIVE_SECTION_KEY, section);
+
+            // Smart loading behavior
+            if (!hasSubsections && !hasLists) {
+                // 4a: No subsections or lists - load content immediately
+                loadSectionContent(section);
+            } else if (hasSubsections && !hasLists) {
+                // 4b: Has subsections - load first subsection
+                loadFirstSubsection(section);
+            } else if (hasLists) {
+                // 4c: Has lists - load previous or refresh current
+                loadListContent(section);
+            }
         });
     }
+
+    /**
+     * Load main section content (4a)
+     */
+    function loadSectionContent(section) {
+        // Navigate to section page or update main content area
+        window.location.hash = section;
+
+        // Trigger custom event for app to handle
+        $(document).trigger('nav:section:load', { section: section });
+    }
+
+    /**
+     * Load first subsection (4b)
+     */
+    function loadFirstSubsection(section) {
+        // Trigger custom event with first subsection flag
+        $(document).trigger('nav:subsection:load', {
+            section: section,
+            subsection: 'first'
+        });
+    }
+
+    /**
+     * Load list content - previous or current (4c)
+     */
+    function loadListContent(section) {
+        const lastListKey = LAST_SELECTED_LIST_KEY + ':' + section;
+        const lastListId = localStorage.getItem(lastListKey);
+
+        if (lastListId) {
+            // Load previously-selected list
+            $(document).trigger('nav:list:load', {
+                section: section,
+                listId: lastListId,
+                action: 'load'
+            });
+        } else {
+            // No previous list - trigger refresh of current or show list selector
+            $(document).trigger('nav:list:load', {
+                section: section,
+                listId: null,
+                action: 'refresh'
+            });
+        }
+    }
+
+    /**
+     * Store selected list for later recall (called by main app)
+     */
+    function storeSelectedList(section, listId) {
+        const lastListKey = LAST_SELECTED_LIST_KEY + ':' + section;
+        localStorage.setItem(lastListKey, listId);
+    }
+
+    // Expose storeSelectedList globally for main app to use
+    window.navStoreSelectedList = storeSelectedList;
 
     /**
      * Restore active section from sessionStorage if available
@@ -163,12 +224,8 @@
      * Initialize the navigation panel
      */
     function init() {
-        // Initialize nav state from localStorage
-        initNavState();
-
         // Set up interaction behaviors
-        setupHoverBehavior();
-        setupPinButton();
+        setupIconPopovers();
         setupNavItemClicks();
 
         // Highlight active section

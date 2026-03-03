@@ -11912,38 +11912,38 @@ textarea.hl, li.hl { background-color: #fffff0; }
 /* ========================================
    Left Navigation Layout Integration
    Added: Phase 01-03
+   Updated: Phase 01-03 (Fixed Nav with Content Card Design)
    ======================================== */
 
-/* Body flexbox layout to accommodate fixed left nav */
+/* Body flexbox layout with light gray background */
 body {
     display: flex;
     min-height: 100vh;
+    background-color: #f5f5f5 !important;
 }
 
-/* Main content area adjusts for left navigation */
+/* Main content area - Fixed margin for 250px nav */
 .main-content {
     flex: 1;
-    margin-left: 60px;
-    transition: margin-left 0.3s ease-in-out;
-}
-
-/* When nav is pinned, increase margin */
-body.nav-pinned .main-content {
     margin-left: 250px;
+    padding: 20px;
+    background-color: #f5f5f5;
 }
 
-/* When nav is collapsed (default), use minimal margin */
-body.nav-collapsed .main-content {
-    margin-left: 60px;
+/* Inner content card - White background with rounded corners and shadow */
+.main-content > .container,
+.main-content #page-inner-content {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    min-height: calc(100vh - 40px);
 }
 
-/* Ensure page-inner-content and container adjust correctly */
-#page-inner-content {
-    width: 100%;
-}
-
-.container {
-    max-width: 100%;
+/* Ensure page content inherits white card styling */
+#page-content {
+    background-color: transparent;
+    margin: 0;
 }
 
 /* Z-index management */
@@ -11962,26 +11962,25 @@ body.nav-collapsed .main-content {
     z-index: 1050;
 }
 
-/* Responsive adjustments for laptop viewports (1366-1920px) */
+/* Responsive adjustments - Fixed nav width on all viewports */
 @media (min-width: 1366px) and (max-width: 1919px) {
-    /* Same behavior, nav adapts via its own CSS */
-    body.nav-collapsed .main-content {
-        margin-left: 60px;
-    }
-    
-    body.nav-pinned .main-content {
+    .main-content {
         margin-left: 250px;
     }
 }
 
 /* Desktop viewports (1920+) */
 @media (min-width: 1920px) {
-    body.nav-collapsed .main-content {
-        margin-left: 60px;
-    }
-    
-    body.nav-pinned .main-content {
+    .main-content {
         margin-left: 250px;
+    }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 10px;
     }
 }
 

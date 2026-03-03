@@ -11,33 +11,30 @@
     <link rel="stylesheet" href="nav-left.css">
 
     <style>
-        /* Test-specific styles */
+        /* Test-specific styles for fixed nav with content card design */
         body {
             margin: 0;
             padding: 0;
             display: flex;
             min-height: 100vh;
+            background-color: #f5f5f5 !important;
         }
 
         .main-content {
             flex: 1;
-            margin-left: 60px;
-            transition: margin-left 0.3s ease-in-out;
-            background-color: var(--color-bg-primary, #fafafa);
-        }
-
-        body.nav-pinned .main-content {
             margin-left: 250px;
-        }
-
-        body.nav-collapsed .main-content {
-            margin-left: 60px;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
 
         .content-wrapper {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             padding: 30px;
             max-width: 1400px;
             margin: 0 auto;
+            min-height: calc(100vh - 40px);
         }
 
         .section-content {
@@ -209,10 +206,10 @@
         }
     </style>
 </head>
-<body class="nav-collapsed">
+<body>
 
     <!-- Left Navigation (from nav-left.html) -->
-    <nav id="left-nav" class="nav-collapsed">
+    <nav id="left-nav">
         <div class="nav-header">
             <button id="nav-pin-btn" class="nav-pin-button" aria-label="Pin navigation">
                 <svg class="pin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
