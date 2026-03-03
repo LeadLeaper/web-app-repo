@@ -63,11 +63,15 @@
 
             console.log('Setting up popover for:', section, 'subsections:', subsections, 'lists:', lists);
 
-            // Create popover element
-            const $popover = createPopover(section, subsections, lists);
-            console.log('Created popover element:', $popover.length > 0 ? 'SUCCESS' : 'FAILED');
-            $item.append($popover);
-            console.log('Appended popover to nav item, total popovers in DOM:', $('.nav-popover').length);
+            // Create popover element with error handling
+            try {
+                const $popover = createPopover(section, subsections, lists);
+                console.log('Created popover element:', $popover.length > 0 ? 'SUCCESS' : 'FAILED');
+                $item.append($popover);
+                console.log('Appended popover to nav item, total popovers in DOM:', $('.nav-popover').length);
+            } catch (error) {
+                console.error('ERROR creating popover:', error.message, error.stack);
+            }
 
             // Show popover on hover with delay
             $link.on('mouseenter', function() {
@@ -126,8 +130,11 @@
      * Create popover element with subsections or lists
      */
     function createPopover(section, subsections, lists) {
+        console.log('createPopover called for section:', section);
         const $popover = $('<div class="nav-popover"></div>');
+        console.log('Created div element');
         const $list = $('<ul class="nav-popover-list"></ul>');
+        console.log('Created ul element');
 
         // Add header
         const headerText = subsections ? 'Subsections' : 'Lists';
@@ -377,6 +384,11 @@
      * Initialize the navigation panel
      */
     function init() {
+        console.log('Nav init started');
+        console.log('Nav width:', $leftNav.width(), 'px');
+        console.log('Nav computed width:', $leftNav.css('width'));
+        console.log('Total nav items:', $navItems.length);
+
         // Set up interaction behaviors
         setupIconPopovers();
         setupNavItemClicks();
@@ -386,6 +398,8 @@
 
         // Re-highlight on hash change
         $(window).on('hashchange', highlightActiveSection);
+
+        console.log('Nav init complete');
     }
 
     // Initialize when DOM is ready
