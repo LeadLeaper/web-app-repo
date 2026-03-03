@@ -61,43 +61,29 @@
                 return;
             }
 
-            console.log('Setting up popover for:', section, 'subsections:', subsections, 'lists:', lists);
-
             // Create popover element with error handling
             let $popover;
             try {
                 $popover = createPopover(section, subsections, lists);
-                console.log('Created popover element:', $popover.length > 0 ? 'SUCCESS' : 'FAILED');
                 $item.append($popover);
-                console.log('Appended popover to nav item, total popovers in DOM:', $('.nav-popover').length);
             } catch (error) {
-                console.error('ERROR creating popover:', error.message, error.stack);
+                console.error('ERROR creating popover for', section, ':', error.message);
                 return; // Skip event handlers if popover creation failed
             }
 
             // Show popover on hover with delay
             $link.on('mouseenter', function() {
-                console.log('MOUSEENTER on nav link for section:', section);
-
                 if (popoverTimer) {
                     clearTimeout(popoverTimer);
-                    console.log('Cleared existing popover timer');
                 }
 
-                console.log('Starting popover timer (600ms delay)...');
                 popoverTimer = setTimeout(function() {
-                    console.log('Popover timer fired for:', section);
-
                     // Hide all other popovers first
                     $('.nav-popover').removeClass('visible');
 
                     // Position and show this popover
                     positionPopover($popover, $link);
                     $popover.addClass('visible');
-
-                    console.log('Popover should be visible now. Has visible class:', $popover.hasClass('visible'));
-                    console.log('Popover CSS display:', $popover.css('display'));
-                    console.log('Popover position:', $popover.css('left'), $popover.css('top'));
                 }, POPOVER_DELAY);
             });
 
@@ -111,11 +97,8 @@
 
             // Hide popover when leaving both link and popover
             $link.on('mouseleave', function() {
-                console.log('MOUSELEAVE from nav link for section:', section);
-
                 if (popoverTimer) {
                     clearTimeout(popoverTimer);
-                    console.log('Cancelled popover timer due to mouseleave');
                 }
 
                 setTimeout(function() {
@@ -139,11 +122,8 @@
      * Create popover element with subsections or lists
      */
     function createPopover(section, subsections, lists) {
-        console.log('createPopover called for section:', section);
         const $popover = $('<div class="nav-popover"></div>');
-        console.log('Created div element');
         const $list = $('<ul class="nav-popover-list"></ul>');
-        console.log('Created ul element');
 
         // Add header
         const headerText = subsections ? 'Subsections' : 'Lists';
@@ -197,7 +177,6 @@
     function positionPopover($popover, $link) {
         const linkOffset = $link.offset();
         const topPos = linkOffset.top + 10; // +10px to center caret with icon
-        console.log('Positioning popover at top:', topPos + 'px');
         $popover.css({
             top: topPos + 'px',
             left: '65px'
@@ -397,11 +376,6 @@
      * Initialize the navigation panel
      */
     function init() {
-        console.log('Nav init started');
-        console.log('Nav width:', $leftNav.width(), 'px');
-        console.log('Nav computed width:', $leftNav.css('width'));
-        console.log('Total nav items:', $navItems.length);
-
         // Set up interaction behaviors
         setupIconPopovers();
         setupNavItemClicks();
@@ -411,8 +385,6 @@
 
         // Re-highlight on hash change
         $(window).on('hashchange', highlightActiveSection);
-
-        console.log('Nav init complete');
     }
 
     // Initialize when DOM is ready
