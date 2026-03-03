@@ -306,8 +306,8 @@
         // Caret is positioned at ~17px from edge of popover (see CSS ::before/::after)
         const caretOffset = 17;
 
-        // Initial position (downward popover) - adjusted by 5px
-        let topPos = iconCenterY - caretOffset - 5;
+        // Initial position (downward popover) - adjusted by 8px for better alignment
+        let topPos = iconCenterY - caretOffset - 8;
 
         // Make popover visible temporarily to measure height
         $popover.css({ visibility: 'hidden', display: 'block' });
@@ -320,7 +320,8 @@
         if (wouldOverflowBottom) {
             // Position popover ABOVE the icon
             // For upward popovers, caret is at bottom: 17px, so align it with icon center
-            topPos = iconCenterY - popoverHeight + caretOffset - 5;
+            // User requested +14px adjustment for User avatar popover
+            topPos = iconCenterY - popoverHeight + caretOffset + 9;
             $popover.addClass('popover-upward');
         } else {
             $popover.removeClass('popover-upward');
