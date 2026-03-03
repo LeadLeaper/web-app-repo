@@ -191,7 +191,9 @@
     }
 
     /**
-     * Create special Lists popover with multi-column layout, Add button, and Archived section
+     * Create special Lists popover with dynamic 1-3 column layout, Add button, and Archived section
+     * Column logic: 1-7 lists = 1 col, 8-14 lists = 2 cols, 15-20 lists = 3 cols
+     * Max 7 items per column, max 20 lists total
      */
     function createListsPopover(section) {
         const $popover = $('<div class="nav-popover lists-popover"></div>');
@@ -208,14 +210,31 @@
         $popover.append($addBtn);
 
         // Sample lists (in production, this would come from data)
+        // Using 18 lists to demonstrate 3-column layout
         const sampleLists = [
             'My Leads', 'Hot Prospects', 'Follow-ups', 'Cold Leads',
-            'Q1 Targets', 'Enterprise Deals', 'SMB Pipeline', 'Nurture Campaigns'
+            'Q1 Targets', 'Enterprise Deals', 'SMB Pipeline', 'Nurture Campaigns',
+            'Warm Leads', 'New Contacts', 'Re-engagement', 'VIP Clients',
+            'Trial Users', 'Qualified Leads', 'Web Signups', 'Event Attendees',
+            'Referrals', 'Partner Leads'
         ];
 
-        // Multi-column list grid
-        const $list = $('<ul class="nav-popover-list multi-column"></ul>');
-        sampleLists.forEach(function(listName, index) {
+        // Limit to 20 lists maximum
+        const lists = sampleLists.slice(0, 20);
+        const listCount = lists.length;
+
+        // Determine number of columns based on list count
+        let columnCount = 1;
+        if (listCount >= 15) {
+            columnCount = 3;
+        } else if (listCount >= 8) {
+            columnCount = 2;
+        }
+
+        // Multi-column list grid with dynamic columns
+        const $list = $(`<ul class="nav-popover-list multi-column column-${columnCount}"></ul>`);
+
+        lists.forEach(function(listName, index) {
             const $listItem = $(`
                 <li class="nav-popover-item">
                     <a href="#" class="nav-popover-link" data-section="${section}" data-item-id="${listName}" data-item-index="${index}">
@@ -274,11 +293,12 @@
 
     /**
      * Position popover next to the nav item (using fixed positioning)
-     * Caret centered with icon
+     * Caret centered with icon, with automatic upward positioning for bottom items
      */
     function positionPopover($popover, $link) {
         const linkOffset = $link.offset();
         const linkHeight = $link.outerHeight();
+        const windowHeight = $(window).height();
 
         // Calculate icon center position
         const iconCenterY = linkOffset.top + (linkHeight / 2);
@@ -286,8 +306,24 @@
         // Caret is positioned at ~17px from top of popover (see CSS ::before/::after)
         const caretOffsetFromPopoverTop = 17;
 
-        // Position popover so caret aligns with icon center
-        const topPos = iconCenterY - caretOffsetFromPopoverTop;
+        // Initial position (downward popover) - adjusted by 5px
+        let topPos = iconCenterY - caretOffsetFromPopoverTop - 5;
+
+        // Make popover visible temporarily to measure height
+        $popover.css({ visibility: 'hidden', display: 'block' });
+        const popoverHeight = $popover.outerHeight();
+        $popover.css({ visibility: '', display: '' });
+
+        // Check if popover would go off bottom of screen
+        const wouldOverflowBottom = (topPos + popoverHeight) > (windowHeight - 20);
+
+        if (wouldOverflowBottom) {
+            // Position popover ABOVE the icon
+            topPos = linkOffset.top - popoverHeight + 5;
+            $popover.addClass('popover-upward');
+        } else {
+            $popover.removeClass('popover-upward');
+        }
 
         $popover.css({
             top: topPos + 'px',

@@ -281,12 +281,46 @@ body {
     transform: translateY(0);
 }
 
-/* Multi-column Lists Grid */
+/* Multi-column Lists Grid - Dynamic 1-3 columns */
 .nav-popover-list.multi-column {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-    padding: 0 8px;
+    gap: 0;
+    padding: 0;
+    grid-auto-flow: column;
+    grid-auto-rows: auto;
+}
+
+/* 1 column (1-7 lists) */
+.nav-popover-list.column-1 {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(7, auto);
+}
+
+/* 2 columns (8-14 lists) */
+.nav-popover-list.column-2 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(7, auto);
+    column-gap: 0;
+}
+
+.nav-popover-list.column-2 .nav-popover-item:nth-child(n+8) {
+    border-left: 1px solid #e0e0e0;
+}
+
+/* 3 columns (15-20 lists) */
+.nav-popover-list.column-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: repeat(7, auto);
+    column-gap: 0;
+}
+
+.nav-popover-list.column-3 .nav-popover-item:nth-child(n+8) {
+    border-left: 1px solid #e0e0e0;
+}
+
+/* Adjust padding for items with left border */
+.multi-column .nav-popover-item:nth-child(n+8) .nav-popover-link {
+    padding-left: 13px;
 }
 
 /* Archived Toggle */
@@ -399,6 +433,17 @@ body {
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
     border-right: 8px solid #ffffff;
+}
+
+/* Upward popover (for bottom nav items) - caret points from bottom */
+.nav-popover.popover-upward::before {
+    top: auto;
+    bottom: 16px;
+}
+
+.nav-popover.popover-upward::after {
+    top: auto;
+    bottom: 17px;
 }
 
 /* Responsive Adjustments - Icon-Only on All Viewports */
