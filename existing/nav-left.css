@@ -137,17 +137,16 @@ body {
 
 /* Icon Popover Styles - Card with Shadow */
 .nav-popover {
-    position: absolute;
+    position: fixed;
     left: 65px;
-    top: 0;
     background-color: #ffffff;
-    border: 1px solid #e0e0e0;
+    border: 2px solid #08c;
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     padding: 8px 0;
     min-width: 200px;
     max-width: 300px;
-    z-index: 10000;
+    z-index: 99999;
     display: none;
     pointer-events: auto;
 }

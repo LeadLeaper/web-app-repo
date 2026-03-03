@@ -191,12 +191,15 @@
     }
 
     /**
-     * Position popover next to the nav item
+     * Position popover next to the nav item (using fixed positioning)
      */
     function positionPopover($popover, $link) {
-        const linkPos = $link.position();
+        const linkOffset = $link.offset();
+        const topPos = linkOffset.top;
+        console.log('Positioning popover at top:', topPos + 'px');
         $popover.css({
-            top: linkPos.top + 'px'
+            top: topPos + 'px',
+            left: '65px'
         });
     }
 
