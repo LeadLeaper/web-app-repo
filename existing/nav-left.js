@@ -65,7 +65,9 @@
 
             // Create popover element
             const $popover = createPopover(section, subsections, lists);
+            console.log('Created popover element:', $popover.length > 0 ? 'SUCCESS' : 'FAILED');
             $item.append($popover);
+            console.log('Appended popover to nav item, total popovers in DOM:', $('.nav-popover').length);
 
             // Show popover on hover with delay
             $link.on('mouseenter', function() {
@@ -74,12 +76,18 @@
                 }
 
                 popoverTimer = setTimeout(function() {
+                    console.log('Popover timer fired for:', section);
+
                     // Hide all other popovers first
                     $('.nav-popover').removeClass('visible');
 
                     // Position and show this popover
                     positionPopover($popover, $link);
                     $popover.addClass('visible');
+
+                    console.log('Popover should be visible now. Has visible class:', $popover.hasClass('visible'));
+                    console.log('Popover CSS display:', $popover.css('display'));
+                    console.log('Popover position:', $popover.css('left'), $popover.css('top'));
                 }, POPOVER_DELAY);
             });
 
