@@ -38,6 +38,7 @@
             // Parse JSON data attributes (jQuery .data() should auto-parse, but be explicit)
             let subsections = $item.data('subsections');
             let lists = $item.data('lists');
+            let hasLists = $item.data('has-lists'); // For Lists section
 
             // If they're strings, parse them
             if (typeof subsections === 'string') {
@@ -56,8 +57,8 @@
                 }
             }
 
-            // Only show popover if there are subsections or lists
-            if (!subsections && !lists) {
+            // Only show popover if there are subsections, lists, or has-lists flag
+            if (!subsections && !lists && !hasLists) {
                 return;
             }
 
@@ -123,22 +124,41 @@
      */
     function createPopover(section, subsections, lists) {
         const $popover = $('<div class="nav-popover"></div>');
+
+        // Special handling for Lists section
+        if (section === 'lists') {
+            return createListsPopover(section);
+        }
+
         const $list = $('<ul class="nav-popover-list"></ul>');
 
         // Add header
-        const headerText = subsections ? 'Subsections' : 'Lists';
+        const headerText = subsections ? section.charAt(0).toUpperCase() + section.slice(1) : 'Lists';
         $popover.append(`<div class="nav-popover-header">${headerText}</div>`);
 
-        // Add items
+        // Add items with title + description format
         const items = subsections || lists || [];
         items.forEach(function(item, index) {
             const itemId = typeof item === 'object' ? item.id : item;
             const itemName = typeof item === 'object' ? item.name : item;
+            const itemDesc = typeof item === 'object' ? item.desc : '';
+
+            let linkContent;
+            if (itemDesc) {
+                // Enhanced format with title + description
+                linkContent = `
+                    <div class="popover-item-title">${itemName}</div>
+                    <div class="popover-item-desc">${itemDesc}</div>
+                `;
+            } else {
+                // Simple format (backward compatible)
+                linkContent = itemName;
+            }
 
             const $listItem = $(`
                 <li class="nav-popover-item">
                     <a href="#" class="nav-popover-link" data-section="${section}" data-item-id="${itemId}" data-item-index="${index}">
-                        ${itemName}
+                        ${linkContent}
                     </a>
                 </li>
             `);
@@ -165,6 +185,88 @@
             } else {
                 loadList(section, itemId);
             }
+        });
+
+        return $popover;
+    }
+
+    /**
+     * Create special Lists popover with multi-column layout, Add button, and Archived section
+     */
+    function createListsPopover(section) {
+        const $popover = $('<div class="nav-popover lists-popover"></div>');
+
+        // Header
+        $popover.append(`<div class="nav-popover-header">Your Lists</div>`);
+
+        // Add List Button
+        const $addBtn = $(`
+            <button class="nav-popover-add-btn">
+                + Add List
+            </button>
+        `);
+        $popover.append($addBtn);
+
+        // Sample lists (in production, this would come from data)
+        const sampleLists = [
+            'My Leads', 'Hot Prospects', 'Follow-ups', 'Cold Leads',
+            'Q1 Targets', 'Enterprise Deals', 'SMB Pipeline', 'Nurture Campaigns'
+        ];
+
+        // Multi-column list grid
+        const $list = $('<ul class="nav-popover-list multi-column"></ul>');
+        sampleLists.forEach(function(listName, index) {
+            const $listItem = $(`
+                <li class="nav-popover-item">
+                    <a href="#" class="nav-popover-link" data-section="${section}" data-item-id="${listName}" data-item-index="${index}">
+                        ${listName}
+                    </a>
+                </li>
+            `);
+            $list.append($listItem);
+        });
+        $popover.append($list);
+
+        // Archived Lists Section
+        const $archived = $(`
+            <div class="nav-popover-archived">
+                <span class="archived-label">View Archived Lists</span>
+                <svg class="archived-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 3h18v4H3V3zm1 5h16v13H4V8zm8 7l4-4h-3V9h-2v2H8l4 4z"/>
+                </svg>
+            </div>
+        `);
+        $popover.append($archived);
+
+        // Handle Add button click
+        $addBtn.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $popover.removeClass('visible');
+
+            // Trigger custom event for app to handle
+            $(document).trigger('nav:list:add', { section: section });
+        });
+
+        // Handle list clicks
+        $popover.on('click', '.nav-popover-link', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const itemId = $(this).data('item-id');
+
+            $popover.removeClass('visible');
+            loadList(section, itemId);
+        });
+
+        // Handle archived click
+        $archived.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $popover.removeClass('visible');
+
+            // Trigger custom event for app to handle
+            $(document).trigger('nav:list:archived', { section: section });
         });
 
         return $popover;
@@ -373,10 +475,35 @@
     }
 
     /**
+     * Set up logo click handler
+     */
+    function setupLogoClick() {
+        $('#nav-logo').on('click', function(e) {
+            e.preventDefault();
+
+            // Navigate to dashboard
+            window.location.hash = 'dashboard';
+
+            // Remove active class from all nav items
+            $navItems.removeClass(CLASS_ACTIVE);
+
+            // Add active to dashboard
+            $navItems.filter('[data-section="dashboard"]').addClass(CLASS_ACTIVE);
+
+            // Store active section
+            sessionStorage.setItem(ACTIVE_SECTION_KEY, 'dashboard');
+
+            // Trigger custom event
+            $(document).trigger('nav:section:load', { section: 'dashboard' });
+        });
+    }
+
+    /**
      * Initialize the navigation panel
      */
     function init() {
         // Set up interaction behaviors
+        setupLogoClick();
         setupIconPopovers();
         setupNavItemClicks();
 

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 Enhanced - Navigation Demo</title>
+
+    <!-- Phase 1 Foundation Styles -->
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="typography.css">
+    <link rel="stylesheet" href="nav-left.css">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            min-height: 100vh;
+            background-color: #f5f5f5 !important;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 60px;
+            padding: 30px;
+            background-color: #f5f5f5;
+        }
+
+        .content-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+            padding: 40px;
+            max-width: 900px;
+        }
+
+        .demo-header {
+            border-bottom: 2px solid #e5e5e5;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .demo-header h1 {
+            margin: 0 0 10px 0;
+            color: #171717;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .demo-header p {
+            margin: 0;
+            color: #525252;
+            font-size: 16px;
+        }
+
+        .feature-section {
+            margin-bottom: 40px;
+        }
+
+        .feature-section h2 {
+            color: #404040;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-tag {
+            display: inline-block;
+            background: #e6f4ff;
+            color: #08c;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+
+        .feature-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            color: #525252;
+            font-size: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .demo-instruction {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .demo-instruction strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .demo-instruction p {
+            margin: 0;
+            color: #78350f;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .code-sample {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .section-content {
+            display: none;
+        }
+
+        .section-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .highlight-box {
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .highlight-box h3 {
+            margin: 0 0 10px 0;
+            color: #0369a1;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .highlight-box p {
+            margin: 0;
+            color: #0c4a6e;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Enhanced Left Navigation -->
+    <nav id="left-nav">
+        <!-- Company Logo/Branding - Clickable to Dashboard -->
+        <div class="nav-header">
+            <a href="#dashboard" class="nav-logo-link" id="nav-logo">
+                <div class="nav-logo-placeholder">
+                    <span class="logo-text">LL</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Main Navigation Items -->
+        <ul class="nav-list">
+            <li class="nav-item" data-section="team"
+                data-subsections='[{"id":"overview","name":"Overview","desc":"Team performance metrics"},{"id":"members","name":"Members","desc":"Manage team members"},{"id":"roles","name":"Roles","desc":"Configure user roles"}]'>
+                <a href="#team" class="nav-link">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Team</span>
+                </a>
+            </li>
+
+            <li class="nav-item active" data-section="dashboard">
+                <a href="#dashboard" class="nav-link">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+
+            <li class="nav-item" data-section="lists" data-has-lists="true">
+                <a href="#lists" class="nav-link">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Lists</span>
+                </a>
+            </li>
+
+            <li class="nav-item" data-section="engagement"
+                data-subsections='[{"id":"templates","name":"Email Templates","desc":"Manage email templates"},{"id":"campaigns","name":"Campaigns","desc":"Track campaign performance"},{"id":"sequences","name":"Sequences","desc":"Automated email sequences"}]'>
+                <a href="#engagement" class="nav-link">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Engagement</span>
+                </a>
+            </li>
+
+            <li class="nav-item" data-section="tracking"
+                data-subsections='[{"id":"opens","name":"Email Opens","desc":"Track email open rates"},{"id":"clicks","name":"Link Clicks","desc":"Monitor link engagement"},{"id":"replies","name":"Replies","desc":"View email responses"}]'>
+                <a href="#tracking" class="nav-link">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Tracking</span>
+                </a>
+            </li>
+
+            <li class="nav-item" data-section="alerts"
+                data-subsections='[{"id":"active","name":"Active Alerts","desc":"Current notifications"},{"id":"resolved","name":"Resolved","desc":"Past notifications"}]'>
+                <a href="#alerts" class="nav-link">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Alerts</span>
+                </a>
+            </li>
+
+            <li class="nav-item" data-section="integrations"
+                data-subsections='[{"id":"connections","name":"Connections","desc":"Connected services"},{"id":"settings","name":"Settings","desc":"Integration configuration"}]'>
+                <a href="#integrations" class="nav-link">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17 16l-4-4V8.82C14.16 8.4 15 7.3 15 6c0-1.66-1.34-3-3-3S9 4.34 9 6c0 1.3.84 2.4 2 2.82V12l-4 4H3v5h5v-3.05l4-4.2 4 4.2V21h5v-5h-4z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Integrations</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Bottom Utilities (User & Help) -->
+        <div class="nav-footer">
+            <ul class="nav-footer-list">
+                <li class="nav-item nav-item-footer" data-section="user"
+                    data-subsections='[{"id":"profile","name":"Profile","desc":"Manage your account"},{"id":"settings","name":"Settings","desc":"Configure preferences"},{"id":"billing","name":"Billing","desc":"Subscription & payments"}]'>
+                    <a href="#user" class="nav-link">
+                        <span class="nav-icon user-avatar">
+                            <span class="avatar-initials">LL</span>
+                        </span>
+                        <span class="nav-text">User</span>
+                    </a>
+                </li>
+
+                <li class="nav-item nav-item-footer" data-section="help"
+                    data-subsections='[{"id":"docs","name":"Documentation","desc":"User guides & tutorials"},{"id":"support","name":"Support","desc":"Contact support team"},{"id":"whats-new","name":"What\'s New","desc":"Latest features & updates"}]'>
+                    <a href="#help" class="nav-link">
+                        <span class="nav-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Help</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="content-card">
+            <div class="demo-header">
+                <h1>Phase 1 Enhanced Navigation</h1>
+                <p>Demonstration of all new navigation features and improvements</p>
+            </div>
+
+            <div class="feature-section">
+                <h2><span class="feature-tag">New</span> Clickable Company Logo</h2>
+                <div class="demo-instruction">
+                    <strong>Try it:</strong>
+                    <p>Click the "LL" logo at the top of the navigation panel. It will navigate you to the Dashboard section.</p>
+                </div>
+                <ul class="feature-list">
+                    <li>Logo serves dual purpose: branding + navigation control</li>
+                    <li>Hover effect provides visual feedback</li>
+                    <li>Always returns user to Dashboard (main landing page)</li>
+                    <li>Ready to replace "LL" placeholder with actual LeadLeaper logo</li>
+                </ul>
+            </div>
+
+            <div class="feature-section">
+                <h2><span class="feature-tag">Enhanced</span> Lists Popover (Multi-Column)</h2>
+                <div class="demo-instruction">
+                    <strong>Try it:</strong>
+                    <p>Hover over the Lists icon (third from top). Wait 600ms for the enhanced popover to appear.</p>
+                </div>
+                <ul class="feature-list">
+                    <li><strong>Multi-column grid</strong> - Displays lists in 2-column layout for easier scanning</li>
+                    <li><strong>"+ Add List" button</strong> - Prominent action button at the top</li>
+                    <li><strong>"View Archived Lists" section</strong> - Access to previously archived lists</li>
+                    <li>Supports many lists without overwhelming vertical scroll</li>
+                </ul>
+                <div class="highlight-box">
+                    <h3>Sample lists included:</h3>
+                    <p>My Leads, Hot Prospects, Follow-ups, Cold Leads, Q1 Targets, Enterprise Deals, SMB Pipeline, Nurture Campaigns</p>
+                </div>
+            </div>
+
+            <div class="feature-section">
+                <h2><span class="feature-tag">Enhanced</span> Section Popovers (Title + Description)</h2>
+                <div class="demo-instruction">
+                    <strong>Try it:</strong>
+                    <p>Hover over any section icon (Team, Engagement, Tracking, etc.). Each item now shows a title AND a helpful description.</p>
+                </div>
+                <ul class="feature-list">
+                    <li><strong>Title</strong> - Clear section name (e.g., "Email Templates")</li>
+                    <li><strong>Description</strong> - Context about what the section does (e.g., "Manage email templates")</li>
+                    <li>Better user understanding of each section's purpose</li>
+                    <li>Reduces confusion for new users</li>
+                </ul>
+                <div class="highlight-box">
+                    <h3>Example - Engagement section:</h3>
+                    <p>• Email Templates - Manage email templates<br>
+                       • Campaigns - Track campaign performance<br>
+                       • Sequences - Automated email sequences</p>
+                </div>
+            </div>
+
+            <div class="feature-section">
+                <h2><span class="feature-tag">New</span> Bottom Navigation Utilities</h2>
+                <div class="demo-instruction">
+                    <strong>Try it:</strong>
+                    <p>Scroll to the bottom of the navigation panel. User avatar and Help icon are now positioned at the bottom.</p>
+                </div>
+                <ul class="feature-list">
+                    <li><strong>User Avatar</strong> - Circle with initials (replaceable with user photo)</li>
+                    <li>Hover effect scales avatar and adds shadow</li>
+                    <li><strong>Help Icon</strong> - Positioned alongside user avatar for easy access</li>
+                    <li>Modern SaaS pattern: main nav in middle, utilities at bottom</li>
+                </ul>
+            </div>
+
+            <div class="feature-section">
+                <h2><span class="feature-tag">Technical</span> Custom Events</h2>
+                <div class="code-sample">// JavaScript events triggered by navigation actions:
+$(document).on('nav:list:add', function(e, data) {
+    // Fired when user clicks "+ Add List" button
+    console.log('Add list to section:', data.section);
+});
+
+$(document).on('nav:list:archived', function(e, data) {
+    // Fired when user clicks "View Archived Lists"
+    console.log('Show archived lists for:', data.section);
+});
+
+$(document).on('nav:section:load', function(e, data) {
+    // Fired when navigating to a section
+    console.log('Load section:', data.section);
+});</div>
+                <p style="margin-top: 15px; color: #525252; font-size: 14px;">
+                    These custom events allow the main application to respond to navigation actions.
+                </p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Next Steps</h2>
+                <div class="highlight-box">
+                    <h3>Ready for logo integration</h3>
+                    <p>When you provide the LeadLeaper logo file, I'll replace the "LL" placeholder with the actual logo image. The logo area is 40x40px with 8px border radius.</p>
+                </div>
+                <div class="highlight-box" style="margin-top: 15px;">
+                    <h3>User avatar customization</h3>
+                    <p>The avatar can display actual user initials (from user data) and be replaced with a user-uploaded thumbnail photo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery and Navigation Script -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="nav-left.js"></script>
+
+    <!-- Demo Event Listeners -->
+    <script>
+        $(document).ready(function() {
+            // Log custom events
+            $(document).on('nav:list:add', function(e, data) {
+                console.log('✓ Add List button clicked for section:', data.section);
+                alert('Add List functionality would open here!\n\nSection: ' + data.section);
+            });
+
+            $(document).on('nav:list:archived', function(e, data) {
+                console.log('✓ View Archived Lists clicked for section:', data.section);
+                alert('Archived Lists view would open here!\n\nSection: ' + data.section);
+            });
+
+            $(document).on('nav:section:load', function(e, data) {
+                console.log('✓ Navigated to section:', data.section);
+            });
+
+            $(document).on('nav:subsection:load', function(e, data) {
+                console.log('✓ Loaded subsection:', data.subsection, 'in section:', data.section);
+                alert('Subsection loaded!\n\nSection: ' + data.section + '\nSubsection: ' + data.subsection);
+            });
+
+            $(document).on('nav:list:load', function(e, data) {
+                console.log('✓ Loaded list:', data.listId, 'in section:', data.section);
+                alert('List loaded!\n\nSection: ' + data.section + '\nList: ' + data.listId);
+            });
+
+            console.log('=== Phase 1 Enhanced Navigation Demo ===');
+            console.log('All features loaded and ready to test!');
+        });
+    </script>
+</body>
+</html>

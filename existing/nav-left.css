@@ -33,7 +33,7 @@ body {
     flex-direction: column;
 }
 
-/* Navigation Header - Logo/Icon Area */
+/* Navigation Header - Company Logo/Branding */
 .nav-header {
     height: 60px;
     display: flex;
@@ -41,11 +41,43 @@ body {
     justify-content: center;
     border-bottom: 1px solid #e0e0e0;
     padding: 0;
+    flex-shrink: 0;
 }
 
-.nav-logo {
-    font-size: 24px;
-    color: #08c;
+.nav-logo-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 200ms ease;
+}
+
+.nav-logo-link:hover {
+    background-color: #ececec;
+}
+
+.nav-logo-placeholder {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #08c;
+    border-radius: 8px;
+    transition: transform 200ms ease;
+}
+
+.nav-logo-link:hover .nav-logo-placeholder {
+    transform: scale(1.05);
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
     line-height: 1;
 }
 
@@ -56,6 +88,24 @@ body {
     padding: 0;
     flex: 1;
     overflow-y: auto;
+}
+
+/* Navigation Footer - Bottom Utilities (User & Help) */
+.nav-footer {
+    margin-top: auto;
+    border-top: 1px solid #e0e0e0;
+    padding: 8px 0;
+    flex-shrink: 0;
+}
+
+.nav-footer-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item-footer {
+    margin: 0;
 }
 
 /* Navigation Items */
@@ -112,6 +162,36 @@ body {
     height: 24px;
 }
 
+/* User Avatar Icon */
+.user-avatar {
+    position: relative;
+}
+
+.avatar-initials {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #08c;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.nav-link:hover .avatar-initials {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 136, 204, 0.3);
+}
+
+.nav-item.active .avatar-initials {
+    background-color: #ffffff;
+    color: #08c;
+}
+
 /* Navigation Text - Hidden (icon-only nav) */
 .nav-text {
     display: none;
@@ -155,6 +235,13 @@ body {
     display: block;
 }
 
+/* Lists Popover - Multi-column Layout */
+.nav-popover.lists-popover {
+    min-width: 400px;
+    max-width: 600px;
+    padding: 12px 0;
+}
+
 .nav-popover-header {
     padding: 10px 16px 8px;
     font-size: 11px;
@@ -168,6 +255,68 @@ body {
     border-radius: 8px 8px 0 0;
 }
 
+/* Add List Button */
+.nav-popover-add-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 8px 16px;
+    padding: 8px 12px;
+    background-color: #08c;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 200ms ease, transform 100ms ease;
+    text-align: center;
+}
+
+.nav-popover-add-btn:hover {
+    background-color: #0077b3;
+    transform: translateY(-1px);
+}
+
+.nav-popover-add-btn:active {
+    transform: translateY(0);
+}
+
+/* Multi-column Lists Grid */
+.nav-popover-list.multi-column {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    padding: 0 8px;
+}
+
+/* Archived Toggle */
+.nav-popover-archived {
+    padding: 10px 16px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+
+.nav-popover-archived:hover {
+    background-color: #f5f7fa;
+}
+
+.archived-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #525252;
+}
+
+.archived-icon {
+    width: 16px;
+    height: 16px;
+    color: #737373;
+}
+
 .nav-popover-list {
     list-style: none;
     margin: 0;
@@ -178,6 +327,7 @@ body {
     margin: 0;
 }
 
+/* Popover Link with Title & Description */
 .nav-popover-link {
     display: block;
     padding: 10px 16px;
@@ -199,6 +349,31 @@ body {
     font-weight: 500;
     border-left: 3px solid #08c;
     padding-left: 13px;
+}
+
+/* Enhanced Popover with Title + Description */
+.popover-item-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #404040;
+    margin-bottom: 2px;
+    transition: color 150ms ease;
+}
+
+.popover-item-desc {
+    font-size: 12px;
+    color: #737373;
+    line-height: 1.4;
+}
+
+.nav-popover-link:hover .popover-item-title {
+    color: #08c;
+}
+
+/* Multi-column items - compact layout */
+.multi-column .nav-popover-link {
+    padding: 8px 12px;
+    font-size: 13px;
 }
 
 /* Popover arrow (pointing left towards nav icon) */
