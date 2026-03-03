@@ -64,13 +64,15 @@
             console.log('Setting up popover for:', section, 'subsections:', subsections, 'lists:', lists);
 
             // Create popover element with error handling
+            let $popover;
             try {
-                const $popover = createPopover(section, subsections, lists);
+                $popover = createPopover(section, subsections, lists);
                 console.log('Created popover element:', $popover.length > 0 ? 'SUCCESS' : 'FAILED');
                 $item.append($popover);
                 console.log('Appended popover to nav item, total popovers in DOM:', $('.nav-popover').length);
             } catch (error) {
                 console.error('ERROR creating popover:', error.message, error.stack);
+                return; // Skip event handlers if popover creation failed
             }
 
             // Show popover on hover with delay
