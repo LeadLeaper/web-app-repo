@@ -135,20 +135,29 @@ body {
     background-color: #e8e8e8;
 }
 
-/* Active Navigation Item */
+/* Active Navigation Item - Blue horizontal bars top and bottom */
 .nav-item.active .nav-link {
-    background-color: #08c;
-    color: #ffffff;
+    position: relative;
 }
 
 .nav-item.active .nav-link::before {
     content: '';
     position: absolute;
     left: 0;
+    right: 0;
     top: 0;
+    height: 3px;
+    background-color: #08c;
+}
+
+.nav-item.active .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
     bottom: 0;
-    width: 4px;
-    background-color: #ffffff;
+    height: 3px;
+    background-color: #08c;
 }
 
 /* Navigation Icon */
@@ -191,9 +200,10 @@ body {
     box-shadow: 0 2px 8px rgba(0, 136, 204, 0.3);
 }
 
+/* Keep avatar styling unchanged when active */
 .nav-item.active .avatar-initials {
-    background-color: #ffffff;
-    color: #08c;
+    background-color: #08c;
+    color: #ffffff;
 }
 
 /* Navigation Text - Hidden (icon-only nav) */

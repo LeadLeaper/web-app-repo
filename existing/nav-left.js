@@ -299,6 +299,8 @@
         const linkOffset = $link.offset();
         const linkHeight = $link.outerHeight();
         const windowHeight = $(window).height();
+        const $item = $link.closest('.nav-item');
+        const isFooterItem = $item.hasClass('nav-item-footer');
 
         // Calculate icon center position
         const iconCenterY = linkOffset.top + (linkHeight / 2);
@@ -314,10 +316,10 @@
         const popoverHeight = $popover.outerHeight();
         $popover.css({ visibility: '', display: '' });
 
-        // Check if popover would go off bottom of screen (with 40px buffer for status bar)
+        // Force upward positioning for footer items, or check if would overflow
         const wouldOverflowBottom = (topPos + popoverHeight) > (windowHeight - 40);
 
-        if (wouldOverflowBottom) {
+        if (isFooterItem || wouldOverflowBottom) {
             // Position popover ABOVE the icon
             // For upward popovers, caret is at bottom: 17px, so align it with icon center
             // User requested +14px adjustment for User avatar popover
