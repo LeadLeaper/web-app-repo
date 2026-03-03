@@ -62,6 +62,7 @@ body {
 .nav-item {
     margin: 0;
     padding: 0;
+    position: relative;
 }
 
 .nav-link {
@@ -138,14 +139,17 @@ body {
 .nav-popover {
     position: absolute;
     left: 65px;
+    top: 0;
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     padding: 8px 0;
     min-width: 200px;
-    z-index: 1100;
+    max-width: 300px;
+    z-index: 10000;
     display: none;
+    pointer-events: auto;
 }
 
 .nav-popover.visible {
