@@ -525,8 +525,13 @@
             closeProfilePanel();
         });
 
-        // Close Method 2: Backdrop click (only if clicked on backdrop itself, not children)
+        // Close Method 2: Backdrop click (only if clicked on backdrop itself, not children or contact names)
         $(document).on('click', '.profile-panel-backdrop', function(e) {
+            // Don't close if clicking on a contact name - let it switch the panel content instead
+            if ($(e.target).closest('.contact-name').length > 0) {
+                return;
+            }
+
             if (e.target === this) {
                 closeProfilePanel();
             }
