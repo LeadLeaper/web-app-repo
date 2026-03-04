@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="typography.css?v=3">
     <link rel="stylesheet" href="nav-left.css?v=3">
 
+    <!-- Phase 2 Profile Panel Styles -->
+    <link rel="stylesheet" href="profile-panel.css">
+
     <style>
         /* Test-specific styles for fixed nav with content card design */
         body {
@@ -473,48 +476,70 @@
                 <div class="sample-panel">
                     <h2>Your Contact Lists</h2>
 
-                    <table class="sample-table">
+                    <div style="margin-bottom: 15px; padding: 10px; background: #e8f4f8; border-left: 3px solid var(--color-primary, #08c); border-radius: 4px;">
+                        <strong>Test Profile Panel:</strong> Click any contact name below to open profile panel
+                    </div>
+
+                    <table class="sample-table contact-list-table">
                         <thead>
                             <tr>
-                                <th>List Name</th>
-                                <th>Contacts</th>
-                                <th>Created</th>
-                                <th>Last Updated</th>
+                                <th>Contact Name</th>
+                                <th>Company</th>
+                                <th>Title</th>
+                                <th>Email</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Enterprise Prospects</td>
-                                <td>234</td>
-                                <td>Jan 15, 2026</td>
-                                <td>Mar 1, 2026</td>
-                                <td><span class="status-badge status-active">Active</span></td>
+                            <tr class="contact-row" data-contact-id="1">
+                                <td class="contact-name" style="cursor: pointer; color: var(--color-primary, #08c); font-weight: 500;">
+                                    Sarah Johnson
+                                </td>
+                                <td>Acme Corp</td>
+                                <td>VP of Sales</td>
+                                <td>sarah.johnson@acmecorp.com</td>
+                                <td><span class="status-badge status-active">LIVE</span></td>
                                 <td><button class="btn-secondary">Edit</button></td>
                             </tr>
-                            <tr>
-                                <td>Mid-Market Leads</td>
-                                <td>187</td>
-                                <td>Jan 20, 2026</td>
-                                <td>Feb 28, 2026</td>
-                                <td><span class="status-badge status-active">Active</span></td>
+                            <tr class="contact-row" data-contact-id="2">
+                                <td class="contact-name" style="cursor: pointer; color: var(--color-primary, #08c); font-weight: 500;">
+                                    Michael Chen
+                                </td>
+                                <td>TechStart Inc</td>
+                                <td>CEO</td>
+                                <td>m.chen@techstart.io</td>
+                                <td><span class="status-badge status-active">LIVE</span></td>
                                 <td><button class="btn-secondary">Edit</button></td>
                             </tr>
-                            <tr>
-                                <td>Event Attendees - Q4 2025</td>
-                                <td>92</td>
-                                <td>Oct 5, 2025</td>
-                                <td>Oct 12, 2025</td>
-                                <td><span class="status-badge status-inactive">Archived</span></td>
-                                <td><button class="btn-secondary">View</button></td>
-                            </tr>
-                            <tr>
-                                <td>Warm Referrals</td>
-                                <td>48</td>
-                                <td>Feb 10, 2026</td>
-                                <td>Mar 2, 2026</td>
+                            <tr class="contact-row" data-contact-id="3">
+                                <td class="contact-name" style="cursor: pointer; color: var(--color-primary, #08c); font-weight: 500;">
+                                    Emily Rodriguez
+                                </td>
+                                <td>Global Systems</td>
+                                <td>Director of Marketing</td>
+                                <td>e.rodriguez@globalsys.com</td>
                                 <td><span class="status-badge status-pending">Pending</span></td>
+                                <td><button class="btn-secondary">Edit</button></td>
+                            </tr>
+                            <tr class="contact-row" data-contact-id="4">
+                                <td class="contact-name" style="cursor: pointer; color: var(--color-primary, #08c); font-weight: 500;">
+                                    David Park
+                                </td>
+                                <td>Innovation Labs</td>
+                                <td>CTO</td>
+                                <td>david.park@innovlabs.com</td>
+                                <td><span class="status-badge status-active">LIVE</span></td>
+                                <td><button class="btn-secondary">Edit</button></td>
+                            </tr>
+                            <tr class="contact-row" data-contact-id="5">
+                                <td class="contact-name" style="cursor: pointer; color: var(--color-primary, #08c); font-weight: 500;">
+                                    Jennifer Martinez
+                                </td>
+                                <td>Enterprise Solutions</td>
+                                <td>Account Manager</td>
+                                <td>j.martinez@entsolutions.com</td>
+                                <td><span class="status-badge status-inactive">Inactive</span></td>
                                 <td><button class="btn-secondary">Edit</button></td>
                             </tr>
                         </tbody>
@@ -930,9 +955,64 @@
         </div>
     </div>
 
+    <!-- Profile Panel Integration -->
+    <div class="profile-panel-backdrop" aria-hidden="true"></div>
+    <aside class="profile-panel" role="dialog" aria-label="Contact Profile" aria-hidden="true">
+        <header class="profile-header">
+            <button type="button" class="profile-close-btn" aria-label="Close profile panel">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <div class="profile-identity">
+                <div class="profile-photo-wrapper">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23d4d4d4'/%3E%3C/svg%3E"
+                         alt="Contact photo" class="profile-photo">
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-name">Contact Name</h2>
+                    <div class="profile-status">
+                        <span class="badge badge-live">LIVE</span>
+                        <span class="profile-company">Company Name</span>
+                    </div>
+                    <div class="profile-title">Job Title</div>
+                </div>
+            </div>
+        </header>
+        <div class="profile-actions">
+            <div class="profile-nav-arrows">
+                <button type="button" class="btn btn-sm btn-default profile-nav-btn" data-nav="prev" aria-label="Previous contact" title="Previous">
+                    <span aria-hidden="true">&larr;</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-default profile-nav-btn" data-nav="next" aria-label="Next contact" title="Next">
+                    <span aria-hidden="true">&rarr;</span>
+                </button>
+            </div>
+            <div class="profile-action-buttons">
+                <button type="button" class="btn btn-sm btn-default" title="Send Email">
+                    <svg class="action-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383l-4.758 2.855L15 11.114v-5.73zm-.034 6.878L9.271 8.82 8 9.583 6.728 8.82l-5.694 3.44A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.739zM1 11.114l4.758-2.876L1 5.383v5.73z"/>
+                    </svg>
+                    Email
+                </button>
+                <button type="button" class="btn btn-sm btn-default" title="Call Contact">
+                    <svg class="action-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328z"/>
+                    </svg>
+                    Call
+                </button>
+                <button type="button" class="btn btn-sm btn-default" title="More actions" aria-label="More actions">
+                    <span aria-hidden="true">&vellip;</span>
+                </button>
+            </div>
+        </div>
+        <div class="profile-content">
+            <!-- Content will be populated dynamically -->
+        </div>
+    </aside>
+
     <!-- jQuery and Navigation Script -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="nav-left.js"></script>
+    <script src="profile-panel.js"></script>
 
     <!-- Section Switching Script -->
     <script>
@@ -973,6 +1053,209 @@
             console.log('Theme CSS: Applied');
             console.log('Typography CSS: Applied');
             console.log('All 9 sections: Available');
+        });
+    </script>
+
+    <!-- Profile Panel Integration Script -->
+    <script>
+        $(document).ready(function() {
+            // Sample contact data for testing
+            const sampleContacts = [
+                {
+                    id: 1,
+                    name: 'Sarah Johnson',
+                    company: 'Acme Corp',
+                    title: 'VP of Sales',
+                    email: 'sarah.johnson@acmecorp.com',
+                    phone: '+1 (555) 123-4567',
+                    photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%234CAF50"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3ESJ%3C/text%3E%3C/svg%3E',
+                    isLive: true,
+                    details: [
+                        { label: 'Email', value: 'sarah.johnson@acmecorp.com', type: 'email' },
+                        { label: 'Phone', value: '+1 (555) 123-4567', type: 'phone' },
+                        { label: 'Location', value: 'San Francisco, CA', type: 'text' }
+                    ],
+                    companyInfo: [
+                        { label: 'Company', value: 'Acme Corp', type: 'text' },
+                        { label: 'Industry', value: 'Enterprise Software', type: 'text' },
+                        { label: 'Size', value: '500-1000 employees', type: 'text' },
+                        { label: 'Website', value: 'https://acmecorp.com', type: 'url' }
+                    ],
+                    socialLinks: [
+                        { platform: 'LinkedIn', url: 'https://linkedin.com/in/sarahjohnson' },
+                        { platform: 'Twitter', url: 'https://twitter.com/sarahjohnson' }
+                    ],
+                    notes: [
+                        { date: '2026-02-28', text: 'Great call - very interested in Q2 pricing', author: 'You' },
+                        { date: '2026-02-15', text: 'Sent proposal for enterprise plan', author: 'You' }
+                    ],
+                    calls: [
+                        { date: '2026-02-28', duration: '25 min', outcome: 'Positive - moving to next stage', notes: 'Discussed implementation timeline' }
+                    ],
+                    meetings: [
+                        { date: '2026-03-10', time: '2:00 PM', title: 'Product Demo', attendees: 'Sarah Johnson, Mike Chen' }
+                    ],
+                    reminders: [
+                        { date: '2026-03-08', text: 'Follow up before demo' }
+                    ],
+                    emailReplies: 5,
+                    emailLinksViewed: 12,
+                    emailsSent: 8
+                },
+                {
+                    id: 2,
+                    name: 'Michael Chen',
+                    company: 'TechStart Inc',
+                    title: 'CEO',
+                    email: 'm.chen@techstart.io',
+                    phone: '+1 (555) 234-5678',
+                    photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%232196F3"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EMC%3C/text%3E%3C/svg%3E',
+                    isLive: true,
+                    details: [
+                        { label: 'Email', value: 'm.chen@techstart.io', type: 'email' },
+                        { label: 'Phone', value: '+1 (555) 234-5678', type: 'phone' },
+                        { label: 'Location', value: 'Austin, TX', type: 'text' }
+                    ],
+                    companyInfo: [
+                        { label: 'Company', value: 'TechStart Inc', type: 'text' },
+                        { label: 'Industry', value: 'SaaS - Marketing', type: 'text' },
+                        { label: 'Size', value: '50-100 employees', type: 'text' },
+                        { label: 'Website', value: 'https://techstart.io', type: 'url' }
+                    ],
+                    socialLinks: [
+                        { platform: 'LinkedIn', url: 'https://linkedin.com/in/michaelchen' }
+                    ],
+                    notes: [
+                        { date: '2026-03-01', text: 'Highly engaged - opened email 3 times', author: 'System' }
+                    ],
+                    calls: [],
+                    meetings: [],
+                    reminders: [],
+                    emailReplies: 2,
+                    emailLinksViewed: 8,
+                    emailsSent: 4
+                },
+                {
+                    id: 3,
+                    name: 'Emily Rodriguez',
+                    company: 'Global Systems',
+                    title: 'Director of Marketing',
+                    email: 'e.rodriguez@globalsys.com',
+                    phone: '+1 (555) 345-6789',
+                    photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%23FF9800"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EER%3C/text%3E%3C/svg%3E',
+                    isLive: false,
+                    details: [
+                        { label: 'Email', value: 'e.rodriguez@globalsys.com', type: 'email' },
+                        { label: 'Phone', value: '+1 (555) 345-6789', type: 'phone' },
+                        { label: 'Location', value: 'New York, NY', type: 'text' }
+                    ],
+                    companyInfo: [
+                        { label: 'Company', value: 'Global Systems', type: 'text' },
+                        { label: 'Industry', value: 'Logistics', type: 'text' },
+                        { label: 'Size', value: '1000+ employees', type: 'text' }
+                    ],
+                    socialLinks: [],
+                    notes: [],
+                    calls: [],
+                    meetings: [],
+                    reminders: [
+                        { date: '2026-03-15', text: 'Check in after Q1 closes' }
+                    ],
+                    emailReplies: 0,
+                    emailLinksViewed: 2,
+                    emailsSent: 3
+                },
+                {
+                    id: 4,
+                    name: 'David Park',
+                    company: 'Innovation Labs',
+                    title: 'CTO',
+                    email: 'david.park@innovlabs.com',
+                    phone: '+1 (555) 456-7890',
+                    photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%239C27B0"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EDP%3C/text%3E%3C/svg%3E',
+                    isLive: true,
+                    details: [
+                        { label: 'Email', value: 'david.park@innovlabs.com', type: 'email' },
+                        { label: 'Phone', value: '+1 (555) 456-7890', type: 'phone' },
+                        { label: 'Location', value: 'Seattle, WA', type: 'text' }
+                    ],
+                    companyInfo: [
+                        { label: 'Company', value: 'Innovation Labs', type: 'text' },
+                        { label: 'Industry', value: 'AI/ML Research', type: 'text' },
+                        { label: 'Size', value: '100-200 employees', type: 'text' }
+                    ],
+                    socialLinks: [
+                        { platform: 'LinkedIn', url: 'https://linkedin.com/in/davidpark' },
+                        { platform: 'GitHub', url: 'https://github.com/davidpark' }
+                    ],
+                    notes: [
+                        { date: '2026-03-02', text: 'Technical decision maker - focus on API capabilities', author: 'You' }
+                    ],
+                    calls: [
+                        { date: '2026-02-20', duration: '45 min', outcome: 'Technical deep dive completed', notes: 'Very impressed with platform scalability' }
+                    ],
+                    meetings: [],
+                    reminders: [],
+                    emailReplies: 3,
+                    emailLinksViewed: 15,
+                    emailsSent: 5
+                },
+                {
+                    id: 5,
+                    name: 'Jennifer Martinez',
+                    company: 'Enterprise Solutions',
+                    title: 'Account Manager',
+                    email: 'j.martinez@entsolutions.com',
+                    phone: '+1 (555) 567-8901',
+                    photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%23795548"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EJM%3C/text%3E%3C/svg%3E',
+                    isLive: false,
+                    details: [
+                        { label: 'Email', value: 'j.martinez@entsolutions.com', type: 'email' },
+                        { label: 'Phone', value: '+1 (555) 567-8901', type: 'phone' },
+                        { label: 'Location', value: 'Chicago, IL', type: 'text' }
+                    ],
+                    companyInfo: [
+                        { label: 'Company', value: 'Enterprise Solutions', type: 'text' },
+                        { label: 'Industry', value: 'Consulting', type: 'text' },
+                        { label: 'Size', value: '500-1000 employees', type: 'text' }
+                    ],
+                    socialLinks: [],
+                    notes: [],
+                    calls: [],
+                    meetings: [],
+                    reminders: [],
+                    emailReplies: 0,
+                    emailLinksViewed: 0,
+                    emailsSent: 2
+                }
+            ];
+
+            // Store contact list globally for navigation
+            window.currentContactList = sampleContacts;
+
+            // Handle contact row clicks
+            $(document).on('click', '.contact-row .contact-name', function(e) {
+                e.preventDefault();
+
+                const contactId = parseInt($(this).closest('.contact-row').data('contact-id'));
+                const contactData = sampleContacts.find(c => c.id === contactId);
+
+                if (contactData && typeof openProfilePanel === 'function') {
+                    console.log('Opening profile panel for:', contactData.name);
+                    openProfilePanel(contactData, sampleContacts);
+                } else {
+                    console.error('Profile panel not available or contact not found');
+                }
+            });
+
+            // Setup panel handlers when profile-panel.js loads
+            if (typeof setupPanelHandlers === 'function') {
+                setupPanelHandlers();
+            }
+
+            console.log('=== Phase 2 Profile Panel Integration Ready ===');
+            console.log('Contact list with', sampleContacts.length, 'contacts loaded');
+            console.log('Click any contact name to open profile panel');
         });
     </script>
 </body>
