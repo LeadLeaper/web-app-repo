@@ -1,0 +1,13 @@
+# Claude internal files
+.claude/
+
+# Temp files
+*.tmp
+
+# Temp working directories
+save/
+temp/
+working/
+
+# Screenshot artifacts (existing/ only — phase-1/icons/*.png are kept)
+existing/*.png
