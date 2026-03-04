@@ -47,8 +47,8 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Panel structure & slide animations
-- [ ] 02-02-PLAN.md — Content rendering & section organization
+- [x] 02-01-PLAN.md — Panel structure & slide animations
+- [x] 02-02-PLAN.md — Content rendering & section organization
 - [ ] 02-03-PLAN.md — Panel interaction & navigation
 - [ ] 02-04-PLAN.md — Integration & modal replacement
 
@@ -74,5 +74,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/3 | In progress | - |
-| 2. Profile System | 0/4 | Not started | - |
+| 2. Profile System | 2/4 | In progress | - |
 | 3. Section Rollout | 0/TBD | Not started | - |

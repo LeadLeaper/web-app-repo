@@ -17,11 +17,11 @@ Requirements for UI modernization. Each maps to roadmap phases.
 ### Profile Panel
 
 - [x] **PROF-01**: User can open contact/lead profile in right-hand slide panel
-- [ ] **PROF-02**: Profile panel displays contact/lead details and company info
-- [ ] **PROF-03**: Profile panel shows engagement history
-- [ ] **PROF-04**: Profile panel shows social/professional links
-- [ ] **PROF-05**: Profile panel shows notes, calls, meetings, and reminders
-- [ ] **PROF-06**: Profile panel shows team member ownership
+- [x] **PROF-02**: Profile panel displays contact/lead details and company info
+- [x] **PROF-03**: Profile panel shows engagement history
+- [x] **PROF-04**: Profile panel shows social/professional links
+- [x] **PROF-05**: Profile panel shows notes, calls, meetings, and reminders
+- [x] **PROF-06**: Profile panel shows team member ownership
 - [x] **PROF-07**: User can close profile panel without losing context
 - [ ] **PROF-08**: Profile panel replaces existing popup behavior (no modal popups)
 
@@ -93,11 +93,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMPAT-02 | Phase 1 | Complete |
 | COMPAT-03 | Phase 1 | Pending |
 | PROF-01 | Phase 2 | Complete |
-| PROF-02 | Phase 2 | Pending |
-| PROF-03 | Phase 2 | Pending |
-| PROF-04 | Phase 2 | Pending |
-| PROF-05 | Phase 2 | Pending |
-| PROF-06 | Phase 2 | Pending |
+| PROF-02 | Phase 2 | Complete |
+| PROF-03 | Phase 2 | Complete |
+| PROF-04 | Phase 2 | Complete |
+| PROF-05 | Phase 2 | Complete |
+| PROF-06 | Phase 2 | Complete |
 | PROF-07 | Phase 2 | Complete |
 | PROF-08 | Phase 2 | Pending |
 | SECTION-01 | Phase 3 | Pending |
