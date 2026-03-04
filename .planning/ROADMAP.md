@@ -44,10 +44,13 @@ Plans:
   2. Profile panel displays contact/lead details, company info, engagement history, social/professional links, notes, calls, meetings, reminders, and team member ownership
   3. User can close profile panel without losing context in main content area
   4. Modal popup behavior is completely replaced (no popups remain)
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- TBD
+- [ ] 02-01-PLAN.md — Panel structure & slide animations
+- [ ] 02-02-PLAN.md — Content rendering & section organization
+- [ ] 02-03-PLAN.md — Panel interaction & navigation
+- [ ] 02-04-PLAN.md — Integration & modal replacement
 
 ### Phase 3: Section Rollout
 **Goal**: All 9 application sections use new navigation, profile panel, and theme consistently
@@ -71,5 +74,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/3 | In progress | - |
-| 2. Profile System | 0/TBD | Not started | - |
+| 2. Profile System | 0/4 | Not started | - |
 | 3. Section Rollout | 0/TBD | Not started | - |
