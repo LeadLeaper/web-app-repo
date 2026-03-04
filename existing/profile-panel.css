@@ -246,6 +246,130 @@
   background: var(--color-neutral-400, #a3a3a3);
 }
 
+/* ===== Profile Sections - Collapsible Content ===== */
+
+/* Section Container */
+.profile-section {
+  border-bottom: 1px solid var(--color-neutral-200, #e5e5e5);
+  padding: var(--spacing-md, 16px) 0;
+}
+
+/* Section Header - Clickable toggle */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: var(--color-neutral-700, #404040);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  cursor: pointer;
+  border-radius: var(--radius-sm, 4px);
+  transition: background-color 200ms ease;
+}
+
+.section-header:hover {
+  background-color: var(--color-neutral-50, #fafafa);
+}
+
+/* Section Title */
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-neutral-700, #404040);
+}
+
+/* Section Toggle Icon */
+.section-toggle {
+  color: var(--color-neutral-500, #737373);
+  font-size: 16px;
+  transition: transform 200ms ease;
+  transform: rotate(-90deg);
+  display: inline-block;
+}
+
+/* Expanded state - icon points down */
+.profile-section.expanded .section-toggle {
+  transform: rotate(0deg);
+}
+
+/* Section Content - Hidden by default, shown when expanded */
+.section-content {
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  /* Display managed by jQuery slideToggle */
+}
+
+/* Section Groups - Visual separation between Static, Activity, Engagement */
+.profile-section[data-group="activity"]:first-of-type {
+  margin-top: var(--spacing-lg, 24px);
+}
+
+.profile-section[data-group="engagement"]:first-of-type {
+  margin-top: var(--spacing-lg, 24px);
+}
+
+/* Empty State Styling */
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-lg, 24px);
+  color: var(--color-neutral-500, #737373);
+  font-style: italic;
+  border: 2px dashed var(--color-neutral-200, #e5e5e5);
+  border-radius: var(--radius-md, 8px);
+  background-color: var(--color-neutral-50, #fafafa);
+}
+
+.empty-state-text {
+  margin-bottom: var(--spacing-sm, 8px);
+  font-size: 13px;
+}
+
+/* Empty State Action Button */
+.empty-state-action {
+  display: inline-block;
+  margin-top: var(--spacing-sm, 8px);
+  color: var(--color-primary, #08c);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 13px;
+  font-style: normal;
+}
+
+.empty-state-action:hover {
+  text-decoration: underline;
+  color: var(--color-primary-hover, #0077b3);
+}
+
+/* Section Items */
+.section-item {
+  padding: var(--spacing-xs, 4px) 0;
+  border-bottom: 1px solid var(--color-neutral-100, #f5f5f5);
+  font-size: 13px;
+  color: var(--color-neutral-700, #404040);
+}
+
+.section-item:last-child {
+  border-bottom: none;
+}
+
+.section-item strong {
+  font-weight: 600;
+  color: var(--color-neutral-800, #262626);
+}
+
+/* Item content styling */
+.item-title {
+  font-weight: 500;
+  color: var(--color-neutral-800, #262626);
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.item-date {
+  font-size: 12px;
+  color: var(--color-neutral-500, #737373);
+  margin-left: var(--spacing-sm, 8px);
+}
+
 /* ===== Responsive Adjustments ===== */
 
 /* Laptop viewport (1366-1920px) - slightly narrower panel */
