@@ -28,8 +28,8 @@ tech-stack:
 
 key-files:
   created:
-    - existing/profile-panel.html
-    - existing/profile-panel.css
+    - phase-2/profile-panel.html
+    - phase-2/profile-panel.css
   modified: []
 
 key-decisions:
@@ -76,8 +76,8 @@ Each task was committed atomically:
 2. **Task 2: Implement CSS overlay positioning, slide animations, and z-index strategy** - `45ff254` (feat)
 
 ## Files Created/Modified
-- `existing/profile-panel.html` - Profile panel HTML with fixed header (contact photo, name, LIVE badge, status), fixed actions (prev/next arrows, email/call/more buttons), scrollable content container, and backdrop overlay element
-- `existing/profile-panel.css` - Overlay positioning with transform-based slide animations (300ms), z-index strategy (backdrop 1090, panel 1100), fixed header/actions styling, scrollable content with custom scrollbar, responsive breakpoints for laptop/tablet/mobile
+- `phase-2/profile-panel.html` - Profile panel HTML with fixed header (contact photo, name, LIVE badge, status), fixed actions (prev/next arrows, email/call/more buttons), scrollable content container, and backdrop overlay element
+- `phase-2/profile-panel.css` - Overlay positioning with transform-based slide animations (300ms), z-index strategy (backdrop 1090, panel 1100), fixed header/actions styling, scrollable content with custom scrollbar, responsive breakpoints for laptop/tablet/mobile
 
 ## Decisions Made
 - **Panel width:** 380px on desktop, 360px on laptops (1366-1920px) - optimized for content display and screen real estate
@@ -109,8 +109,8 @@ None - no external service configuration required.
 ## Self-Check: PASSED
 
 All files and commits verified:
-- FOUND: existing/profile-panel.html
-- FOUND: existing/profile-panel.css
+- FOUND: phase-2/profile-panel.html
+- FOUND: phase-2/profile-panel.css
 - FOUND: 7c577e9 (Task 1 commit)
 - FOUND: 45ff254 (Task 2 commit)
 

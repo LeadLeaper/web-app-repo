@@ -30,9 +30,9 @@ tech-stack:
 
 key-files:
   created:
-    - existing/profile-panel.js
+    - phase-2/profile-panel.js
   modified:
-    - existing/profile-panel.css
+    - phase-2/profile-panel.css
 
 key-decisions:
   - "Section ordering: Static (Details, Company, Links) → Activity (Notes, Calls, Meetings, Reminders) → Engagement (Email metrics)"
@@ -80,8 +80,8 @@ Each task was committed atomically:
 2. **Task 2: Style collapsible sections with expand/collapse UI and empty states** - `299d2d2` (feat)
 
 ## Files Created/Modified
-- `existing/profile-panel.js` - Content rendering system with openProfilePanel entry point, section organization (Static/Activity/Engagement groups), smart default expansion logic (alwaysExpanded flag + data presence checks), empty state generation with actionable prompts, initSectionToggles with slideToggle(300ms) animation, close handlers (X button, backdrop, ESC key), sample data structure for testing
-- `existing/profile-panel.css` - Collapsible section styling (.profile-section with border dividers, .section-header with hover effect, .section-toggle icon rotation animation, .expanded state class, .empty-state with dashed border and centered text, .empty-state-action link styling, .section-item dividers, visual spacing between section groups, all using theme.css variables)
+- `phase-2/profile-panel.js` - Content rendering system with openProfilePanel entry point, section organization (Static/Activity/Engagement groups), smart default expansion logic (alwaysExpanded flag + data presence checks), empty state generation with actionable prompts, initSectionToggles with slideToggle(300ms) animation, close handlers (X button, backdrop, ESC key), sample data structure for testing
+- `phase-2/profile-panel.css` - Collapsible section styling (.profile-section with border dividers, .section-header with hover effect, .section-toggle icon rotation animation, .expanded state class, .empty-state with dashed border and centered text, .empty-state-action link styling, .section-item dividers, visual spacing between section groups, all using theme.css variables)
 
 ## Decisions Made
 - **Section ordering:** Implemented exact user specification - Static Information first (Details, Company, Links), Activity second (Notes, Calls, Meetings, Reminders), Engagement third (Email Replies, Links Viewed, Emails Sent)
@@ -118,8 +118,8 @@ None - no external service configuration required.
 ## Self-Check: PASSED
 
 All files and commits verified:
-- FOUND: existing/profile-panel.js
-- FOUND: existing/profile-panel.css (modified)
+- FOUND: phase-2/profile-panel.js
+- FOUND: phase-2/profile-panel.css (modified)
 - FOUND: e775c64 (Task 1 commit)
 - FOUND: 299d2d2 (Task 2 commit)
 

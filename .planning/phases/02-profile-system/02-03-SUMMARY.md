@@ -31,7 +31,7 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - existing/profile-panel.js
+    - phase-2/profile-panel.js
 
 key-decisions:
   - "Cross-fade timing: 150ms out/150ms in per research recommendation for smooth content switching"
@@ -77,7 +77,7 @@ Each task was committed atomically:
 2. **Task 2: Implement prev/next contact navigation** - `ded5b5e` (feat)
 
 ## Files Created/Modified
-- `existing/profile-panel.js` - Enhanced openProfilePanel with state checking (if already open → updatePanelContent), added updatePanelContent with cross-fade transitions (fadeOut 150ms, re-render, fadeIn 150ms), enhanced closeProfilePanel with animation timing (300ms) and cleanup, created setupPanelHandlers with event delegation for all interactions, implemented navigateContact with wrap-around logic ((currentIndex ± 1 + length) % length), added navigation button handler (.btn-nav with data-nav='prev'/'next'), exposed all public functions globally (openProfilePanel, closeProfilePanel, updatePanelContent, navigateContact, setupPanelHandlers)
+- `phase-2/profile-panel.js` - Enhanced openProfilePanel with state checking (if already open → updatePanelContent), added updatePanelContent with cross-fade transitions (fadeOut 150ms, re-render, fadeIn 150ms), enhanced closeProfilePanel with animation timing (300ms) and cleanup, created setupPanelHandlers with event delegation for all interactions, implemented navigateContact with wrap-around logic ((currentIndex ± 1 + length) % length), added navigation button handler (.btn-nav with data-nav='prev'/'next'), exposed all public functions globally (openProfilePanel, closeProfilePanel, updatePanelContent, navigateContact, setupPanelHandlers)
 
 ## Decisions Made
 - **Cross-fade timing:** 150ms fade out followed by 150ms fade in per research recommendation - provides smooth visual transition when switching contacts without feeling sluggish
@@ -111,7 +111,7 @@ None - no external service configuration required.
 ## Self-Check: PASSED
 
 All files and commits verified:
-- FOUND: existing/profile-panel.js (modified)
+- FOUND: phase-2/profile-panel.js (modified)
 - FOUND: 9f351b4 (Task 1 commit)
 - FOUND: ded5b5e (Task 2 commit)
 
