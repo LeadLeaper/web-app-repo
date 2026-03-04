@@ -410,7 +410,7 @@
 
     /**
      * Update panel content when switching between contacts
-     * Uses cross-fade transition for smooth content updates
+     * Uses fade-out → loading spinner → fade-in for smooth transitions
      *
      * @param {Object} contactData - New contact data
      */
@@ -418,23 +418,30 @@
         const $panel = $('.profile-panel');
         const $content = $('.profile-content');
 
-        // Cross-fade content transition (150ms out, 150ms in)
-        $content.fadeOut(150, function() {
-            // Update fixed header immediately (no fade)
-            updateFixedHeader(contactData);
+        // Fade out current content quickly (200ms)
+        $content.fadeOut(200, function() {
+            // Show loading spinner in content area
+            $content.html('<div class="loading-spinner"></div>');
+            $content.show();
 
-            // Re-render sections with new contact data
-            const contentHtml = renderSections(contactData);
-            $content.html(contentHtml);
+            // Simulate realistic loading delay (400ms) for data fetch
+            setTimeout(function() {
+                // Update fixed header
+                updateFixedHeader(contactData);
 
-            // Update stored contact ID
-            $panel.data('contact-id', contactData.id);
+                // Re-render sections with new contact data
+                const contentHtml = renderSections(contactData);
+                $content.html(contentHtml);
 
-            // Fade in new content
-            $content.fadeIn(150, function() {
-                // Re-initialize section toggles for new content
-                initSectionToggles();
-            });
+                // Update stored contact ID
+                $panel.data('contact-id', contactData.id);
+
+                // Fade in new content (200ms)
+                $content.hide().fadeIn(200, function() {
+                    // Re-initialize section toggles for new content
+                    initSectionToggles();
+                });
+            }, 400);
         });
     }
 

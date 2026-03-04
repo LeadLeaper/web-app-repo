@@ -221,6 +221,7 @@
   overflow-x: hidden;
   padding: var(--spacing-md, 16px);
   background-color: var(--color-bg-primary, #ffffff);
+  position: relative;
 }
 
 /* Smooth scrolling behavior */
@@ -368,6 +369,29 @@
   font-size: 12px;
   color: var(--color-neutral-500, #737373);
   margin-left: var(--spacing-sm, 8px);
+}
+
+/* ===== Loading Spinner ===== */
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-neutral-200, #e5e5e5);
+  border-top-color: var(--color-primary, #08c);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 /* ===== Responsive Adjustments ===== */
