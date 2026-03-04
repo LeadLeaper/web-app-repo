@@ -439,6 +439,52 @@
     }
 
     /**
+     * Navigate to previous or next contact in list
+     * Uses wrap-around logic to cycle through contacts
+     *
+     * @param {String} direction - 'prev' or 'next'
+     */
+    function navigateContact(direction) {
+        const $panel = $('.profile-panel');
+
+        // Get current contact ID from panel data
+        const currentId = $panel.data('contact-id');
+
+        // Get contact list from window state
+        const contacts = window.currentContactList || [];
+
+        // Safety check: no contacts available
+        if (contacts.length === 0) {
+            return;
+        }
+
+        // Find current index
+        const currentIndex = contacts.findIndex(function(c) {
+            return c.id === currentId;
+        });
+
+        // Safety check: current contact not found in list
+        if (currentIndex === -1) {
+            return;
+        }
+
+        // Calculate next index with wrap-around
+        let nextIndex;
+        if (direction === 'next') {
+            nextIndex = (currentIndex + 1) % contacts.length;
+        } else {
+            // Prev with wrap-around (add length to handle negative modulo)
+            nextIndex = (currentIndex - 1 + contacts.length) % contacts.length;
+        }
+
+        // Get next contact
+        const nextContact = contacts[nextIndex];
+
+        // Update panel with cross-fade
+        updatePanelContent(nextContact);
+    }
+
+    /**
      * Close profile panel
      */
     function closeProfilePanel() {
@@ -486,6 +532,13 @@
                 closeProfilePanel();
             }
         });
+
+        // Navigation: Prev/Next contact buttons
+        $(document).on('click', '.profile-panel .btn-nav', function(e) {
+            e.preventDefault();
+            const direction = $(this).data('nav'); // 'prev' or 'next'
+            navigateContact(direction);
+        });
     }
 
     /**
@@ -500,6 +553,7 @@
     window.openProfilePanel = openProfilePanel;
     window.closeProfilePanel = closeProfilePanel;
     window.updatePanelContent = updatePanelContent;
+    window.navigateContact = navigateContact;
     window.renderProfileContent = renderProfileContent;
     window.renderSections = renderSections;
     window.setupPanelHandlers = setupPanelHandlers;
