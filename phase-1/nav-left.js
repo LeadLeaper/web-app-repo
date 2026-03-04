@@ -130,6 +130,17 @@
             return createListsPopover(section);
         }
 
+        // Single-item popover: item name becomes the header, desc is the only body content
+        if (subsections && subsections.length === 1) {
+            const item = subsections[0];
+            $popover.addClass('single-item-popover');
+            $popover.append(`<div class="nav-popover-header">${item.name}</div>`);
+            if (item.desc) {
+                $popover.append(`<div class="nav-popover-single-desc">${item.desc}</div>`);
+            }
+            return $popover;
+        }
+
         const $list = $('<ul class="nav-popover-list"></ul>');
 
         // Add header
@@ -191,8 +202,9 @@
     }
 
     /**
-     * Create special Lists popover with dynamic 1-3 column layout, Add button, and Archived section
-     * Column logic: 1-7 lists = 1 col, 8-14 lists = 2 cols, 15-20 lists = 3 cols
+     * Create special Lists popover with dynamic 1-3 column layout and Archived section
+     * Column logic based on total items (lists + "+ Add a List" link):
+     *   1-7 items = 1 col, 8-14 items = 2 cols, 15-21 items = 3 cols
      * Max 7 items per column, max 20 lists total
      */
     function createListsPopover(section) {
@@ -200,14 +212,6 @@
 
         // Header
         $popover.append(`<div class="nav-popover-header">Your Lists</div>`);
-
-        // Add List Button
-        const $addBtn = $(`
-            <button class="nav-popover-add-btn">
-                + Add List
-            </button>
-        `);
-        $popover.append($addBtn);
 
         // Sample lists (in production, this would come from data)
         // Using 18 lists to demonstrate 3-column layout
@@ -223,11 +227,12 @@
         const lists = sampleLists.slice(0, 20);
         const listCount = lists.length;
 
-        // Determine number of columns based on list count
+        // Determine columns based on total items (lists + "+ Add a List" link)
+        const totalItems = listCount + 1;
         let columnCount = 1;
-        if (listCount >= 15) {
+        if (totalItems >= 15) {
             columnCount = 3;
-        } else if (listCount >= 8) {
+        } else if (totalItems >= 8) {
             columnCount = 2;
         }
 
@@ -244,6 +249,17 @@
             `);
             $list.append($listItem);
         });
+
+        // "+ Add a List" as the last entry in the list grid
+        const $addItem = $(`
+            <li class="nav-popover-item">
+                <a href="#" class="nav-popover-link nav-popover-add-list-link" data-section="${section}">
+                    + Add a List
+                </a>
+            </li>
+        `);
+        $list.append($addItem);
+
         $popover.append($list);
 
         // Archived Lists Section
@@ -257,8 +273,8 @@
         `);
         $popover.append($archived);
 
-        // Handle Add button click
-        $addBtn.on('click', function(e) {
+        // Handle "+ Add a List" link click
+        $popover.on('click', '.nav-popover-add-list-link', function(e) {
             e.preventDefault();
             e.stopPropagation();
             $popover.removeClass('visible');
@@ -267,8 +283,8 @@
             $(document).trigger('nav:list:add', { section: section });
         });
 
-        // Handle list clicks
-        $popover.on('click', '.nav-popover-link', function(e) {
+        // Handle list item clicks (exclude the add link)
+        $popover.on('click', '.nav-popover-link:not(.nav-popover-add-list-link)', function(e) {
             e.preventDefault();
             e.stopPropagation();
 
@@ -355,8 +371,13 @@
             'teamMgr': 'team',
             'dashView': 'dashboard',
             'listView': 'lists',
-            'engSel': 'engagement',
-            'trackView': 'tracking',
+            'senderMgr': 'sender',
+            'engSel': 'templates',      // legacy body class → templates
+            'tmplView': 'templates',
+            'replyView': 'replies',
+            'trackView': 'opens',       // legacy body class → opens
+            'linkView': 'links',
+            'openView': 'opens',
             'alertMgr': 'alerts',
             'acctMgr': 'user',
             'integMgr': 'integrations',
