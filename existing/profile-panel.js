@@ -19,15 +19,30 @@
      * Main entry point for displaying contact/lead profiles
      *
      * @param {Object} contactData - Complete contact information
+     * @param {Array} [contactList] - Array of contacts for prev/next navigation
      */
-    function openProfilePanel(contactData) {
+    function openProfilePanel(contactData, contactList) {
         const $panel = $('.profile-panel');
         const $backdrop = $('.profile-panel-backdrop');
         const $content = $('.profile-content');
 
+        // Store contact list for navigation if provided
+        if (contactList && Array.isArray(contactList)) {
+            window.currentContactList = contactList;
+        }
+
+        // If panel already open, update content instead of reopening
+        if ($panel.hasClass('open')) {
+            updatePanelContent(contactData);
+            return;
+        }
+
         // Render profile content
         const contentHtml = renderProfileContent(contactData);
         $content.html(contentHtml);
+
+        // Store current contact ID on panel
+        $panel.data('contact-id', contactData.id);
 
         // Show panel with slide animation
         $backdrop.addClass('visible');
@@ -394,52 +409,105 @@
     }
 
     /**
+     * Update panel content when switching between contacts
+     * Uses cross-fade transition for smooth content updates
+     *
+     * @param {Object} contactData - New contact data
+     */
+    function updatePanelContent(contactData) {
+        const $panel = $('.profile-panel');
+        const $content = $('.profile-content');
+
+        // Cross-fade content transition (150ms out, 150ms in)
+        $content.fadeOut(150, function() {
+            // Update fixed header immediately (no fade)
+            updateFixedHeader(contactData);
+
+            // Re-render sections with new contact data
+            const contentHtml = renderSections(contactData);
+            $content.html(contentHtml);
+
+            // Update stored contact ID
+            $panel.data('contact-id', contactData.id);
+
+            // Fade in new content
+            $content.fadeIn(150, function() {
+                // Re-initialize section toggles for new content
+                initSectionToggles();
+            });
+        });
+    }
+
+    /**
      * Close profile panel
      */
     function closeProfilePanel() {
         const $panel = $('.profile-panel');
         const $backdrop = $('.profile-panel-backdrop');
 
-        // Hide panel with slide animation
+        // Check if already closed
+        if (!$panel.hasClass('open')) {
+            return;
+        }
+
+        // Remove classes to trigger slide-out animation
         $panel.removeClass('open');
         $backdrop.removeClass('visible');
+
+        // Clear content after animation completes (300ms)
+        setTimeout(function() {
+            $('.profile-content').html('');
+            $panel.removeData('contact-id');
+        }, ANIMATION_DURATION);
     }
 
     /**
-     * Initialize profile panel event handlers
+     * Setup panel interaction handlers
+     * Initialize all event handlers using event delegation
      */
-    function init() {
-        // Close button
-        $('.profile-close-btn').on('click', function(e) {
+    function setupPanelHandlers() {
+        // Close Method 1: Close button click
+        $(document).on('click', '.profile-panel .close-btn', function(e) {
             e.preventDefault();
             closeProfilePanel();
         });
 
-        // Backdrop click
-        $('.profile-panel-backdrop').on('click', function(e) {
-            e.preventDefault();
-            closeProfilePanel();
-        });
-
-        // ESC key
-        $(document).on('keydown', function(e) {
-            if (e.key === 'Escape' || e.keyCode === 27) {
-                const $panel = $('.profile-panel');
-                if ($panel.hasClass('open')) {
-                    closeProfilePanel();
-                }
+        // Close Method 2: Backdrop click (only if clicked on backdrop itself, not children)
+        $(document).on('click', '.profile-panel-backdrop', function(e) {
+            if (e.target === this) {
+                closeProfilePanel();
             }
         });
+
+        // Close Method 3: ESC key
+        $(document).on('keydown', function(e) {
+            const $panel = $('.profile-panel');
+            if (e.which === 27 && $panel.hasClass('open')) { // ESC key = 27
+                closeProfilePanel();
+            }
+        });
+    }
+
+    /**
+     * Initialize profile panel
+     * @deprecated Use setupPanelHandlers() - kept for backwards compatibility
+     */
+    function init() {
+        setupPanelHandlers();
     }
 
     // Expose public functions globally
     window.openProfilePanel = openProfilePanel;
     window.closeProfilePanel = closeProfilePanel;
+    window.updatePanelContent = updatePanelContent;
     window.renderProfileContent = renderProfileContent;
     window.renderSections = renderSections;
+    window.setupPanelHandlers = setupPanelHandlers;
 
     // Initialize when DOM is ready
-    $(document).ready(init);
+    $(document).ready(function() {
+        setupPanelHandlers();
+    });
 
 })(jQuery);
 
