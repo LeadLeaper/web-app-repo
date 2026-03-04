@@ -2,11 +2,11 @@
 
 ## What This Is
 
-A comprehensive UI modernization of LeadLeaper, a CRM focused on email engagement and lead tracking. This project updates the visual design, layout structure, and responsive behavior to match modern SaaS standards while preserving all existing functionality and the current jQuery/vanilla JS codebase.
+A comprehensive UI modernization of LeadLeaper, a CRM and AI-enabled engagement platform focused on AI-enabled email & social engagement and lead management & tracking. This project updates the visual design, layout structure, and responsive behavior to match modern SaaS standards while preserving all existing functionality and the current jQuery/vanilla JS codebase.
 
 ## Core Value
 
-Users must be able to efficiently manage leads and track email engagement without disruption to existing workflows.
+Users must be able to intuitively and effectively manage leads and conduct AI-enabled engagement without disruption to existing workflows.
 
 ## Requirements
 
@@ -22,8 +22,8 @@ Users must be able to efficiently manage leads and track email engagement withou
 - [ ] Update typography with modern font selections
 - [ ] Implement flexbox-based responsive layout supporting desktop and laptop screens (1366-1920+)
 - [ ] Apply new layout and theme to all 9 navigation sections (Team, Dashboard, Lists, Engagement, Tracking, Alerts, User, Integrations, Help)
-- [ ] Modernize email and social engagement UI components
-- [ ] Ensure profile panel displays: contact/lead details, company info, engagement history, social/professional links, notes, calls, meetings, reminders, team member ownership
+- [ ] Modernize AI-enabled email and social engagement UI components
+- [ ] Ensure profile panel displays: AI-enabled engagement including engagement status and contact/lead details including company info, engagement history, social/professional links, notes, calls, meetings, reminders, team member ownership
 
 ### Out of Scope
 
@@ -37,24 +37,28 @@ Users must be able to efficiently manage leads and track email engagement withou
 **Current Architecture:**
 - Frontend: Vanilla JavaScript with jQuery
 - Layout: Top horizontal navigation with modal popup profile views
-- Navigation structure: 9 main sections serving different user workflows
+- Navigation structure: 12 main sections serving different user workflows
 
 **Navigation Sections:**
 1. **Team** — Management dashboard
 2. **Dashboard** — User dashboard
 3. **Lists** — User-created lists
-4. **Engagement** — Email templates, sender accounts, email signatures
-5. **Tracking** — Email opens, links, replies
-6. **Alerts** — Issues, new features, announcements
-7. **User** — Profile and subscription management
-8. **Integrations** — Third-party connections
-9. **Help** — Ask LeadLeaper support
+4. **Sender** — Sender Accounts, Email Signature
+5. Templates** — AI-enabled system and user-generated email templates
+6. **Replies** — Reply tracking
+7. **Links** — Link tracking
+8. **Opens** — Open tracking
+9. **Alerts** — Issues, new features, announcements
+10. **User** — Profile and subscription management
+11. **Integrations** — Third-party connections
+12. **Help** — Ask LeadLeaper support
 
 **User Base:**
-Mixed teams including sales, support, and marketing personnel who rely on email engagement tracking and lead management workflows.
+Mixed teams including sales and marketing personnel who rely on AI-enabled engagement, engagement tracking and lead management workflows.
 
 **Current Pain Points:**
-Interface appears outdated compared to competing CRMs, creating competitive disadvantage and user perception issues.
+Interface appears outdated compared to competitors, creating competitive disadvantage and user perception issues.
+Interface is not well-suited to support new AI features including AI-generated engagement messaging and AI-generated company research
 
 ## Constraints
 
@@ -69,9 +73,9 @@ Interface appears outdated compared to competing CRMs, creating competitive disa
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Phased rollout: nav/profile/theme first, then full application | Deliver value quickly while managing risk of large-scale UI changes | — Pending |
-| Modern neutral palette (professional SaaS aesthetic) | Aligns with competitive CRMs, timeless rather than trendy | — Pending |
+| Modern neutral palette (professional SaaS aesthetic) | Aligns with major competitors, timeless rather than trendy | — Pending |
 | Left nav + right profile panel pattern | Industry standard for data-heavy applications, maximizes vertical content space | — Pending |
 | Keep jQuery/vanilla JS stack | Minimize risk and timeline, focus purely on UI layer improvements | — Pending |
 
 ---
-*Last updated: 2026-03-01 after initialization*
+*Last updated: 2026-03-04 after initialization*

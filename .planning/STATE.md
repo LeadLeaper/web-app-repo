@@ -17,7 +17,7 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-03-01)
 
-**Core value:** Users must be able to efficiently manage leads and track email engagement without disruption to existing workflows
+**Core value:** Users must be able to intuitively and effectively manage leads and conduct AI-enabled engagement without disruption to existing workflows.
 **Current focus:** Phase 2: Profile System
 
 ## Current Position
