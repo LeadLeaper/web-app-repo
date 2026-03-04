@@ -39,25 +39,9 @@
 }
 
 /* ===== Backdrop Overlay ===== */
+/* Backdrop removed - LinkedIn Sales Navigator pattern allows direct access to content */
 .profile-panel-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 1090;
-
-  /* Hidden by default */
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 300ms ease-out;
-}
-
-/* Backdrop Visible State */
-.profile-panel-backdrop.visible {
-  opacity: 1;
-  pointer-events: auto;
+  display: none;
 }
 
 /* ===== Fixed Header Section ===== */

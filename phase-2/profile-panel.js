@@ -23,7 +23,6 @@
      */
     function openProfilePanel(contactData, contactList) {
         const $panel = $('.profile-panel');
-        const $backdrop = $('.profile-panel-backdrop');
         const $content = $('.profile-content');
 
         // Store contact list for navigation if provided
@@ -45,7 +44,6 @@
         $panel.data('contact-id', contactData.id);
 
         // Show panel with slide animation
-        $backdrop.addClass('visible');
         $panel.addClass('open');
 
         // Initialize section toggle handlers after content is rendered
@@ -496,16 +494,14 @@
      */
     function closeProfilePanel() {
         const $panel = $('.profile-panel');
-        const $backdrop = $('.profile-panel-backdrop');
 
         // Check if already closed
         if (!$panel.hasClass('open')) {
             return;
         }
 
-        // Remove classes to trigger slide-out animation
+        // Remove class to trigger slide-out animation
         $panel.removeClass('open');
-        $backdrop.removeClass('visible');
 
         // Clear content after animation completes (300ms)
         setTimeout(function() {
@@ -525,19 +521,7 @@
             closeProfilePanel();
         });
 
-        // Close Method 2: Backdrop click (only if clicked on backdrop itself, not children or contact names)
-        $(document).on('click', '.profile-panel-backdrop', function(e) {
-            // Don't close if clicking on a contact name - let it switch the panel content instead
-            if ($(e.target).closest('.contact-name').length > 0) {
-                return;
-            }
-
-            if (e.target === this) {
-                closeProfilePanel();
-            }
-        });
-
-        // Close Method 3: ESC key
+        // Close Method 2: ESC key
         $(document).on('keydown', function(e) {
             const $panel = $('.profile-panel');
             if (e.which === 27 && $panel.hasClass('open')) { // ESC key = 27
