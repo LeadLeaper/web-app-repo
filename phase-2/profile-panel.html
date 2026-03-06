@@ -31,7 +31,7 @@
         </button>
     </div>
 
-    <!-- Identity Card: Photo / Name+Badge / Company / Title -->
+    <!-- Identity Card: Photo / Name+Badge / Company / Title / About snippet -->
     <div class="panel-identity">
         <div class="panel-photo-wrapper">
             <img class="panel-photo" src="" alt="Contact photo">
@@ -43,6 +43,17 @@
             </div>
             <div class="panel-company"></div>
             <div class="panel-title-text"></div>
+        </div>
+        <!-- LinkedIn About snippet: fills remaining identity row space; AI view only -->
+        <div class="panel-about-snippet" id="panel-about-snippet"
+             role="button" tabindex="0"
+             aria-label="View LinkedIn About section" aria-expanded="false" aria-haspopup="true">
+            <div class="panel-about-text" id="panel-about-text"></div>
+        </div>
+        <!-- Full About popover — drops down from identity section on click -->
+        <div class="panel-about-popover" id="panel-about-popover"
+             role="dialog" aria-hidden="true" aria-label="LinkedIn About section">
+            <div id="panel-about-popover-text"></div>
         </div>
     </div>
 

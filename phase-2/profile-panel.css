@@ -114,6 +114,12 @@
     border-bottom: 1px solid #e0e0e0;
     background-color: var(--color-bg-primary, #ffffff);
     flex-shrink: 0;
+    position: relative;   /* contains the absolutely-positioned about popover */
+}
+
+/* AI view: align to top so tall about column doesn't push name down */
+.profile-panel.ai-view-active .panel-identity {
+    align-items: flex-start;
 }
 
 .panel-photo-wrapper {
@@ -134,6 +140,12 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
+}
+
+/* AI view: shrink info to content width so about snippet claims the rest */
+.profile-panel.ai-view-active .panel-info {
+    flex: none;
+    max-width: 190px; /* caps at a comfortable name/title length */
 }
 
 .panel-name-row {
@@ -189,6 +201,76 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* ── LinkedIn About snippet (AI Engagement view only) ───────── */
+
+/* Container: fills remaining identity row space after photo+info */
+.panel-about-snippet {
+    display: none;
+    flex: 1;
+    min-width: 0;
+    padding-left: 14px;
+    border-left: 1px solid #efefef;
+    padding-top: 1px;   /* optical alignment with name baseline */
+    cursor: pointer;
+}
+
+.profile-panel.ai-view-active .panel-about-snippet {
+    display: block;
+}
+
+/* Faded preview — 4 lines max, fades toward bottom */
+.panel-about-text {
+    max-height: 66px;   /* 4 × (13px × 1.5 line-height) ≈ 78px, stop a little shorter */
+    overflow: hidden;
+    font-size: var(--text-sm, 13px);
+    color: #b8bcc4;     /* deliberately light — "not a distraction" */
+    line-height: 1.5;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9) 30%, transparent 100%);
+    mask-image:         linear-gradient(to bottom, rgba(0,0,0,0.9) 30%, transparent 100%);
+    transition: color 150ms ease;
+    pointer-events: none;   /* let clicks fall through to .panel-about-snippet */
+}
+
+.panel-about-snippet:hover .panel-about-text {
+    color: #8a8f9a;     /* subtly darker on hover to hint interactivity */
+}
+
+/* Full-text popover — drops down from the identity section */
+.panel-about-popover {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #e2e4e8;
+    border-top: 2px solid #d8dbe1;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.13);
+    padding: 14px 16px 16px;
+    z-index: 20;
+    font-size: var(--text-sm, 13px);
+    color: #404040;
+    line-height: 1.65;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.panel-about-popover.open {
+    display: block;
+    animation: about-drop-in 160ms ease;
+}
+
+@keyframes about-drop-in {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar inside popover */
+.panel-about-popover::-webkit-scrollbar { width: 6px; }
+.panel-about-popover::-webkit-scrollbar-track { background: #f5f5f5; }
+.panel-about-popover::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 3px; }
 
 /* Action buttons — A / B / C placeholders */
 .panel-actions {

@@ -14,7 +14,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=23">
+    <link rel="stylesheet" href="profile-panel.css?v=24">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1001,6 +1001,18 @@
                 <div class="panel-company"></div>
                 <div class="panel-title-text"></div>
             </div>
+            <!-- LinkedIn About snippet: fills remaining identity row space; AI view only -->
+            <div class="panel-about-snippet" id="panel-about-snippet"
+                 role="button" tabindex="0"
+                 aria-label="View LinkedIn About section" aria-expanded="false"
+                 aria-haspopup="true">
+                <div class="panel-about-text" id="panel-about-text"></div>
+            </div>
+            <!-- Full About popover — drops down from identity section on click -->
+            <div class="panel-about-popover" id="panel-about-popover"
+                 role="dialog" aria-hidden="true" aria-label="LinkedIn About section">
+                <div id="panel-about-popover-text"></div>
+            </div>
         </div>
 
         <!-- Action Buttons -->
@@ -1381,7 +1393,7 @@
     <script src="../phase-1/nav-left.js"></script>
     <!-- Quill.js (must load before profile-panel.js) -->
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=20"></script>
+    <script src="profile-panel.js?v=21"></script>
 
     <!-- Section Switching Script -->
     <script>
@@ -1470,6 +1482,7 @@
                     emailReplies: 5,
                     emailLinksViewed: 12,
                     emailsSent: 8,
+                    about: 'Results-driven sales leader with 12+ years driving enterprise revenue growth. Passionate about building high-performance teams and leveraging data-driven strategies to exceed targets. Experienced in SaaS, fintech, and enterprise software verticals. Consistently delivered 130%+ quota attainment through consultative selling and strong executive relationships.',
                     leadOwner: 'Greg Hensonsworth',
                     createdAt: 'Feb 1, 2026 @ 9:15 AM'
                 },
@@ -1502,6 +1515,7 @@
                     calls: [],
                     meetings: [],
                     reminders: [],
+                    about: 'Serial entrepreneur and product visionary building the future of B2B marketing intelligence. Founded TechStart Inc after two successful exits. Former VP of Product at Salesforce. I write about growth, founder mindset, and the intersection of AI and go-to-market strategy. Let\'s connect if you\'re building something that matters.',
                     emailReplies: 2,
                     emailLinksViewed: 8,
                     emailsSent: 4,
@@ -1534,6 +1548,7 @@
                     reminders: [
                         { date: '2026-03-15', text: 'Check in after Q1 closes' }
                     ],
+                    about: 'Marketing executive with expertise in brand strategy, demand generation, and multi-channel campaigns for global enterprise brands. Led teams across 8 countries driving measurable pipeline impact. Speaker at MozCon, B2B Summit, and Marketing Week. Passionate about data-driven storytelling and sustainable growth.',
                     emailReplies: 0,
                     emailLinksViewed: 2,
                     emailsSent: 3
@@ -1569,6 +1584,7 @@
                     ],
                     meetings: [],
                     reminders: [],
+                    about: 'Engineering leader and AI researcher exploring the boundaries of what machines can learn. 15+ years building distributed systems at scale. Published researcher in NLP and computer vision. I believe the next decade belongs to teams that can move fast without breaking trust. Open to speaking engagements on AI ethics and ML infrastructure.',
                     emailReplies: 3,
                     emailLinksViewed: 15,
                     emailsSent: 5
@@ -1597,6 +1613,7 @@
                     calls: [],
                     meetings: [],
                     reminders: [],
+                    about: 'Relationship-focused account manager with a track record of growing enterprise accounts and navigating complex stakeholder environments. Specialized in digital transformation consulting across financial services and healthcare. Committed to understanding client goals first and delivering solutions that actually stick.',
                     emailReplies: 0,
                     emailLinksViewed: 0,
                     emailsSent: 2

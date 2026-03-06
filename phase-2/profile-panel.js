@@ -27,6 +27,13 @@
         $identity.find('.panel-badge-live').toggleClass('hidden', !contactData.isLive);
         $identity.find('.panel-company').text(contactData.company || '');
         $identity.find('.panel-title-text').text(contactData.title || '');
+        // Populate LinkedIn About snippet + popover (shown only in AI view via CSS)
+        const about = contactData.about || '';
+        $('#panel-about-text').text(about);
+        $('#panel-about-popover-text').text(about);
+        // Ensure popover is closed when contact changes
+        $('#panel-about-popover').removeClass('open').attr('aria-hidden', 'true');
+        $('#panel-about-snippet').attr('aria-expanded', 'false');
     }
 
     // ─── Main content renderer ───────────────────────────────────────────────
@@ -300,6 +307,9 @@
             .attr('aria-label', 'Switch to AI Engagement view')
             .attr('title', 'Switch to AI Engagement view');
         panelCurrentView = 'crm';
+        // Close About snippet popover when leaving AI view
+        $('#panel-about-popover').removeClass('open').attr('aria-hidden', 'true');
+        $('#panel-about-snippet').attr('aria-expanded', 'false');
     }
 
     // Toggle between CRM and AI Engagement views
@@ -415,6 +425,26 @@
             this.style.height = this.scrollHeight + 'px';
         });
 
+        // ── LinkedIn About snippet popover ───────────────────────────────────
+
+        // Click toggles the full About popover open/closed
+        $(document).on('click', '#panel-about-snippet', function(e) {
+            e.stopPropagation();
+            const $popover = $('#panel-about-popover');
+            const isOpen   = $popover.hasClass('open');
+            $popover.toggleClass('open', !isOpen)
+                    .attr('aria-hidden', String(isOpen));
+            $(this).attr('aria-expanded', String(!isOpen));
+        });
+
+        // Keyboard activation: Enter or Space triggers click
+        $(document).on('keydown', '#panel-about-snippet', function(e) {
+            if (e.which === 13 || e.which === 32) {
+                e.preventDefault();
+                $(this).trigger('click');
+            }
+        });
+
         // ── AI+ Engagement dropdown ──────────────────────────────────────────
 
         // Toggle open/close on button click
@@ -511,9 +541,15 @@
             }
         });
 
-        // ── Shared: close all dropdowns when clicking outside ────────────────
+        // ── Shared: close popovers/dropdowns when clicking outside ──────────
 
         $(document).on('click', function(e) {
+            // Close About snippet popover when clicking outside snippet + popover
+            if (!$(e.target).closest('#panel-about-snippet, #panel-about-popover').length) {
+                $('#panel-about-popover').removeClass('open').attr('aria-hidden', 'true');
+                $('#panel-about-snippet').attr('aria-expanded', 'false');
+            }
+            // Close all AI+ dropdowns when clicking outside their buttons/menus
             if (!$(e.target).closest('#ai-engagement-btn, #ai-engagement-dropdown, #ai-research-btn, #ai-research-dropdown, #ai-slack-btn, #ai-slack-dropdown').length) {
                 $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
                 $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
