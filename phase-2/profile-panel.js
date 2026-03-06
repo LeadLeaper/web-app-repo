@@ -11,6 +11,10 @@
 
     const ANIMATION_DURATION = 300;
 
+    // ─── AI Engagement view state ─────────────────────────────────────────────
+    let panelCurrentView = 'crm';   // 'crm' | 'ai'
+    let quillsInitialized = false;  // lazy-init Quill editors on first AI view open
+
     // ─── Identity card ───────────────────────────────────────────────────────
 
     function updatePanelIdentity(contactData) {
@@ -235,6 +239,18 @@
             .removeClass('open')
             .attr('aria-hidden', 'true')
             .attr('data-state', 'start');
+        // Reset AI view: switch back to CRM, clear Quill editor DOM for fresh init
+        switchToCrmView();
+        if (quillsInitialized) {
+            $('.ai-editor').empty();
+            quillsInitialized = false;
+        }
+        // Reset all AI section states
+        $('.ai-section').removeClass('collapsed');
+        $('.ai-section-toggle').text('hide').attr('data-state', 'visible');
+        $('.ai-post-block').removeClass('collapsed');
+        $('.ai-post-block-toggle').text('show less');
+
         setTimeout(function() {
             $('.profile-content').html('');
             $panel.removeData('contact-id');
@@ -254,6 +270,68 @@
     // Switch Slack VSR dropdown between 'start' and 'active' states
     function setAiSlackState(state) {
         $('#ai-slack-dropdown').attr('data-state', state);
+    }
+
+    // ─── AI Engagement view switching ────────────────────────────────────────
+
+    // Switch panel to AI Engagement view (expand width, show AI content)
+    function switchToAiView() {
+        const $panel = $('.profile-panel');
+        $panel.addClass('ai-view-active');
+        $('#panel-view-toggle')
+            .attr('aria-label', 'Switch to CRM view')
+            .attr('title', 'Switch to CRM view');
+        panelCurrentView = 'ai';
+        if (!quillsInitialized) initQuillEditors();
+    }
+
+    // Switch panel back to CRM view (contract width, show CRM content)
+    function switchToCrmView() {
+        const $panel = $('.profile-panel');
+        $panel.removeClass('ai-view-active');
+        $('#panel-view-toggle')
+            .attr('aria-label', 'Switch to AI Engagement view')
+            .attr('title', 'Switch to AI Engagement view');
+        panelCurrentView = 'crm';
+    }
+
+    // Toggle between CRM and AI Engagement views
+    function togglePanelView() {
+        if (panelCurrentView === 'crm') switchToAiView();
+        else switchToCrmView();
+    }
+
+    // ─── Quill editor initialization (lazy — called on first AI view open) ───
+
+    function initQuillEditors() {
+        if (typeof Quill === 'undefined') {
+            console.warn('[AI View] Quill.js not loaded — editors will not initialize');
+            return;
+        }
+        const toolbarOptions = [
+            ['bold', 'italic', 'underline'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['code-block'],
+            ['clean']
+        ];
+        const demoContent = {
+            linkedin:     '<p>Hi Sarah,</p><p>Great post about mastering peak seasons in iGaming and Betting. Your insights on leveraging key CX metrics, data-driven forecasting, and AI-driven tools highlight how the platform empowers operators to maintain top-notch player experiences when pressure peaks. It\'s a strategic approach that can truly redefine support readiness during critical moments.</p>',
+            challenges:   '<p>Hi Sarah,</p><p>Growing competition from language schools and the surge in online platforms have likely put pressure on Zendesk to maintain consistent student satisfaction while managing teacher transitions. Streamlining outreach to schools, educators, and decision-makers using verified contacts can help Zendesk expand its influence and adopt more personalized, timely engagement to stay ahead.</p>',
+            competitors:  '<p>Hi Sarah,</p><p>I wanted to share how our approach differs from the solutions your team may currently be evaluating. LeadLeaper\'s verified contact data and AI-powered engagement tools are purpose-built for sales teams that need to move fast without sacrificing accuracy or personalization. I\'d love to show you how teams like yours are seeing results in their first week.</p>',
+            announcement: '<p>Hi Sarah,</p><p>I wanted to reach out with some exciting news that I think could be a great fit for your team at Zendesk. We\'ve just launched a new capability that directly addresses the challenges we discussed around pipeline visibility and engagement velocity — and early results from similar teams have been very promising.</p>'
+        };
+        ['linkedin', 'challenges', 'competitors', 'announcement'].forEach(function(key) {
+            const el = document.getElementById('ai-editor-' + key);
+            if (!el || el.querySelector('.ql-container')) return; // already initialized
+            const quill = new Quill(el, {
+                theme: 'snow',
+                modules: { toolbar: toolbarOptions },
+                placeholder: 'AI-generated draft will appear here\u2026'
+            });
+            quill.clipboard.dangerouslyPasteHTML(demoContent[key] || '');
+        });
+        quillsInitialized = true;
+        console.log('[AI View] Quill editors initialized');
     }
 
     // ⑤ All panel event handlers
@@ -285,6 +363,33 @@
         // Accordion action links (prevent default; behaviour wired later)
         $(document).on('click', '.accordion-action', function(e) {
             e.preventDefault();
+        });
+
+        // ── View toggle button ───────────────────────────────────────────────
+
+        // Click the left-border circle to switch between CRM and AI Engagement views
+        $(document).on('click', '#panel-view-toggle', function(e) {
+            e.stopPropagation();
+            togglePanelView();
+        });
+
+        // ── AI section show/hide ─────────────────────────────────────────────
+
+        // Section-level toggle (all 4 AI engagement sections)
+        $(document).on('click', '.ai-section-toggle', function() {
+            const $section = $(this).closest('.ai-section');
+            const isCollapsed = $section.hasClass('collapsed');
+            $section.toggleClass('collapsed', !isCollapsed);
+            $(this).text(isCollapsed ? 'hide' : 'show')
+                   .attr('data-state', isCollapsed ? 'visible' : 'hidden');
+        });
+
+        // LinkedIn post content sub-section toggle (show/hide post text independently)
+        $(document).on('click', '.ai-post-block-toggle', function() {
+            const $block = $(this).closest('.ai-post-block');
+            const isCollapsed = $block.hasClass('collapsed');
+            $block.toggleClass('collapsed', !isCollapsed);
+            $(this).text(isCollapsed ? 'show less' : 'show more');
         });
 
         // ── AI+ Engagement dropdown ──────────────────────────────────────────
@@ -426,6 +531,11 @@
                 if (currentState === 'start') setAiSlackState('active');
             }
 
+            // Auto-switch to AI Engagement view when an AI+ Engagement action is triggered
+            if (dropdownId === 'ai-engagement-dropdown' && aiAction !== 'configure-engagement') {
+                if (panelCurrentView === 'crm') switchToAiView();
+            }
+
             // TODO: dispatch aiAction to appropriate handler
             console.log('[AI+] dropdown:', dropdownId, '| action:', aiAction);
         });
@@ -439,6 +549,9 @@
     window.setAiEngagementState  = setAiEngagementState;
     window.setAiResearchState    = setAiResearchState;
     window.setAiSlackState       = setAiSlackState;
+    window.switchToAiView        = switchToAiView;
+    window.switchToCrmView       = switchToCrmView;
+    window.togglePanelView       = togglePanelView;
 
     $(document).ready(function() { setupPanelHandlers(); });
 

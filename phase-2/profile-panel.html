@@ -71,7 +71,131 @@
         </button>
     </div>
 
+    <!-- Left-border circular toggle: click to switch CRM ↔ AI Engagement view -->
+    <button type="button" class="panel-view-toggle" id="panel-view-toggle"
+            aria-label="Switch to AI Engagement view" title="Switch to AI Engagement view">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+             class="panel-view-toggle-icon">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+    </button>
+
+    <!-- CRM view (existing) — populated dynamically by renderMainContent() -->
     <div class="profile-content"></div>
+
+    <!-- ══ AI Engagement View ═══════════════════════════════════════════ -->
+    <!-- Shown when .profile-panel has .ai-view-active class             -->
+    <div class="panel-ai-view" id="panel-ai-view">
+
+        <!-- ── Section 1: LinkedIn Posts ──────────────────────────────── -->
+        <!-- Mapped from: AI+ Engagement › Ping LinkedIn for posts         -->
+        <div class="ai-section" id="ai-section-linkedin" data-ai-section="ping-linkedin">
+            <div class="ai-section-header">
+                <span class="ai-section-title">LinkedIn Posts</span>
+                <div class="ai-section-header-right">
+                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
+                    <button type="button" class="ai-section-toggle" data-state="visible"
+                            aria-label="Hide LinkedIn Posts section">hide</button>
+                </div>
+            </div>
+            <div class="ai-section-body">
+                <div class="ai-post-block" id="ai-post-block-linkedin">
+                    <div class="ai-post-block-header">
+                        <span class="ai-post-block-label">LinkedIn Article Post</span>
+                        <button type="button" class="ai-post-block-toggle"
+                                aria-label="Hide post text">show less</button>
+                    </div>
+                    <div class="ai-post-block-body">
+                        <p class="ai-post-text">When the action peaks, so does the pressure
+                        behind the scenes. In iGaming &amp; Betting, high-demand moments can
+                        make or break the player experience. Volumes surge, enquiries shift,
+                        and the margin for error narrows fast. So who comes out on top? The
+                        operators whose support teams are truly peak-ready.</p>
+                    </div>
+                </div>
+                <div class="ai-subject-row">
+                    <input type="text" class="ai-subject-input"
+                           value="I like your post on mastering iGaming peak seasons"
+                           placeholder="Your comment headline…">
+                    <button type="button" class="ai-send-btn">SEND</button>
+                </div>
+                <div class="ai-editor-wrap">
+                    <div class="ai-editor" id="ai-editor-linkedin"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Section 2: Challenges Email ────────────────────────────── -->
+        <div class="ai-section" id="ai-section-challenges" data-ai-section="challenges-email">
+            <div class="ai-section-header">
+                <span class="ai-section-title">Employer Challenges</span>
+                <div class="ai-section-header-right">
+                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
+                    <button type="button" class="ai-section-toggle" data-state="visible"
+                            aria-label="Hide Employer Challenges section">hide</button>
+                </div>
+            </div>
+            <div class="ai-section-body">
+                <div class="ai-subject-row">
+                    <input type="text" class="ai-subject-input"
+                           value="Helping overcome challenges with evolving competition"
+                           placeholder="Email subject…">
+                    <button type="button" class="ai-send-btn">SEND</button>
+                </div>
+                <div class="ai-editor-wrap">
+                    <div class="ai-editor" id="ai-editor-challenges"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Section 3: Competitors Email ───────────────────────────── -->
+        <div class="ai-section" id="ai-section-competitors" data-ai-section="competitors-email">
+            <div class="ai-section-header">
+                <span class="ai-section-title">Competitors Email</span>
+                <div class="ai-section-header-right">
+                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
+                    <button type="button" class="ai-section-toggle" data-state="visible"
+                            aria-label="Hide Competitors Email section">hide</button>
+                </div>
+            </div>
+            <div class="ai-section-body">
+                <div class="ai-subject-row">
+                    <input type="text" class="ai-subject-input"
+                           value="How we compare to your current solution"
+                           placeholder="Email subject…">
+                    <button type="button" class="ai-send-btn">SEND</button>
+                </div>
+                <div class="ai-editor-wrap">
+                    <div class="ai-editor" id="ai-editor-competitors"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Section 4: Announcement Email ──────────────────────────── -->
+        <div class="ai-section" id="ai-section-announcement" data-ai-section="announcement-email">
+            <div class="ai-section-header">
+                <span class="ai-section-title">Announcement Email</span>
+                <div class="ai-section-header-right">
+                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
+                    <button type="button" class="ai-section-toggle" data-state="visible"
+                            aria-label="Hide Announcement Email section">hide</button>
+                </div>
+            </div>
+            <div class="ai-section-body">
+                <div class="ai-subject-row">
+                    <input type="text" class="ai-subject-input"
+                           value="Exciting news that could help your team"
+                           placeholder="Email subject…">
+                    <button type="button" class="ai-send-btn">SEND</button>
+                </div>
+                <div class="ai-editor-wrap">
+                    <div class="ai-editor" id="ai-editor-announcement"></div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /.panel-ai-view -->
+
 </aside>
 
 <!-- AI+ Engagement dropdown — rendered outside <aside> to escape overflow:hidden -->
