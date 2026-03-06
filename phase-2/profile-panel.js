@@ -406,8 +406,32 @@
         });
 
         // Stub handlers — no functionality yet, just prevent default
-        $(document).on('click', '.ce-preview-btn, .ce-move-btn, .ce-btn-pause, .ce-btn-delete, .ce-btn-save',
+        $(document).on('click', '.ce-preview-btn, .ce-btn-pause, .ce-btn-delete, .ce-btn-save',
             function(e) { e.preventDefault(); });
+
+        // Touch reorder: fade out → move one step → fade in
+        $(document).on('click', '.ce-move-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $item = $(this).closest('.ce-touch-item');
+            var dir   = $(this).data('dir');
+            // Guard against double-click during animation
+            if ($item.data('ce-animating')) return;
+            var $sibling = dir === 'up'
+                ? $item.prev('.ce-touch-item')
+                : $item.next('.ce-touch-item');
+            if (!$sibling.length) return; // already at edge — silent no-op
+            $item.data('ce-animating', true);
+            $item.fadeTo(180, 0, function() {
+                // DOM swap (item is now invisible)
+                if (dir === 'up') $item.insertBefore($sibling);
+                else              $item.insertAfter($sibling);
+                // Fade back in at the new position
+                $item.fadeTo(180, 1, function() {
+                    $item.removeData('ce-animating');
+                });
+            });
+        });
 
         // Prev / Next buttons
         $(document).on('click', '.panel-nav-btn', function() {
