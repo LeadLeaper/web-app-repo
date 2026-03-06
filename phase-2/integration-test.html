@@ -14,7 +14,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=21">
+    <link rel="stylesheet" href="profile-panel.css?v=22">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1028,15 +1028,6 @@
             </button>
         </div>
 
-        <!-- Left-border circular toggle: click to switch CRM ↔ AI Engagement view -->
-        <button type="button" class="panel-view-toggle" id="panel-view-toggle"
-                aria-label="Switch to AI Engagement view" title="Switch to AI Engagement view">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                 class="panel-view-toggle-icon">
-                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-            </svg>
-        </button>
-
         <!-- CRM view (existing) — populated dynamically by renderMainContent() -->
         <div class="profile-content"></div>
 
@@ -1160,6 +1151,15 @@
         </div><!-- /.panel-ai-view -->
 
     </aside>
+
+    <!-- View toggle — rendered outside <aside> (portal) so panel overflow:hidden cannot clip it -->
+    <button type="button" class="panel-view-toggle" id="panel-view-toggle"
+            aria-label="Switch to AI Engagement view" title="Switch to AI Engagement view">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+             class="panel-view-toggle-icon">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+    </button>
 
     <!-- AI+ Engagement dropdown — rendered outside <aside> to escape overflow:hidden -->
     <!-- data-state drives visibility: "start" shows State 1, "active" shows State 2     -->
@@ -1375,7 +1375,7 @@
     <script src="../phase-1/nav-left.js"></script>
     <!-- Quill.js (must load before profile-panel.js) -->
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=18"></script>
+    <script src="profile-panel.js?v=19"></script>
 
     <!-- Section Switching Script -->
     <script>

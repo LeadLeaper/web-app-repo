@@ -180,6 +180,7 @@
         }
         $panel.data('contact-id', contactData.id);
         $panel.addClass('open');             // slide in (behavior 1)
+        $('#panel-view-toggle').addClass('visible');
         const $content = $('.profile-content');
         $content.hide().html('<div class="loading-spinner"></div>').show();
         setTimeout(function() {
@@ -223,6 +224,7 @@
         const $panel = $('.profile-panel');
         if (!$panel.hasClass('open')) return;
         $panel.removeClass('open');
+        $('#panel-view-toggle').removeClass('visible ai-view');
         // Close any open AI+ dropdowns and reset their states to "start"
         $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-engagement-dropdown')
@@ -279,6 +281,7 @@
         const $panel = $('.profile-panel');
         $panel.addClass('ai-view-active');
         $('#panel-view-toggle')
+            .addClass('ai-view')
             .attr('aria-label', 'Switch to CRM view')
             .attr('title', 'Switch to CRM view');
         panelCurrentView = 'ai';
@@ -290,6 +293,7 @@
         const $panel = $('.profile-panel');
         $panel.removeClass('ai-view-active');
         $('#panel-view-toggle')
+            .removeClass('ai-view')
             .attr('aria-label', 'Switch to AI Engagement view')
             .attr('title', 'Switch to AI Engagement view');
         panelCurrentView = 'crm';

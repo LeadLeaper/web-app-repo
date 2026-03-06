@@ -71,15 +71,6 @@
         </button>
     </div>
 
-    <!-- Left-border circular toggle: click to switch CRM ↔ AI Engagement view -->
-    <button type="button" class="panel-view-toggle" id="panel-view-toggle"
-            aria-label="Switch to AI Engagement view" title="Switch to AI Engagement view">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-             class="panel-view-toggle-icon">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-        </svg>
-    </button>
-
     <!-- CRM view (existing) — populated dynamically by renderMainContent() -->
     <div class="profile-content"></div>
 
@@ -197,6 +188,15 @@
     </div><!-- /.panel-ai-view -->
 
 </aside>
+
+<!-- View toggle — rendered outside <aside> (portal) so panel overflow:hidden cannot clip it -->
+<button type="button" class="panel-view-toggle" id="panel-view-toggle"
+        aria-label="Switch to AI Engagement view" title="Switch to AI Engagement view">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+         class="panel-view-toggle-icon">
+        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+    </svg>
+</button>
 
 <!-- AI+ Engagement dropdown — rendered outside <aside> to escape overflow:hidden -->
 <!-- data-state drives visibility: "start" shows State 1, "active" shows State 2     -->

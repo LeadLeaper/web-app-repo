@@ -685,10 +685,15 @@
 .profile-panel.ai-view-active .profile-content { display: none; }
 .profile-panel.ai-view-active .panel-ai-view   { display: flex; }
 
-/* ── Left-border circular view toggle button ───────────────── */
+/* ── Portal view toggle button (fixed, sibling of <aside>) ─── */
+/* Positioned at the panel's left edge; no longer inside the    */
+/* panel so overflow:hidden cannot clip it.                     */
+/* Visibility + position class controlled by JS:                */
+/*   .visible   — shown when panel is open                      */
+/*   .ai-view   — right shifts to match 920px panel width       */
 .panel-view-toggle {
-    position: absolute;
-    left: -18px;
+    position: fixed;
+    right: 382px;      /* 400px panel width − 18px (half button) */
     top: 50%;
     transform: translateY(-50%);
     width: 36px;
@@ -698,12 +703,22 @@
     border: 1px solid #e0e0e0;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.12);
     cursor: pointer;
-    display: flex;
+    display: none;     /* hidden until panel opens */
     align-items: center;
     justify-content: center;
     z-index: 1101;
-    transition: background-color 150ms ease, box-shadow 150ms ease;
+    transition: background-color 150ms ease, box-shadow 150ms ease, right 300ms ease;
     padding: 0;
+}
+
+/* Shown while panel is open */
+.panel-view-toggle.visible {
+    display: flex;
+}
+
+/* Shift left to track the wider AI-view panel (920px) */
+.panel-view-toggle.ai-view {
+    right: 902px;      /* 920px panel width − 18px */
 }
 
 .panel-view-toggle:hover {
@@ -720,9 +735,50 @@
     display: block;
 }
 
-/* AI view active: flip chevron right (signals "collapse") */
-.profile-panel.ai-view-active .panel-view-toggle-icon {
+/* AI view: flip chevron to point right (→ collapse) */
+.panel-view-toggle.ai-view .panel-view-toggle-icon {
     transform: rotate(180deg);
+}
+
+/* "Toggle view" tooltip — appears to the left of the button */
+.panel-view-toggle::after {
+    content: 'Toggle view';
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(38, 38, 38, 0.92);
+    color: #ffffff;
+    padding: 4px 9px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 150ms ease 400ms;  /* 400ms hover-delay */
+}
+
+.panel-view-toggle:hover::after {
+    opacity: 1;
+}
+
+/* Responsive: panel is 380px (CRM) / 860px (AI) at 1366–1919px */
+@media (min-width: 1366px) and (max-width: 1919px) {
+    .panel-view-toggle          { right: 362px; }  /* 380px − 18px */
+    .panel-view-toggle.ai-view  { right: 842px; }  /* 860px − 18px */
+}
+
+/* Tablet (≤1024px): panel becomes max-width:480px — track its left edge */
+@media (max-width: 1024px) {
+    .panel-view-toggle          { right: 462px; }  /* 480px − 18px */
+    .panel-view-toggle.ai-view  { right: 462px; }  /* AI view same — panel still 480px max */
+}
+
+/* Mobile (≤768px): panel is full-width — toggle has nowhere to protrude; hide it */
+@media (max-width: 768px) {
+    .panel-view-toggle { display: none !important; }
 }
 
 /* ── AI Engagement view container ──────────────────────────── */
