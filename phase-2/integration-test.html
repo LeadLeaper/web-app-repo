@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../phase-1/nav-left.css?v=3">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=4">
+    <link rel="stylesheet" href="profile-panel.css?v=17">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -956,63 +956,170 @@
     </div>
 
     <!-- Profile Panel Integration -->
+    <!-- Backdrop (hidden via CSS) -->
     <div class="profile-panel-backdrop" aria-hidden="true"></div>
+
+    <!-- Profile Panel -->
     <aside class="profile-panel" role="dialog" aria-label="Contact Profile" aria-hidden="true">
-        <header class="profile-header">
-            <button type="button" class="profile-close-btn" aria-label="Close profile panel">
-                <span aria-hidden="true">&times;</span>
+
+        <!-- Controls Bar: Prev / Next / Close -->
+        <div class="panel-controls">
+            <div class="panel-controls-nav">
+                <button type="button" class="panel-nav-btn" data-nav="prev" aria-label="Previous contact">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="panel-nav-chevron">
+                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                    </svg>
+                    Previous
+                </button>
+                <button type="button" class="panel-nav-btn" data-nav="next" aria-label="Next contact">
+                    Next
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="panel-nav-chevron">
+                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                    </svg>
+                </button>
+            </div>
+            <button type="button" class="panel-close-btn" aria-label="Close panel">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
             </button>
-            <div class="profile-identity">
-                <div class="profile-photo-wrapper">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23d4d4d4'/%3E%3C/svg%3E"
-                         alt="Contact photo" class="profile-photo">
-                </div>
-                <div class="profile-info">
-                    <h2 class="profile-name">Contact Name</h2>
-                    <div class="profile-status">
-                        <span class="badge badge-live">LIVE</span>
-                        <span class="profile-company">Company Name</span>
-                    </div>
-                    <div class="profile-title">Job Title</div>
-                </div>
+        </div>
+
+        <!-- Identity Card: Photo / Name+Badge / Company / Title -->
+        <div class="panel-identity">
+            <div class="panel-photo-wrapper">
+                <img class="panel-photo" src="" alt="Contact photo">
             </div>
-        </header>
-        <div class="profile-actions">
-            <div class="profile-nav-arrows">
-                <button type="button" class="btn btn-sm btn-default profile-nav-btn" data-nav="prev" aria-label="Previous contact" title="Previous">
-                    <span aria-hidden="true">&larr;</span>
-                </button>
-                <button type="button" class="btn btn-sm btn-default profile-nav-btn" data-nav="next" aria-label="Next contact" title="Next">
-                    <span aria-hidden="true">&rarr;</span>
-                </button>
-            </div>
-            <div class="profile-action-buttons">
-                <button type="button" class="btn btn-sm btn-default" title="Send Email">
-                    <svg class="action-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383l-4.758 2.855L15 11.114v-5.73zm-.034 6.878L9.271 8.82 8 9.583 6.728 8.82l-5.694 3.44A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.739zM1 11.114l4.758-2.876L1 5.383v5.73z"/>
-                    </svg>
-                    Email
-                </button>
-                <button type="button" class="btn btn-sm btn-default" title="Call Contact">
-                    <svg class="action-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328z"/>
-                    </svg>
-                    Call
-                </button>
-                <button type="button" class="btn btn-sm btn-default" title="More actions" aria-label="More actions">
-                    <span aria-hidden="true">&vellip;</span>
-                </button>
+            <div class="panel-info">
+                <div class="panel-name-row">
+                    <span class="panel-name"></span>
+                    <span class="panel-badge-live" aria-label="Live contact">LIVE</span>
+                </div>
+                <div class="panel-company"></div>
+                <div class="panel-title-text"></div>
             </div>
         </div>
-        <div class="profile-content">
-            <!-- Content will be populated dynamically -->
+
+        <!-- Action Buttons -->
+        <div class="panel-actions">
+
+            <!-- Button A: AI+ Engagement dropdown trigger -->
+            <button type="button" class="panel-action-btn panel-action-ai"
+                    id="ai-engagement-btn"
+                    aria-haspopup="true" aria-expanded="false">
+                AI+ Engagement
+            </button>
+
+            <button type="button" class="panel-action-btn" data-action="b">B</button>
+            <button type="button" class="panel-action-btn" data-action="c">C</button>
         </div>
+
+        <div class="profile-content"></div>
     </aside>
+
+    <!-- AI+ Engagement dropdown — rendered outside <aside> to escape overflow:hidden -->
+    <!-- data-state drives visibility: "start" shows State 1, "active" shows State 2     -->
+    <div class="ai-engagement-dropdown" id="ai-engagement-dropdown"
+         data-state="start" role="menu" aria-hidden="true">
+
+        <!-- ── State 1: Starting state (pre-engagement) ─────────────────────────── -->
+        <ul class="ai-dropdown-list ai-state-panel" data-for-state="start">
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="ping-linkedin">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                     class="ai-item-arrow" aria-hidden="true">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+                Ping LinkedIn for posts
+            </li>
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="challenges-email">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                     class="ai-item-arrow" aria-hidden="true">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+                Challenges Email
+            </li>
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="competitors-email">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                     class="ai-item-arrow" aria-hidden="true">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+                Competitors Email
+            </li>
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="announcement-email">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                     class="ai-item-arrow" aria-hidden="true">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+                Announcement Email
+            </li>
+            <li class="ai-dropdown-divider" role="separator"></li>
+            <li class="ai-dropdown-item ai-dropdown-config" role="menuitem" data-ai-action="configure-engagement">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                     class="ai-item-icon" aria-hidden="true">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.07.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+                Configure Engagement
+            </li>
+        </ul>
+
+        <!-- ── State 2: Active state (LinkedIn pinged, AI drafts ready) ──────────── -->
+        <ul class="ai-dropdown-list ai-state-panel" data-for-state="active">
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="ping-linkedin">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     class="ai-item-check" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Ping LinkedIn for posts
+            </li>
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="challenges-email">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     class="ai-item-check" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Challenges Email
+            </li>
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="competitors-email">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     class="ai-item-check" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Competitors Email
+            </li>
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="announcement-email">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     class="ai-item-check" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Announcement Email
+            </li>
+            <li class="ai-dropdown-divider" role="separator"></li>
+            <li class="ai-dropdown-item ai-dropdown-config ai-dropdown-config-row"
+                role="menuitem" data-ai-action="configure-engagement">
+                <span class="ai-config-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                         class="ai-item-icon" aria-hidden="true">
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.07.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                    Configure Engagement
+                </span>
+                <span class="ai-dropdown-live" aria-label="Campaign is live">LIVE</span>
+            </li>
+        </ul>
+
+    </div>
 
     <!-- jQuery and Navigation Script -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="../phase-1/nav-left.js"></script>
-    <script src="profile-panel.js?v=4"></script>
+    <script src="profile-panel.js?v=14"></script>
 
     <!-- Section Switching Script -->
     <script>
@@ -1100,7 +1207,9 @@
                     ],
                     emailReplies: 5,
                     emailLinksViewed: 12,
-                    emailsSent: 8
+                    emailsSent: 8,
+                    leadOwner: 'Greg Hensonsworth',
+                    createdAt: 'Feb 1, 2026 @ 9:15 AM'
                 },
                 {
                     id: 2,
@@ -1133,7 +1242,9 @@
                     reminders: [],
                     emailReplies: 2,
                     emailLinksViewed: 8,
-                    emailsSent: 4
+                    emailsSent: 4,
+                    leadOwner: 'Greg Hensonsworth',
+                    createdAt: 'Jan 15, 2026 @ 11:30 AM'
                 },
                 {
                     id: 3,
@@ -1247,11 +1358,6 @@
                     console.error('Profile panel not available or contact not found');
                 }
             });
-
-            // Setup panel handlers when profile-panel.js loads
-            if (typeof setupPanelHandlers === 'function') {
-                setupPanelHandlers();
-            }
 
             console.log('=== Phase 2 Profile Panel Integration Ready ===');
             console.log('Contact list with', sampleContacts.length, 'contacts loaded');

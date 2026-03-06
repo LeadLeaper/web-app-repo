@@ -1,421 +1,625 @@
 /* ========================================
-   Profile Panel - Right Slide-Out Overlay
+   Profile Panel — Interaction Skeleton
    ======================================== */
 
-/**
- * Z-Index Strategy:
- * - Main content: 1000 (left nav)
- * - Backdrop: 1090 (behind panel, above main)
- * - Profile panel: 1100 (overlay panel)
- * - Alerts/Modals: 1200+ (future use)
- */
-
-/* ===== Panel Container - Overlay Positioning ===== */
+/* Panel container + slide animation */
 .profile-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 380px;
-  background-color: var(--color-bg-primary, #ffffff);
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
-  z-index: 1100;
-
-  /* Transform for slide animation - starts off-screen */
-  transform: translateX(100%);
-  transition: transform 300ms ease-out;
-
-  /* Flexbox layout for header/actions/content sections */
-  display: flex;
-  flex-direction: column;
-
-  /* Prevent panel from scrolling as a whole - only content scrolls */
-  overflow: hidden;
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 380px;
+    background-color: var(--color-bg-primary, #ffffff);
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+    z-index: 1100;
+    transform: translateX(100%);
+    transition: transform 300ms ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
-/* Panel Open State - Slides into view */
 .profile-panel.open {
-  transform: translateX(0);
+    transform: translateX(0);
 }
 
-/* ===== Backdrop Overlay ===== */
-/* Backdrop removed - LinkedIn Sales Navigator pattern allows direct access to content */
+/* Backdrop hidden (LinkedIn pattern) */
 .profile-panel-backdrop {
-  display: none;
+    display: none;
 }
 
-/* ===== Fixed Header Section ===== */
-.profile-header {
-  position: relative;
-  flex-shrink: 0;
-  padding: var(--spacing-lg, 24px) var(--spacing-md, 16px);
-  border-bottom: 1px solid var(--color-border, #e5e5e5);
-  background-color: var(--color-bg-primary, #ffffff);
-  z-index: 10;
+/* Controls bar — Prev / Next / Close */
+.panel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px 0 4px;
+    height: 40px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: var(--color-bg-primary, #ffffff);
+    flex-shrink: 0;
 }
 
-/* Close Button - Top Right Corner */
-.profile-close-btn {
-  position: absolute;
-  top: var(--spacing-md, 16px);
-  right: var(--spacing-md, 16px);
-  width: 32px;
-  height: 32px;
-  background-color: transparent;
-  border: none;
-  border-radius: var(--radius-sm, 4px);
-  color: var(--color-neutral-600, #525252);
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 200ms ease, color 200ms ease;
+.panel-controls-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
 }
 
-.profile-close-btn:hover {
-  background-color: var(--color-neutral-100, #f5f5f5);
-  color: var(--color-neutral-900, #171717);
+.panel-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: var(--text-sm, 13px);
+    font-weight: 500;
+    color: #525252;
+    border-radius: 4px;
+    transition: color 150ms ease, background-color 150ms ease;
+    line-height: 1;
 }
 
-.profile-close-btn:active {
-  background-color: var(--color-neutral-200, #e5e5e5);
+.panel-nav-btn:hover {
+    color: #08c;
+    background-color: #f0f7ff;
 }
 
-/* Contact Identity Section */
-.profile-identity {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-md, 16px);
+.panel-nav-btn:disabled {
+    color: #c0c0c0;
+    cursor: default;
+    background: none;
 }
 
-/* Contact Photo */
-.profile-photo-wrapper {
-  flex-shrink: 0;
+.panel-nav-chevron {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
 }
 
-.profile-photo {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid var(--color-border, #e5e5e5);
-  object-fit: cover;
+.panel-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #737373;
+    border-radius: 4px;
+    transition: color 150ms ease, background-color 150ms ease;
+    flex-shrink: 0;
 }
 
-/* Contact Info */
-.profile-info {
-  flex: 1;
-  min-width: 0;
+.panel-close-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
-.profile-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-neutral-900, #171717);
-  margin: 0 0 var(--spacing-xs, 4px) 0;
-  line-height: 1.3;
+.panel-close-btn:hover {
+    color: #404040;
+    background-color: #f0f0f0;
 }
 
-.profile-status {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm, 8px);
-  margin-bottom: var(--spacing-xs, 4px);
+/* Identity card — Photo / Name+Badge / Company / Title */
+.panel-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: var(--color-bg-primary, #ffffff);
+    flex-shrink: 0;
 }
 
-/* LIVE Badge */
-.badge-live {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  background-color: var(--color-primary, #08c);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-radius: 12px;
-  line-height: 1.4;
+.panel-photo-wrapper {
+    flex-shrink: 0;
 }
 
-.profile-company {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-neutral-700, #404040);
+.panel-photo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background-color: var(--color-neutral-200, #e5e5e5);
 }
 
-.profile-title {
-  font-size: 13px;
-  color: var(--color-neutral-500, #737373);
+.panel-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
-/* ===== Fixed Actions Section ===== */
-.profile-actions {
-  position: relative;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm, 8px);
-  padding: var(--spacing-md, 16px);
-  border-bottom: 1px solid var(--color-border, #e5e5e5);
-  background-color: var(--color-bg-secondary, #fafafa);
-  z-index: 9;
+.panel-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
 }
 
-/* Navigation Arrows Group */
-.profile-nav-arrows {
-  display: flex;
-  gap: var(--spacing-xs, 4px);
+.panel-name {
+    font-size: var(--text-base, 15px);
+    font-weight: 600;
+    color: #262626;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.profile-nav-btn {
-  min-width: 36px;
-  font-size: 16px;
-  padding: 4px 10px;
+.panel-badge-live {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    background-color: #08c;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    line-height: 1.4;
 }
 
-/* Action Buttons Group */
-.profile-action-buttons {
-  display: flex;
-  gap: var(--spacing-xs, 4px);
-  flex: 1;
-  justify-content: flex-end;
+/* Hide badge when contact is not live */
+.panel-badge-live.hidden {
+    display: none;
 }
 
-.profile-action-buttons .btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  padding: 6px 12px;
+.panel-company {
+    font-size: var(--text-sm, 13px);
+    font-weight: 500;
+    color: #404040;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 1px;
 }
 
-.action-icon {
-  width: 16px;
-  height: 16px;
-  color: currentColor;
+.panel-title-text {
+    font-size: var(--text-xs, 12px);
+    color: #737373;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* ===== Scrollable Content Section ===== */
+/* Action buttons — A / B / C placeholders */
+.panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: var(--color-bg-primary, #ffffff);
+    flex-shrink: 0;
+}
+
+.panel-action-btn {
+    flex: 1;
+    padding: 7px 0;
+    background: none;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: var(--text-sm, 13px);
+    font-weight: 500;
+    color: #525252;
+    transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+
+.panel-action-btn:hover {
+    border-color: #08c;
+    color: #08c;
+    background-color: #f0f7ff;
+}
+
+/* ── AI+ Engagement button ───────────────────────────────── */
+.panel-action-ai {
+    flex: 0 0 210px;        /* fixed width — aligns with dropdown */
+    background-color: #22c55e;
+    border-color: #22c55e;
+    color: #ffffff;
+    font-weight: 600;
+    white-space: nowrap;    /* never wrap label text */
+}
+
+.panel-action-ai:hover {
+    background-color: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+.panel-action-ai.open {
+    background-color: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+/* ── AI+ Engagement dropdown ─────────────────────────────── */
+.ai-engagement-dropdown {
+    position: fixed;
+    z-index: 1200;
+    background-color: #ffffff;
+    border: 1px solid #e4e5e7;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13), 0 1px 4px rgba(0, 0, 0, 0.06);
+    min-width: 230px;   /* wide enough for active state's "Configure Engagement + LIVE" row */
+    overflow: hidden;
+    display: none;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+}
+
+.ai-engagement-dropdown.open {
+    display: block;
+    animation: ai-dropdown-appear 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ai-dropdown-appear {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.ai-dropdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 5px 0;
+}
+
+.ai-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    font-size: var(--text-sm, 13px);
+    font-weight: 400;
+    color: #404040;
+    cursor: pointer;
+    transition: background-color 100ms ease;
+    user-select: none;
+}
+
+.ai-dropdown-item:hover {
+    background-color: #f4f5f6;
+}
+
+.ai-item-arrow {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #b0b0b0;
+}
+
+.ai-dropdown-divider {
+    height: 1px;
+    background-color: #f0f0f0;
+    margin: 4px 0;
+}
+
+/* Configure Engagement — same size/color as other items */
+.ai-dropdown-config {
+    color: #404040;
+    font-size: var(--text-sm, 13px);
+}
+
+.ai-dropdown-config:hover {
+    background-color: #f4f5f6;
+}
+
+.ai-item-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #a3a3a3;
+}
+
+/* ── AI+ dropdown dual-state visibility ──────────────────── */
+/* Both <ul> lists live in the DOM; only the matching one is shown */
+.ai-state-panel { display: none; }
+
+.ai-engagement-dropdown[data-state="start"]
+    .ai-state-panel[data-for-state="start"]  { display: block; }
+
+.ai-engagement-dropdown[data-state="active"]
+    .ai-state-panel[data-for-state="active"] { display: block; }
+
+/* Circled checkmark (active state leading icon) — sized to match arrow icon */
+.ai-item-check {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    /* colors handled inline on SVG child elements */
+}
+
+/* Configure Engagement row in active state — badge pushed to right */
+.ai-dropdown-config-row {
+    justify-content: space-between;
+}
+
+/* Configure Engagement text + cog: brand blue signals it's the primary CTA in active state */
+.ai-dropdown-config-row .ai-config-left,
+.ai-dropdown-config-row .ai-item-icon {
+    color: #08c;
+}
+
+.ai-config-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;    /* prevent label from wrapping alongside LIVE badge */
+}
+
+/* LIVE badge inside dropdown (green = campaign active) */
+.ai-dropdown-live {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 5px;
+    background-color: #22c55e;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    line-height: 1.4;
+}
+
+/* ── Contact details card ────────────────────────────────── */
+.contact-details-card {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 16px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: var(--color-bg-primary, #ffffff);
+}
+
+.detail-row {
+    padding: 3px 0;
+    font-size: var(--text-sm, 13px);
+    line-height: 1.5;
+}
+
+.detail-link {
+    color: #08c;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    word-break: break-all;
+}
+
+.detail-link:hover {
+    color: #0077b3;
+    text-decoration: underline;
+}
+
+.detail-link-ext {
+    word-break: break-all;
+}
+
+.detail-ext-icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.detail-plain {
+    color: #404040;
+    font-size: var(--text-sm, 13px);
+}
+
+.detail-muted {
+    color: #737373;
+    font-size: var(--text-xs, 12px);
+}
+
+.detail-label {
+    color: #737373;
+    font-size: var(--text-xs, 12px);
+    font-weight: 500;
+    margin-right: 2px;
+}
+
+.detail-row-meta {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* ── Section label ───────────────────────────────────────── */
+.panel-section-label {
+    padding: 0 8px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #a3a3a3;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+}
+
+/* ── Activity accordion ──────────────────────────────────── */
+.activity-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px 8px;
+    background-color: var(--color-bg-primary, #ffffff);
+}
+
+.accordion-row {
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa;
+    border: 1px solid #e4e5e7;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+    user-select: none;
+}
+
+.accordion-header:hover {
+    background-color: #eef0f1;
+}
+
+.accordion-title {
+    font-size: var(--text-sm, 13px);
+    font-weight: 500;
+    color: #404040;
+    flex: 1;
+}
+
+.accordion-count {
+    font-weight: 400;
+    color: #737373;
+}
+
+.accordion-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.accordion-action {
+    font-size: var(--text-xs, 12px);
+    font-weight: 500;
+    color: #08c;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.accordion-action:hover {
+    color: #0077b3;
+    text-decoration: underline;
+}
+
+.accordion-chevron {
+    width: 18px;
+    height: 18px;
+    color: #a3a3a3;
+    transition: transform 200ms ease;
+    flex-shrink: 0;
+}
+
+.accordion-row.open .accordion-chevron {
+    transform: rotate(180deg);
+}
+
+.accordion-body {
+    display: none;
+    padding: 4px 16px 12px;
+    background-color: #f0f1f3;
+}
+
+.accordion-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 6px 0;
+    border-top: 1px solid #f0f0f0;
+}
+
+.accordion-item:first-child {
+    border-top: none;
+}
+
+.accordion-item-date {
+    font-size: 11px;
+    color: #737373;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-top: 1px;
+    min-width: 72px;
+}
+
+.accordion-item-desc {
+    font-size: var(--text-xs, 12px);
+    color: #404040;
+    line-height: 1.45;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.accordion-item-plain {
+    padding: 6px 0;
+    font-size: var(--text-xs, 12px);
+    color: #737373;
+}
+
+/* Scrollable content area */
 .profile-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--spacing-md, 16px);
-  background-color: var(--color-bg-primary, #ffffff);
-  position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    background-color: var(--color-bg-primary, #ffffff);
 }
 
-/* Smooth scrolling behavior */
-.profile-content {
-  scroll-behavior: smooth;
-}
-
-/* Custom scrollbar styling */
 .profile-content::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 .profile-content::-webkit-scrollbar-track {
-  background: var(--color-neutral-100, #f5f5f5);
+    background: var(--color-neutral-100, #f5f5f5);
 }
 
 .profile-content::-webkit-scrollbar-thumb {
-  background: var(--color-neutral-300, #d4d4d4);
-  border-radius: 4px;
+    background: var(--color-neutral-300, #d4d4d4);
+    border-radius: 4px;
 }
 
 .profile-content::-webkit-scrollbar-thumb:hover {
-  background: var(--color-neutral-400, #a3a3a3);
+    background: var(--color-neutral-400, #a3a3a3);
 }
 
-/* ===== Profile Sections - Collapsible Content ===== */
-
-/* Section Container */
-.profile-section {
-  border-bottom: 1px solid var(--color-neutral-200, #e5e5e5);
-  padding: var(--spacing-md, 16px) 0;
-}
-
-/* Section Header - Clickable toggle */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  color: var(--color-neutral-700, #404040);
-  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-  cursor: pointer;
-  border-radius: var(--radius-sm, 4px);
-  transition: background-color 200ms ease;
-}
-
-.section-header:hover {
-  background-color: var(--color-neutral-50, #fafafa);
-}
-
-/* Section Title */
-.section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-neutral-700, #404040);
-}
-
-/* Section Toggle Icon */
-.section-toggle {
-  color: var(--color-neutral-500, #737373);
-  font-size: 16px;
-  transition: transform 200ms ease;
-  transform: rotate(-90deg);
-  display: inline-block;
-}
-
-/* Expanded state - icon points down */
-.profile-section.expanded .section-toggle {
-  transform: rotate(0deg);
-}
-
-/* Section Content - Hidden by default, shown when expanded */
-.section-content {
-  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-  /* Display managed by jQuery slideToggle */
-}
-
-/* Section Groups - Visual separation between Static, Activity, Engagement */
-.profile-section[data-group="activity"]:first-of-type {
-  margin-top: var(--spacing-lg, 24px);
-}
-
-.profile-section[data-group="engagement"]:first-of-type {
-  margin-top: var(--spacing-lg, 24px);
-}
-
-/* Empty State Styling */
-.empty-state {
-  text-align: center;
-  padding: var(--spacing-lg, 24px);
-  color: var(--color-neutral-500, #737373);
-  font-style: italic;
-  border: 2px dashed var(--color-neutral-200, #e5e5e5);
-  border-radius: var(--radius-md, 8px);
-  background-color: var(--color-neutral-50, #fafafa);
-}
-
-.empty-state-text {
-  margin-bottom: var(--spacing-sm, 8px);
-  font-size: 13px;
-}
-
-/* Empty State Action Button */
-.empty-state-action {
-  display: inline-block;
-  margin-top: var(--spacing-sm, 8px);
-  color: var(--color-primary, #08c);
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 13px;
-  font-style: normal;
-}
-
-.empty-state-action:hover {
-  text-decoration: underline;
-  color: var(--color-primary-hover, #0077b3);
-}
-
-/* Section Items */
-.section-item {
-  padding: var(--spacing-xs, 4px) 0;
-  border-bottom: 1px solid var(--color-neutral-100, #f5f5f5);
-  font-size: 13px;
-  color: var(--color-neutral-700, #404040);
-}
-
-.section-item:last-child {
-  border-bottom: none;
-}
-
-.section-item strong {
-  font-weight: 600;
-  color: var(--color-neutral-800, #262626);
-}
-
-/* Item content styling */
-.item-title {
-  font-weight: 500;
-  color: var(--color-neutral-800, #262626);
-  margin-bottom: var(--spacing-xs, 4px);
-}
-
-.item-date {
-  font-size: 12px;
-  color: var(--color-neutral-500, #737373);
-  margin-left: var(--spacing-sm, 8px);
-}
-
-/* ===== Loading Spinner ===== */
+/* Loading spinner */
 .loading-spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--color-neutral-200, #e5e5e5);
-  border-top-color: var(--color-primary, #08c);
-  border-radius: 50%;
-  animation: spinner-rotate 0.8s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-neutral-200, #e5e5e5);
+    border-top-color: var(--color-primary, #08c);
+    border-radius: 50%;
+    animation: spinner-rotate 0.8s linear infinite;
 }
 
 @keyframes spinner-rotate {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* ===== Responsive Adjustments ===== */
-
-/* Laptop viewport (1366-1920px) - slightly narrower panel */
+/* Responsive panel widths */
 @media (min-width: 1366px) and (max-width: 1919px) {
-  .profile-panel {
-    width: 360px;
-  }
+    .profile-panel { width: 360px; }
 }
 
-/* Tablet and below - full width overlay */
 @media (max-width: 1024px) {
-  .profile-panel {
-    width: 100%;
-    max-width: 480px;
-  }
+    .profile-panel { width: 100%; max-width: 480px; }
 }
 
-/* Mobile - full screen overlay */
 @media (max-width: 768px) {
-  .profile-panel {
-    width: 100%;
-    max-width: none;
-  }
-
-  .profile-header {
-    padding: var(--spacing-md, 16px);
-  }
-
-  .profile-actions {
-    flex-wrap: wrap;
-  }
-
-  .profile-action-buttons {
-    width: 100%;
-    order: 1;
-  }
-
-  .profile-nav-arrows {
-    order: 2;
-  }
+    .profile-panel { width: 100%; max-width: none; }
 }

@@ -1,612 +1,334 @@
-/**
- * Profile Panel - Content Rendering and Section Organization
- *
- * Features:
- * - Dynamic content rendering with smart section organization
- * - Collapsible sections with default expansion rules
- * - Empty state prompts for engagement
- * - Smooth animations matching navigation patterns (300ms)
- */
+/* ========================================
+   Profile Panel — Interaction Skeleton
+   Behaviors preserved:
+     1. Slide in → spinner → fade in on initial contact click
+     2. Fade out → spinner → fade in when switching contacts
+     3. Same fade cycle as refresh when clicking already-displayed contact
+   ======================================== */
 
 (function($) {
     'use strict';
 
-    // Constants
-    const ANIMATION_DURATION = 300; // Match navigation panel timing
+    const ANIMATION_DURATION = 300;
 
-    /**
-     * Open profile panel with contact data
-     * Main entry point for displaying contact/lead profiles
-     *
-     * @param {Object} contactData - Complete contact information
-     * @param {Array} [contactList] - Array of contacts for prev/next navigation
-     */
+    // ─── Identity card ───────────────────────────────────────────────────────
+
+    function updatePanelIdentity(contactData) {
+        const $identity = $('.panel-identity');
+        if (!$identity.length) return;
+        $identity.find('.panel-photo')
+            .attr('src', contactData.photo || '')
+            .attr('alt', contactData.name || '');
+        $identity.find('.panel-name').text(contactData.name || '');
+        $identity.find('.panel-badge-live').toggleClass('hidden', !contactData.isLive);
+        $identity.find('.panel-company').text(contactData.company || '');
+        $identity.find('.panel-title-text').text(contactData.title || '');
+    }
+
+    // ─── Main content renderer ───────────────────────────────────────────────
+
+    function renderMainContent(contactData) {
+        const $content = $('.profile-content');
+        $content.html(
+            buildContactDetailsHTML(contactData) +
+            buildActivityAccordionHTML(contactData)
+        );
+    }
+
+    // SVG snippets reused in renderers
+    const EXT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="detail-ext-icon">' +
+        '<path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7z' +
+        'M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>';
+
+    const CHEVRON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="accordion-chevron">' +
+        '<path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>';
+
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // Contact details card (location, email, phone, URLs, social, lead owner)
+    function buildContactDetailsHTML(contactData) {
+        let rows = '';
+
+        // Detail fields: email → mailto link, phone → tel link, url → ext link, text → plain
+        (contactData.details || []).forEach(function(item) {
+            if (!item.value) return;
+            let valueHTML;
+            if (item.type === 'email') {
+                valueHTML = '<a href="mailto:' + escHtml(item.value) + '" class="detail-link">' + escHtml(item.value) + '</a>';
+            } else if (item.type === 'phone') {
+                valueHTML = '<a href="tel:' + escHtml(item.value.replace(/\s/g,'')) + '" class="detail-link">' + escHtml(item.value) + '</a>';
+            } else if (item.type === 'url') {
+                valueHTML = '<a href="' + escHtml(item.value) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.value) + EXT_ICON + '</a>';
+            } else {
+                valueHTML = '<span class="detail-plain">' + escHtml(item.value) + '</span>';
+            }
+            rows += '<div class="detail-row">' + valueHTML + '</div>';
+        });
+
+        // Website from companyInfo (type: url)
+        (contactData.companyInfo || []).filter(function(i) { return i.type === 'url'; }).forEach(function(item) {
+            rows += '<div class="detail-row"><a href="' + escHtml(item.value) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.value) + EXT_ICON + '</a></div>';
+        });
+
+        // Social links
+        (contactData.socialLinks || []).forEach(function(item) {
+            rows += '<div class="detail-row"><a href="' + escHtml(item.url) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.url) + EXT_ICON + '</a></div>';
+        });
+
+        // Lead owner + created date
+        if (contactData.leadOwner) {
+            rows += '<div class="detail-row detail-row-meta"><span class="detail-label">Lead Owner:</span> <span class="detail-plain">' + escHtml(contactData.leadOwner) + '</span></div>';
+        }
+        if (contactData.createdAt) {
+            rows += '<div class="detail-row detail-row-meta"><span class="detail-muted">' + escHtml(contactData.createdAt) + '</span></div>';
+        }
+
+        return rows ? '<div class="contact-details-card">' + rows + '</div>' : '';
+    }
+
+    // Activity accordion (notes, meetings, calls, reminders, email metrics)
+    function buildActivityAccordionHTML(contactData) {
+        const sections = [
+            { key: 'notes',        label: 'Notes',             action: 'Add Note', items: contactData.notes     || [] },
+            { key: 'meetings',     label: 'Meetings',          action: 'Schedule', items: contactData.meetings  || [] },
+            { key: 'calls',        label: 'Calls',             action: 'Log Call', items: contactData.calls     || [] },
+            { key: 'reminders',    label: 'Tasks / Reminders', action: 'Add Task', items: contactData.reminders || [] },
+            { key: 'email-replies', label: 'Email Replies',      action: null, count: contactData.emailReplies     || 0 },
+            { key: 'email-links',   label: 'Email Links Viewed', action: null, count: contactData.emailLinksViewed || 0 },
+            { key: 'emails-sent',   label: 'Emails Sent',        action: null, count: contactData.emailsSent       || 0 }
+        ];
+
+        let html = '<div class="activity-accordion">' +
+            '<div class="panel-section-label">Engagement History</div>';
+        sections.forEach(function(section) {
+            const count = section.items ? section.items.length : (section.count || 0);
+            const actionLink = section.action
+                ? '<a class="accordion-action" data-action="' + section.key + '" href="#">' + section.action + '</a>'
+                : '';
+
+            html += '<div class="accordion-row" data-section="' + section.key + '">';
+            html += '<div class="accordion-header">';
+            html += '<span class="accordion-title">' + escHtml(section.label) +
+                    ' <span class="accordion-count">(' + count + ')</span></span>';
+            html += '<div class="accordion-header-right">' + actionLink + CHEVRON_SVG + '</div>';
+            html += '</div>'; // .accordion-header
+
+            html += '<div class="accordion-body">';
+            if (section.items && section.items.length > 0) {
+                section.items.forEach(function(item) {
+                    html += buildAccordionItemHTML(section.key, item);
+                });
+            } else if (!section.items && section.count > 0) {
+                html += '<div class="accordion-item-plain">' + section.count + ' item' + (section.count !== 1 ? 's' : '') + '</div>';
+            }
+            html += '</div>'; // .accordion-body
+            html += '</div>'; // .accordion-row
+        });
+        html += '</div>'; // .activity-accordion
+        return html;
+    }
+
+    function buildAccordionItemHTML(sectionKey, item) {
+        let date = '', desc = '';
+        switch (sectionKey) {
+            case 'notes':
+                date = item.date || '';
+                desc = item.text || '';
+                break;
+            case 'meetings':
+                date = (item.date || '') + (item.time ? ' @ ' + item.time : '');
+                desc = item.title || '';
+                break;
+            case 'calls':
+                date = item.date || '';
+                desc = (item.outcome || '') + (item.duration ? ' · ' + item.duration : '');
+                break;
+            case 'reminders':
+                date = item.date || '';
+                desc = item.text || '';
+                break;
+            default:
+                desc = JSON.stringify(item);
+        }
+        return '<div class="accordion-item">' +
+            (date ? '<span class="accordion-item-date">' + escHtml(date) + '</span>' : '') +
+            '<span class="accordion-item-desc">' + escHtml(desc) + '</span>' +
+            '</div>';
+    }
+
+    // ─── Core panel behaviors ────────────────────────────────────────────────
+
+    // ① Slide in → spinner → fade in on initial open; refresh/switch routing when already open
     function openProfilePanel(contactData, contactList) {
         const $panel = $('.profile-panel');
-        const $content = $('.profile-content');
-
-        // Store contact list for navigation if provided
         if (contactList && Array.isArray(contactList)) {
             window.currentContactList = contactList;
         }
-
-        // If panel already open, update content instead of reopening
         if ($panel.hasClass('open')) {
-            updatePanelContent(contactData);
+            updatePanelContent(contactData); // behaviors 2 & 3
             return;
         }
-
-        // Render profile content
-        const contentHtml = renderProfileContent(contactData);
-        $content.html(contentHtml);
-
-        // Store current contact ID on panel
         $panel.data('contact-id', contactData.id);
-
-        // Show panel with slide animation
-        $panel.addClass('open');
-
-        // Initialize section toggle handlers after content is rendered
+        $panel.addClass('open');             // slide in (behavior 1)
+        const $content = $('.profile-content');
+        $content.hide().html('<div class="loading-spinner"></div>').show();
         setTimeout(function() {
-            initSectionToggles();
-        }, 50);
+            updatePanelIdentity(contactData);
+            renderMainContent(contactData);
+            $content.hide().fadeIn(200);
+        }, 400);
     }
 
-    /**
-     * Render complete profile content
-     * Includes fixed header data and all scrollable sections
-     *
-     * @param {Object} data - Contact data object
-     * @returns {String} Complete HTML string
-     */
-    function renderProfileContent(data) {
-        // Update fixed header (outside scrollable content)
-        updateFixedHeader(data);
-
-        // Render scrollable sections only
-        return renderSections(data);
-    }
-
-    /**
-     * Update fixed header section with contact identity
-     * Modifies existing DOM elements rather than replacing HTML
-     *
-     * @param {Object} data - Contact data
-     */
-    function updateFixedHeader(data) {
-        // Update photo
-        if (data.photo) {
-            $('.profile-photo').attr('src', data.photo);
-        }
-
-        // Update name
-        if (data.name) {
-            $('.profile-name').text(data.name);
-        }
-
-        // Update LIVE badge visibility
-        if (data.isLive) {
-            $('.badge-live').show();
-        } else {
-            $('.badge-live').hide();
-        }
-
-        // Update company
-        if (data.company) {
-            $('.profile-company').text(data.company);
-        }
-
-        // Update title
-        if (data.title) {
-            $('.profile-title').text(data.title);
-        }
-    }
-
-    /**
-     * Render all profile sections in user-specified order
-     * Groups: Static Information → Activity → Engagement
-     *
-     * @param {Object} data - Contact data
-     * @returns {String} HTML string with all sections
-     */
-    function renderSections(data) {
-        const sections = [];
-
-        // ===== GROUP 1: Static Information =====
-
-        // Details - Always expanded per user requirement
-        sections.push(renderSection({
-            id: 'details',
-            title: 'Contact Details',
-            alwaysExpanded: true,
-            data: data.details,
-            group: 'static'
-        }));
-
-        // Company Info - Always expanded per user requirement
-        sections.push(renderSection({
-            id: 'company',
-            title: 'Company Info',
-            alwaysExpanded: true,
-            data: data.companyInfo,
-            group: 'static'
-        }));
-
-        // Social/Professional Links - Expand if has content
-        sections.push(renderSection({
-            id: 'social-links',
-            title: 'Social & Professional Links',
-            alwaysExpanded: null,
-            data: data.socialLinks,
-            group: 'static'
-        }));
-
-        // ===== GROUP 2: Activity =====
-
-        // Notes - Expand if has content, else show "Add Note" prompt
-        sections.push(renderSection({
-            id: 'notes',
-            title: 'Notes',
-            alwaysExpanded: null,
-            data: data.notes,
-            group: 'activity',
-            emptyPrompt: 'Add Note'
-        }));
-
-        // Calls - Expand if has content, else show "Log Call" prompt
-        sections.push(renderSection({
-            id: 'calls',
-            title: 'Call History',
-            alwaysExpanded: null,
-            data: data.calls,
-            group: 'activity',
-            emptyPrompt: 'Log Call'
-        }));
-
-        // Meetings - Expand if has content, else show "Schedule Meeting" prompt
-        sections.push(renderSection({
-            id: 'meetings',
-            title: 'Meetings',
-            alwaysExpanded: null,
-            data: data.meetings,
-            group: 'activity',
-            emptyPrompt: 'Schedule Meeting'
-        }));
-
-        // Tasks/Reminders - Expand if has content, else show "Add Reminder" prompt
-        sections.push(renderSection({
-            id: 'reminders',
-            title: 'Tasks & Reminders',
-            alwaysExpanded: null,
-            data: data.reminders,
-            group: 'activity',
-            emptyPrompt: 'Add Reminder'
-        }));
-
-        // ===== GROUP 3: Engagement =====
-
-        // Email Replies - Expand if has content
-        sections.push(renderSection({
-            id: 'email-replies',
-            title: 'Email Replies',
-            alwaysExpanded: null,
-            data: data.emailReplies,
-            group: 'engagement'
-        }));
-
-        // Email Links Viewed - Expand if has content
-        sections.push(renderSection({
-            id: 'email-links',
-            title: 'Email Links Viewed',
-            alwaysExpanded: null,
-            data: data.emailLinksViewed,
-            group: 'engagement'
-        }));
-
-        // Emails Sent - Expand if has content
-        sections.push(renderSection({
-            id: 'emails-sent',
-            title: 'Emails Sent',
-            alwaysExpanded: null,
-            data: data.emailsSent,
-            group: 'engagement'
-        }));
-
-        return sections.join('');
-    }
-
-    /**
-     * Render individual section with smart expansion defaults
-     *
-     * @param {Object} config - Section configuration
-     * @param {String} config.id - Section identifier
-     * @param {String} config.title - Section display title
-     * @param {Boolean|null} config.alwaysExpanded - Expansion rule (true=always, null=conditional)
-     * @param {Array|Object} config.data - Section data
-     * @param {String} config.group - Section group (static/activity/engagement)
-     * @param {String} [config.emptyPrompt] - Action prompt for empty sections
-     * @returns {String} Section HTML
-     */
-    function renderSection(config) {
-        const { id, title, alwaysExpanded, data, group, emptyPrompt } = config;
-
-        // Determine if section should be expanded using smart defaults
-        let isExpanded = false;
-        let hasData = false;
-
-        // Check if data exists
-        if (Array.isArray(data)) {
-            hasData = data.length > 0;
-        } else if (typeof data === 'object' && data !== null) {
-            hasData = Object.keys(data).length > 0;
-        }
-
-        // Apply expansion rules
-        if (alwaysExpanded === true) {
-            // Always expanded (Details, Company)
-            isExpanded = true;
-        } else if (alwaysExpanded === null && hasData) {
-            // Expand if has content
-            isExpanded = true;
-        }
-        // Otherwise: collapsed (empty sections)
-
-        const expandedClass = isExpanded ? 'expanded' : '';
-        const contentStyle = isExpanded ? '' : 'style="display: none;"';
-
-        // Render section content
-        const sectionContent = renderSectionContent(id, data, emptyPrompt);
-
-        return `
-            <div class="profile-section ${expandedClass}" data-section-id="${id}" data-group="${group}">
-                <div class="section-header">
-                    <span class="section-title">${title}</span>
-                    <span class="section-toggle">▾</span>
-                </div>
-                <div class="section-content" ${contentStyle}>
-                    ${sectionContent}
-                </div>
-            </div>
-        `;
-    }
-
-    /**
-     * Render section content based on data type
-     * Shows empty state with actionable prompt if no data
-     *
-     * @param {String} sectionId - Section identifier
-     * @param {Array|Object} data - Section data
-     * @param {String} [emptyPrompt] - Action prompt for empty sections
-     * @returns {String} Content HTML
-     */
-    function renderSectionContent(sectionId, data, emptyPrompt) {
-        // Check if data is empty
-        let isEmpty = false;
-        if (Array.isArray(data)) {
-            isEmpty = data.length === 0;
-        } else if (typeof data === 'object' && data !== null) {
-            isEmpty = Object.keys(data).length === 0;
-        } else {
-            isEmpty = !data;
-        }
-
-        // Render empty state with actionable prompt
-        if (isEmpty) {
-            if (emptyPrompt) {
-                return `
-                    <div class="empty-state">
-                        <div class="empty-state-text">No ${sectionId.replace('-', ' ')} yet</div>
-                        <a href="#" class="empty-state-action" data-action="add-${sectionId}">
-                            ${emptyPrompt}
-                        </a>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="empty-state">
-                        <div class="empty-state-text">No ${sectionId.replace('-', ' ')} available</div>
-                    </div>
-                `;
-            }
-        }
-
-        // Render content based on section type
-        // For now, use placeholder rendering (detailed content in plan 02-03)
-        return renderPlaceholderContent(sectionId, data);
-    }
-
-    /**
-     * Render placeholder content for testing
-     * Will be replaced with detailed rendering in plan 02-03
-     *
-     * @param {String} sectionId - Section identifier
-     * @param {Array|Object} data - Section data
-     * @returns {String} Placeholder HTML
-     */
-    function renderPlaceholderContent(sectionId, data) {
-        // Handle object data (Details, Company Info)
-        if (!Array.isArray(data) && typeof data === 'object') {
-            const items = Object.entries(data).map(([key, value]) => {
-                return `
-                    <div class="section-item">
-                        <strong>${key}:</strong> ${value}
-                    </div>
-                `;
-            });
-            return items.join('');
-        }
-
-        // Handle array data (all other sections)
-        if (Array.isArray(data)) {
-            const items = data.map((item, index) => {
-                // Simple rendering based on item structure
-                let content = '';
-
-                if (typeof item === 'object') {
-                    // Extract common fields
-                    const title = item.title || item.subject || item.text || item.type || 'Item';
-                    const date = item.date ? `<span class="item-date">${item.date}</span>` : '';
-                    const url = item.url ? `<a href="${item.url}" target="_blank">View</a>` : '';
-
-                    content = `
-                        <div class="item-title">${title}</div>
-                        ${date}
-                        ${url}
-                    `;
-                } else {
-                    content = String(item);
-                }
-
-                return `
-                    <div class="section-item" data-index="${index}">
-                        ${content}
-                    </div>
-                `;
-            });
-
-            return items.join('');
-        }
-
-        return '<div class="section-item">No data</div>';
-    }
-
-    /**
-     * Initialize section toggle handlers
-     * Binds click events to section headers for expand/collapse
-     */
-    function initSectionToggles() {
-        // Remove existing handlers to prevent duplicates
-        $('.profile-content').off('click', '.section-header');
-
-        // Bind click handler using event delegation
-        $('.profile-content').on('click', '.section-header', function(e) {
-            e.preventDefault();
-
-            const $header = $(this);
-            const $section = $header.closest('.profile-section');
-            const $content = $section.find('.section-content');
-
-            // Toggle expanded class
-            $section.toggleClass('expanded');
-
-            // Animate content visibility with slideToggle (matches 300ms timing)
-            $content.slideToggle(ANIMATION_DURATION);
-        });
-
-        // Handle empty state action clicks
-        $('.profile-content').off('click', '.empty-state-action');
-        $('.profile-content').on('click', '.empty-state-action', function(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Prevent section toggle
-
-            const action = $(this).data('action');
-
-            // Trigger custom event for app to handle
-            $(document).trigger('profile:action', { action: action });
-        });
-    }
-
-    /**
-     * Update panel content when switching between contacts
-     * Uses fade-out → loading spinner → fade-in for smooth transitions
-     *
-     * @param {Object} contactData - New contact data
-     */
+    // ② Fade out → spinner → fade in (behaviors 2 & 3)
     function updatePanelContent(contactData) {
         const $panel = $('.profile-panel');
         const $content = $('.profile-content');
-
-        // Fade out current content quickly (200ms)
         $content.fadeOut(200, function() {
-            // Show loading spinner in content area
-            $content.html('<div class="loading-spinner"></div>');
-            $content.show();
-
-            // Simulate realistic loading delay (400ms) for data fetch
+            $content.html('<div class="loading-spinner"></div>').show();
             setTimeout(function() {
-                // Update fixed header
-                updateFixedHeader(contactData);
-
-                // Re-render sections with new contact data
-                const contentHtml = renderSections(contactData);
-                $content.html(contentHtml);
-
-                // Update stored contact ID
+                updatePanelIdentity(contactData);
+                renderMainContent(contactData);
                 $panel.data('contact-id', contactData.id);
-
-                // Fade in new content (200ms)
-                $content.hide().fadeIn(200, function() {
-                    // Re-initialize section toggles for new content
-                    initSectionToggles();
-                });
+                $content.hide().fadeIn(200);
             }, 400);
         });
     }
 
-    /**
-     * Navigate to previous or next contact in list
-     * Uses wrap-around logic to cycle through contacts
-     *
-     * @param {String} direction - 'prev' or 'next'
-     */
+    // ③ Prev/next with wrap-around
     function navigateContact(direction) {
         const $panel = $('.profile-panel');
-
-        // Get current contact ID from panel data
         const currentId = $panel.data('contact-id');
-
-        // Get contact list from window state
         const contacts = window.currentContactList || [];
-
-        // Safety check: no contacts available
-        if (contacts.length === 0) {
-            return;
-        }
-
-        // Find current index
-        const currentIndex = contacts.findIndex(function(c) {
-            return c.id === currentId;
-        });
-
-        // Safety check: current contact not found in list
-        if (currentIndex === -1) {
-            return;
-        }
-
-        // Calculate next index with wrap-around
-        let nextIndex;
-        if (direction === 'next') {
-            nextIndex = (currentIndex + 1) % contacts.length;
-        } else {
-            // Prev with wrap-around (add length to handle negative modulo)
-            nextIndex = (currentIndex - 1 + contacts.length) % contacts.length;
-        }
-
-        // Get next contact
-        const nextContact = contacts[nextIndex];
-
-        // Update panel with cross-fade
-        updatePanelContent(nextContact);
+        if (!contacts.length) return;
+        const idx = contacts.findIndex(c => c.id === currentId);
+        if (idx === -1) return;
+        const next = direction === 'next'
+            ? (idx + 1) % contacts.length
+            : (idx - 1 + contacts.length) % contacts.length;
+        updatePanelContent(contacts[next]);
     }
 
-    /**
-     * Close profile panel
-     */
+    // ④ Slide out + clear
     function closeProfilePanel() {
         const $panel = $('.profile-panel');
-
-        // Check if already closed
-        if (!$panel.hasClass('open')) {
-            return;
-        }
-
-        // Remove class to trigger slide-out animation
+        if (!$panel.hasClass('open')) return;
         $panel.removeClass('open');
-
-        // Clear content after animation completes (300ms)
+        // Close any open AI+ dropdown and reset its state to "start"
+        $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+        $('#ai-engagement-dropdown')
+            .removeClass('open')
+            .attr('aria-hidden', 'true')
+            .attr('data-state', 'start');
         setTimeout(function() {
             $('.profile-content').html('');
             $panel.removeData('contact-id');
         }, ANIMATION_DURATION);
     }
 
-    /**
-     * Setup panel interaction handlers
-     * Initialize all event handlers using event delegation
-     */
+    // Switch AI+ dropdown between 'start' and 'active' states
+    function setAiEngagementState(state) {
+        $('#ai-engagement-dropdown').attr('data-state', state);
+    }
+
+    // ⑤ All panel event handlers
     function setupPanelHandlers() {
-        // Close Method 1: Close button click
-        $(document).on('click', '.profile-panel .close-btn', function(e) {
-            e.preventDefault();
+        // ESC to close
+        $(document).on('keydown', function(e) {
+            const $panel = $('.profile-panel');
+            if (e.which === 27 && $panel.hasClass('open')) closeProfilePanel();
+        });
+
+        // Close button
+        $(document).on('click', '.panel-close-btn', function() {
             closeProfilePanel();
         });
 
-        // Close Method 2: ESC key
-        $(document).on('keydown', function(e) {
-            const $panel = $('.profile-panel');
-            if (e.which === 27 && $panel.hasClass('open')) { // ESC key = 27
-                closeProfilePanel();
+        // Prev / Next buttons
+        $(document).on('click', '.panel-nav-btn', function() {
+            navigateContact($(this).data('nav'));
+        });
+
+        // Accordion toggle (skip if click landed on the action link)
+        $(document).on('click', '.accordion-header', function(e) {
+            if ($(e.target).closest('.accordion-action').length) return;
+            const $row = $(this).closest('.accordion-row');
+            $row.find('.accordion-body').slideToggle(150);
+            $row.toggleClass('open');
+        });
+
+        // Accordion action links (prevent default; behaviour wired later)
+        $(document).on('click', '.accordion-action', function(e) {
+            e.preventDefault();
+        });
+
+        // ── AI+ Engagement dropdown ──────────────────────────────────────────
+
+        // Toggle open/close on button click
+        $(document).on('click', '#ai-engagement-btn', function(e) {
+            e.stopPropagation();
+            const $btn      = $(this);
+            const $dropdown = $('#ai-engagement-dropdown');
+            const isOpen    = $btn.hasClass('open');
+
+            if (isOpen) {
+                $btn.removeClass('open').attr('aria-expanded', 'false');
+                $dropdown.removeClass('open').attr('aria-hidden', 'true');
+            } else {
+                // Anchor to button's left edge; min-width matches button so content can expand
+                const rect = this.getBoundingClientRect();
+                $dropdown.css({
+                    top:      (rect.bottom + 4) + 'px',
+                    left:     rect.left + 'px',
+                    minWidth: rect.width + 'px',
+                    width:    ''              // clear any previously set fixed width
+                });
+                $btn.addClass('open').attr('aria-expanded', 'true');
+                $dropdown.addClass('open').attr('aria-hidden', 'false');
             }
         });
 
-        // Navigation: Prev/Next contact buttons
-        $(document).on('click', '.profile-panel .btn-nav', function(e) {
-            e.preventDefault();
-            const direction = $(this).data('nav'); // 'prev' or 'next'
-            navigateContact(direction);
+        // Close when clicking outside the button or dropdown
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#ai-engagement-btn, #ai-engagement-dropdown').length) {
+                $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+                $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+            }
+        });
+
+        // Dropdown item click — close dropdown; actions dispatched by aiAction value
+        $(document).on('click', '.ai-dropdown-item', function(e) {
+            e.stopPropagation();
+            const aiAction = $(this).data('ai-action');
+            $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+
+            // Demo: "Ping LinkedIn for posts" in starting state triggers active state
+            // (represents AI completing LinkedIn ping + generating all 4 email drafts)
+            if (aiAction === 'ping-linkedin') {
+                const currentState = $('#ai-engagement-dropdown').attr('data-state');
+                if (currentState === 'start') {
+                    setAiEngagementState('active');
+                }
+            }
+
+            // TODO: dispatch aiAction to appropriate handler
+            console.log('[AI+ Engagement] action:', aiAction, '| state:', $('#ai-engagement-dropdown').attr('data-state'));
         });
     }
 
-    /**
-     * Initialize profile panel
-     * @deprecated Use setupPanelHandlers() - kept for backwards compatibility
-     */
-    function init() {
-        setupPanelHandlers();
-    }
+    window.openProfilePanel      = openProfilePanel;
+    window.closeProfilePanel     = closeProfilePanel;
+    window.updatePanelContent    = updatePanelContent;
+    window.navigateContact       = navigateContact;
+    window.setupPanelHandlers    = setupPanelHandlers;
+    window.setAiEngagementState  = setAiEngagementState;
 
-    // Expose public functions globally
-    window.openProfilePanel = openProfilePanel;
-    window.closeProfilePanel = closeProfilePanel;
-    window.updatePanelContent = updatePanelContent;
-    window.navigateContact = navigateContact;
-    window.renderProfileContent = renderProfileContent;
-    window.renderSections = renderSections;
-    window.setupPanelHandlers = setupPanelHandlers;
-
-    // Initialize when DOM is ready
-    $(document).ready(function() {
-        setupPanelHandlers();
-    });
+    $(document).ready(function() { setupPanelHandlers(); });
 
 })(jQuery);
-
-
-// ===== Sample Data for Testing =====
-// Uncomment to test panel rendering
-
-/*
-const sampleContactData = {
-    name: "John Doe",
-    photo: "https://via.placeholder.com/48",
-    company: "Acme Corp",
-    title: "VP of Sales",
-    isLive: true,
-    details: {
-        email: "john@acme.com",
-        phone: "555-1234",
-        location: "San Francisco, CA"
-    },
-    companyInfo: {
-        website: "acme.com",
-        industry: "Technology",
-        employees: "500-1000"
-    },
-    socialLinks: [
-        {type: "LinkedIn", url: "https://linkedin.com/in/johndoe"},
-        {type: "Twitter", url: "https://twitter.com/johndoe"}
-    ],
-    notes: [
-        {text: "Follow up next week", date: "2026-03-01"},
-        {text: "Interested in enterprise plan", date: "2026-02-28"}
-    ],
-    calls: [],
-    meetings: [
-        {title: "Demo call", date: "2026-03-05"}
-    ],
-    reminders: [],
-    emailReplies: [],
-    emailLinksViewed: [],
-    emailsSent: [
-        {subject: "Introduction", date: "2026-02-28"},
-        {subject: "Follow-up", date: "2026-03-01"}
-    ]
-};
-
-// Test opening panel
-// $(document).ready(function() {
-//     setTimeout(function() {
-//         openProfilePanel(sampleContactData);
-//     }, 500);
-// });
-*/
