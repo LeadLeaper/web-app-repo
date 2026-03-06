@@ -14,7 +14,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=22">
+    <link rel="stylesheet" href="profile-panel.css?v=23">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1047,12 +1047,12 @@
                     </div>
                 </div>
                 <div class="ai-section-body">
-                    <!-- Post text sub-section (independently collapsible) -->
-                    <div class="ai-post-block" id="ai-post-block-linkedin">
+                    <!-- Post text sub-section (independently collapsible; collapsed by default) -->
+                    <div class="ai-post-block collapsed" id="ai-post-block-linkedin">
                         <div class="ai-post-block-header">
                             <span class="ai-post-block-label">LinkedIn Article Post</span>
                             <button type="button" class="ai-post-block-toggle"
-                                    aria-label="Hide post text">show less</button>
+                                    aria-label="Show post text">show more</button>
                         </div>
                         <div class="ai-post-block-body">
                             <p class="ai-post-text">When the action peaks, so does the pressure
@@ -1061,6 +1061,12 @@
                             and the margin for error narrows fast. So who comes out on top? The
                             operators whose support teams are truly peak-ready.</p>
                         </div>
+                    </div>
+                    <!-- AI-generated LinkedIn comment (auto-resizing textarea) -->
+                    <div class="ai-comment-row">
+                        <textarea class="ai-comment-textarea" id="ai-comment-linkedin"
+                                  placeholder="Your Comment" rows="2"
+                                  aria-label="AI-generated LinkedIn comment"></textarea>
                     </div>
                     <!-- Subject / comment headline + SEND -->
                     <div class="ai-subject-row">
@@ -1375,7 +1381,7 @@
     <script src="../phase-1/nav-left.js"></script>
     <!-- Quill.js (must load before profile-panel.js) -->
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=19"></script>
+    <script src="profile-panel.js?v=20"></script>
 
     <!-- Section Switching Script -->
     <script>

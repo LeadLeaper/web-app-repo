@@ -250,8 +250,11 @@
         // Reset all AI section states
         $('.ai-section').removeClass('collapsed');
         $('.ai-section-toggle').text('hide').attr('data-state', 'visible');
-        $('.ai-post-block').removeClass('collapsed');
-        $('.ai-post-block-toggle').text('show less');
+        // Post-block collapses back to default (article text hidden, comment textarea visible)
+        $('.ai-post-block').addClass('collapsed');
+        $('.ai-post-block-toggle').text('show more').attr('aria-label', 'Show post text');
+        // Clear and reset comment textarea height
+        $('.ai-comment-textarea').val('').each(function() { this.style.height = ''; });
 
         setTimeout(function() {
             $('.profile-content').html('');
@@ -335,6 +338,15 @@
             quill.clipboard.dangerouslyPasteHTML(demoContent[key] || '');
         });
         quillsInitialized = true;
+
+        // Populate the LinkedIn comment textarea with demo content and auto-size it
+        const commentEl = document.getElementById('ai-comment-linkedin');
+        if (commentEl && !commentEl.value) {
+            commentEl.value = 'Great post on the challenges of demand peaks.';
+            commentEl.style.height = 'auto';
+            commentEl.style.height = commentEl.scrollHeight + 'px';
+        }
+
         console.log('[AI View] Quill editors initialized');
     }
 
@@ -393,7 +405,14 @@
             const $block = $(this).closest('.ai-post-block');
             const isCollapsed = $block.hasClass('collapsed');
             $block.toggleClass('collapsed', !isCollapsed);
-            $(this).text(isCollapsed ? 'show less' : 'show more');
+            $(this).text(isCollapsed ? 'show less' : 'show more')
+                   .attr('aria-label', isCollapsed ? 'Hide post text' : 'Show post text');
+        });
+
+        // Auto-resize LinkedIn comment textarea (vertical only) on user input
+        $(document).on('input', '.ai-comment-textarea', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
         });
 
         // ── AI+ Engagement dropdown ──────────────────────────────────────────
