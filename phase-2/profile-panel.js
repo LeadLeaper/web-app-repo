@@ -219,9 +219,19 @@
         const $panel = $('.profile-panel');
         if (!$panel.hasClass('open')) return;
         $panel.removeClass('open');
-        // Close any open AI+ dropdown and reset its state to "start"
+        // Close any open AI+ dropdowns and reset their states to "start"
         $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-engagement-dropdown')
+            .removeClass('open')
+            .attr('aria-hidden', 'true')
+            .attr('data-state', 'start');
+        $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
+        $('#ai-research-dropdown')
+            .removeClass('open')
+            .attr('aria-hidden', 'true')
+            .attr('data-state', 'start');
+        $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
+        $('#ai-slack-dropdown')
             .removeClass('open')
             .attr('aria-hidden', 'true')
             .attr('data-state', 'start');
@@ -231,9 +241,19 @@
         }, ANIMATION_DURATION);
     }
 
-    // Switch AI+ dropdown between 'start' and 'active' states
+    // Switch AI+ Engagement dropdown between 'start' and 'active' states
     function setAiEngagementState(state) {
         $('#ai-engagement-dropdown').attr('data-state', state);
+    }
+
+    // Switch AI+ Research dropdown between 'start' and 'active' states
+    function setAiResearchState(state) {
+        $('#ai-research-dropdown').attr('data-state', state);
+    }
+
+    // Switch Slack VSR dropdown between 'start' and 'active' states
+    function setAiSlackState(state) {
+        $('#ai-slack-dropdown').attr('data-state', state);
     }
 
     // ⑤ All panel event handlers
@@ -276,49 +296,138 @@
             const $dropdown = $('#ai-engagement-dropdown');
             const isOpen    = $btn.hasClass('open');
 
+            // Always close research + slack dropdowns when toggling engagement
+            $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
+            $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
+
             if (isOpen) {
                 $btn.removeClass('open').attr('aria-expanded', 'false');
                 $dropdown.removeClass('open').attr('aria-hidden', 'true');
             } else {
-                // Anchor to button's left edge; min-width matches button so content can expand
+                // Left-anchor: dropdown extends rightward from button's left edge
                 const rect = this.getBoundingClientRect();
                 $dropdown.css({
-                    top:      (rect.bottom + 4) + 'px',
-                    left:     rect.left + 'px',
-                    minWidth: rect.width + 'px',
-                    width:    ''              // clear any previously set fixed width
+                    top:   (rect.bottom + 4) + 'px',
+                    left:  rect.left + 'px',
+                    right: '',              // clear right positioning
+                    width: ''
                 });
                 $btn.addClass('open').attr('aria-expanded', 'true');
                 $dropdown.addClass('open').attr('aria-hidden', 'false');
             }
         });
 
-        // Close when clicking outside the button or dropdown
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('#ai-engagement-btn, #ai-engagement-dropdown').length) {
-                $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
-                $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+        // ── AI+ Research dropdown ────────────────────────────────────────────
+
+        // Toggle open/close on button click
+        $(document).on('click', '#ai-research-btn', function(e) {
+            e.stopPropagation();
+            const $btn      = $(this);
+            const $dropdown = $('#ai-research-dropdown');
+            const isOpen    = $btn.hasClass('open');
+
+            // Always close engagement + slack dropdowns when toggling research
+            $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+            $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
+
+            if (isOpen) {
+                $btn.removeClass('open').attr('aria-expanded', 'false');
+                $dropdown.removeClass('open').attr('aria-hidden', 'true');
+            } else {
+                // Left-anchor: dropdown extends rightward from button's left edge
+                const rect = this.getBoundingClientRect();
+                $dropdown.css({
+                    top:   (rect.bottom + 4) + 'px',
+                    left:  rect.left + 'px',
+                    right: '',              // clear right positioning
+                    width: ''
+                });
+                $btn.addClass('open').attr('aria-expanded', 'true');
+                $dropdown.addClass('open').attr('aria-hidden', 'false');
             }
         });
 
-        // Dropdown item click — close dropdown; actions dispatched by aiAction value
-        $(document).on('click', '.ai-dropdown-item', function(e) {
+        // ── Slack VSR dropdown ───────────────────────────────────────────────
+
+        // Toggle open/close on button click (right-anchored: extends leftward)
+        $(document).on('click', '#ai-slack-btn', function(e) {
             e.stopPropagation();
-            const aiAction = $(this).data('ai-action');
+            const $btn      = $(this);
+            const $dropdown = $('#ai-slack-dropdown');
+            const isOpen    = $btn.hasClass('open');
+
+            // Always close engagement + research dropdowns when toggling slack
             $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
             $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+            $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
 
-            // Demo: "Ping LinkedIn for posts" in starting state triggers active state
-            // (represents AI completing LinkedIn ping + generating all 4 email drafts)
-            if (aiAction === 'ping-linkedin') {
+            if (isOpen) {
+                $btn.removeClass('open').attr('aria-expanded', 'false');
+                $dropdown.removeClass('open').attr('aria-hidden', 'true');
+            } else {
+                // Right-anchor: dropdown extends leftward from button's right edge
+                const rect = this.getBoundingClientRect();
+                $dropdown.css({
+                    top:   (rect.bottom + 4) + 'px',
+                    right: (window.innerWidth - rect.right) + 'px',
+                    left:  '',              // clear left positioning
+                    width: ''
+                });
+                $btn.addClass('open').attr('aria-expanded', 'true');
+                $dropdown.addClass('open').attr('aria-hidden', 'false');
+            }
+        });
+
+        // ── Shared: close all dropdowns when clicking outside ────────────────
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#ai-engagement-btn, #ai-engagement-dropdown, #ai-research-btn, #ai-research-dropdown, #ai-slack-btn, #ai-slack-dropdown').length) {
+                $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+                $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+                $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
+                $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
+                $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
+                $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
+            }
+        });
+
+        // ── Shared: dropdown item click — handles items in both AI+ dropdowns ──
+
+        $(document).on('click', '.ai-dropdown-item', function(e) {
+            e.stopPropagation();
+            const $item        = $(this);
+            const aiAction     = $item.data('ai-action');
+            const dropdownId   = $item.closest('.ai-engagement-dropdown').attr('id');
+
+            // Close all dropdowns and their buttons
+            $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+            $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
+            $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
+
+            // Demo state toggles
+            if (dropdownId === 'ai-engagement-dropdown' && aiAction === 'ping-linkedin') {
                 const currentState = $('#ai-engagement-dropdown').attr('data-state');
-                if (currentState === 'start') {
-                    setAiEngagementState('active');
-                }
+                if (currentState === 'start') setAiEngagementState('active');
+            }
+            if (dropdownId === 'ai-research-dropdown' && aiAction === 'employer-research') {
+                const currentState = $('#ai-research-dropdown').attr('data-state');
+                if (currentState === 'start') setAiResearchState('active');
+            }
+            if (dropdownId === 'ai-slack-dropdown' && aiAction === 'post-vsr-channel') {
+                const currentState = $('#ai-slack-dropdown').attr('data-state');
+                if (currentState === 'start') setAiSlackState('active');
             }
 
             // TODO: dispatch aiAction to appropriate handler
-            console.log('[AI+ Engagement] action:', aiAction, '| state:', $('#ai-engagement-dropdown').attr('data-state'));
+            console.log('[AI+] dropdown:', dropdownId, '| action:', aiAction);
         });
     }
 
@@ -328,6 +437,8 @@
     window.navigateContact       = navigateContact;
     window.setupPanelHandlers    = setupPanelHandlers;
     window.setAiEngagementState  = setAiEngagementState;
+    window.setAiResearchState    = setAiResearchState;
+    window.setAiSlackState       = setAiSlackState;
 
     $(document).ready(function() { setupPanelHandlers(); });
 

@@ -56,8 +56,19 @@
             AI+ Engagement
         </button>
 
-        <button type="button" class="panel-action-btn" data-action="b">B</button>
-        <button type="button" class="panel-action-btn" data-action="c">C</button>
+        <!-- Button B: AI+ Research dropdown trigger -->
+        <button type="button" class="panel-action-btn panel-action-research"
+                id="ai-research-btn"
+                aria-haspopup="true" aria-expanded="false">
+            AI+ Research
+        </button>
+
+        <!-- Button C: Slack VSR dropdown trigger (right-anchored) -->
+        <button type="button" class="panel-action-btn panel-action-slack"
+                id="ai-slack-btn"
+                aria-haspopup="true" aria-expanded="false">
+            Slack VSR
+        </button>
     </div>
 
     <div class="profile-content"></div>
@@ -157,6 +168,116 @@
                 Configure Engagement
             </span>
             <span class="ai-dropdown-live" aria-label="Campaign is live">LIVE</span>
+        </li>
+    </ul>
+
+</div>
+
+<!-- AI+ Research dropdown — rendered outside <aside> to escape overflow:hidden -->
+<!-- data-state drives visibility: "start" shows State 1, "active" shows State 2    -->
+<div class="ai-engagement-dropdown" id="ai-research-dropdown"
+     data-state="start" role="menu" aria-hidden="true">
+
+    <!-- ── State 1: Starting state (pre-research) ───────────────────────────── -->
+    <ul class="ai-dropdown-list ai-state-panel" data-for-state="start">
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="employer-research">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                 class="ai-item-arrow" aria-hidden="true">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+            Employer Research
+        </li>
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="leadleaper-research">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                 class="ai-item-arrow" aria-hidden="true">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+            LeadLeaper Research
+        </li>
+    </ul>
+
+    <!-- ── State 2: Active state (research complete, descriptions ready) ──────── -->
+    <ul class="ai-dropdown-list ai-state-panel" data-for-state="active">
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="employer-research">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-check" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Employer Research
+        </li>
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="leadleaper-research">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-check" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            LeadLeaper Description
+        </li>
+    </ul>
+
+</div>
+
+<!-- Slack VSR dropdown — right-anchored (extends leftward from button's right edge) -->
+<!-- data-state drives visibility: "start" shows State 1, "active" shows State 2    -->
+<div class="ai-engagement-dropdown" id="ai-slack-dropdown"
+     data-state="start" role="menu" aria-hidden="true">
+
+    <!-- ── State 1: Starting state (pre-Slack actions) ──────────────────────── -->
+    <ul class="ai-dropdown-list ai-state-panel" data-for-state="start">
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="post-vsr-channel">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                 class="ai-item-arrow" aria-hidden="true">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+            Post VSR to Channel
+        </li>
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="schedule-followup">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                 class="ai-item-arrow" aria-hidden="true">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+            Schedule Follow-up Thread
+        </li>
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="engagement-report">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                 class="ai-item-arrow" aria-hidden="true">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+            Generate Engagement Report
+        </li>
+    </ul>
+
+    <!-- ── State 2: Active state (Slack actions complete) ────────────────────── -->
+    <ul class="ai-dropdown-list ai-state-panel" data-for-state="active">
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="post-vsr-channel">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-check" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Post VSR to Channel
+        </li>
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="schedule-followup">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-check" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Schedule Follow-up Thread
+        </li>
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="engagement-report">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-check" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Generate Engagement Report
         </li>
     </ul>
 
