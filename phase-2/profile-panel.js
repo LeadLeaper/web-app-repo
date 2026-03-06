@@ -360,18 +360,54 @@
         console.log('[AI View] Quill editors initialized');
     }
 
+    // ─── Configure Engagement modal ─────────────────────────────────────────
+
+    function openCeModal() {
+        $('#ce-modal').addClass('open').attr('aria-hidden', 'false');
+        $('#ce-backdrop').addClass('open').attr('aria-hidden', 'false');
+        // Move focus to close button for keyboard accessibility
+        setTimeout(function() {
+            var btn = document.getElementById('ce-close-btn');
+            if (btn) btn.focus();
+        }, 50);
+    }
+
+    function closeCeModal() {
+        $('#ce-modal').removeClass('open').attr('aria-hidden', 'true');
+        $('#ce-backdrop').removeClass('open').attr('aria-hidden', 'true');
+    }
+
     // ⑤ All panel event handlers
     function setupPanelHandlers() {
-        // ESC to close
+        // ESC to close — modal takes priority over panel
         $(document).on('keydown', function(e) {
-            const $panel = $('.profile-panel');
-            if (e.which === 27 && $panel.hasClass('open')) closeProfilePanel();
+            if (e.which === 27) {
+                if ($('#ce-modal').hasClass('open')) { closeCeModal(); return; }
+                var $panel = $('.profile-panel');
+                if ($panel.hasClass('open')) closeProfilePanel();
+            }
         });
 
         // Close button
         $(document).on('click', '.panel-close-btn', function() {
             closeProfilePanel();
         });
+
+        // ── Configure Engagement modal ───────────────────────────────────────
+
+        // Close on backdrop click, X button, or Cancel
+        $(document).on('click', '#ce-backdrop, #ce-close-btn, #ce-cancel-btn', closeCeModal);
+
+        // Hour spinner up/down buttons
+        $(document).on('click', '.ce-time-spin-btn', function() {
+            var $n = $('#ce-time-num');
+            var v = parseInt($n.val(), 10) || 9;
+            $n.val($(this).data('dir') === 'up' ? Math.min(v + 1, 12) : Math.max(v - 1, 1));
+        });
+
+        // Stub handlers — no functionality yet, just prevent default
+        $(document).on('click', '.ce-preview-btn, .ce-move-btn, .ce-btn-pause, .ce-btn-delete, .ce-btn-save',
+            function(e) { e.preventDefault(); });
 
         // Prev / Next buttons
         $(document).on('click', '.panel-nav-btn', function() {
@@ -576,6 +612,9 @@
             $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
             $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
 
+            // Configure Engagement — open modal, skip all other logic
+            if (aiAction === 'configure-engagement') { openCeModal(); return; }
+
             // Demo state toggles
             if (dropdownId === 'ai-engagement-dropdown' && aiAction === 'ping-linkedin') {
                 const currentState = $('#ai-engagement-dropdown').attr('data-state');
@@ -602,6 +641,8 @@
 
     window.openProfilePanel      = openProfilePanel;
     window.closeProfilePanel     = closeProfilePanel;
+    window.openCeModal           = openCeModal;
+    window.closeCeModal          = closeCeModal;
     window.updatePanelContent    = updatePanelContent;
     window.navigateContact       = navigateContact;
     window.setupPanelHandlers    = setupPanelHandlers;

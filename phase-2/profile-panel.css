@@ -1092,3 +1092,362 @@
 .ai-editor-wrap .ql-editor p:last-child {
     margin-bottom: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Configure Engagement Modal  (CSS v25)
+   ─────────────────────────────────────────────────────────────────────────
+   .ce-*  classes are scoped to this dialog only.
+   z-index ladder: panel=100, dropdowns=1200, ce-backdrop=1290, ce-modal=1300
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Backdrop ── */
+.ce-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1290;
+    display: none;
+}
+.ce-backdrop.open {
+    display: block;
+    animation: ce-fade-in 180ms ease both;
+}
+@keyframes ce-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ── Modal container ── */
+.ce-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: min(680px, calc(100vw - 40px));
+    z-index: 1300;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+}
+.ce-modal.open {
+    display: flex;
+    animation: ce-modal-appear 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes ce-modal-appear {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
+}
+
+/* ── Header ── */
+.ce-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px 0 20px;
+    height: 48px;
+    border-bottom: 1px solid #e2e4e8;
+    flex-shrink: 0;
+}
+.ce-title {
+    font-size: var(--text-base, 15px);
+    font-weight: 600;
+    color: #262626;
+    margin: 0;
+}
+.ce-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #737373;
+    border-radius: 4px;
+    transition: color 150ms ease, background-color 150ms ease;
+    flex-shrink: 0;
+}
+.ce-close-btn svg { width: 20px; height: 20px; }
+.ce-close-btn:hover { color: #404040; background-color: #f0f0f0; }
+
+/* ── Settings strip ── */
+.ce-settings {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e2e4e8;
+    padding: 14px 20px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.ce-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.ce-label {
+    font-size: var(--text-sm, 13px);
+    color: #525252;
+    white-space: nowrap;
+}
+
+/* Time compound widget */
+.ce-time-wrap {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #ffffff;
+    overflow: hidden;
+    height: 28px;
+}
+.ce-time-num {
+    width: 36px;
+    padding: 0 4px;
+    border: none;
+    outline: none;
+    font-size: var(--text-sm, 13px);
+    color: #262626;
+    text-align: center;
+    background: transparent;
+    -moz-appearance: textfield;
+}
+.ce-time-num::-webkit-outer-spin-button,
+.ce-time-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ce-time-spinners {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #e0e0e0;
+}
+.ce-time-spin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #737373;
+    padding: 0;
+    transition: background-color 100ms ease, color 100ms ease;
+}
+.ce-time-spin-btn + .ce-time-spin-btn { border-top: 1px solid #e0e0e0; }
+.ce-time-spin-btn:hover { background-color: #f0f0f0; color: #08c; }
+.ce-time-spin-btn svg { width: 10px; height: 10px; }
+.ce-time-ampm {
+    padding: 0 6px;
+    border: none;
+    border-left: 1px solid #e0e0e0;
+    outline: none;
+    font-size: var(--text-sm, 13px);
+    color: #262626;
+    background: #f8f9fa;
+    cursor: pointer;
+    appearance: auto;
+}
+.ce-time-ampm:focus { outline: 1px solid #0099cc; outline-offset: -1px; }
+
+/* Checkbox */
+.ce-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-sm, 13px);
+    color: #525252;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.ce-checkbox {
+    width: 15px;
+    height: 15px;
+    accent-color: #08c;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Sender account select */
+.ce-sender-select {
+    flex: 1;
+    max-width: 320px;
+    padding: 5px 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: var(--text-sm, 13px);
+    color: #262626;
+    background: #ffffff;
+    outline: none;
+    transition: border-color 150ms ease;
+}
+.ce-sender-select:focus { border-color: #0099cc; }
+
+/* ── Sequence section header ── */
+.ce-sequence-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px 5px;
+    flex-shrink: 0;
+}
+.ce-sequence-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #a3a3a3;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+}
+.ce-sequence-count {
+    font-size: var(--text-xs, 12px);
+    color: #a3a3a3;
+}
+
+/* ── Touch list ── */
+.ce-touch-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    max-height: 280px;
+}
+.ce-touch-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 100ms ease;
+}
+.ce-touch-item:last-child { border-bottom: none; }
+.ce-touch-item:hover { background-color: #f8f9fa; }
+
+.ce-touch-checkbox {
+    width: 15px;
+    height: 15px;
+    accent-color: #08c;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.ce-touch-subject {
+    flex: 1;
+    font-size: var(--text-sm, 13px);
+    color: #404040;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+/* Gray + strikethrough when unchecked — modern CSS :has() */
+.ce-touch-item:has(.ce-touch-checkbox:not(:checked)) .ce-touch-subject {
+    color: #a3a3a3;
+    text-decoration: line-through;
+}
+
+.ce-delay-select {
+    padding: 3px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: var(--text-xs, 12px);
+    color: #525252;
+    background: #ffffff;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 150ms ease;
+    max-width: 82px;
+    flex-shrink: 0;
+}
+.ce-delay-select:focus { border-color: #0099cc; }
+
+.ce-touch-actions {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+}
+.ce-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #c0c4cc;
+    border-radius: 4px;
+    transition: color 150ms ease, background-color 150ms ease;
+    padding: 0;
+}
+.ce-action-btn:hover { color: #08c; background-color: #f0f7ff; }
+.ce-action-btn svg { width: 16px; height: 16px; }
+
+/* ── Footer ── */
+.ce-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid #e2e4e8;
+    background-color: #f8f9fa;
+    flex-shrink: 0;
+}
+.ce-footer-left,
+.ce-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Base button */
+.ce-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: var(--text-sm, 13px);
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+    white-space: nowrap;
+    font-family: inherit;
+    line-height: 1;
+}
+
+/* Pause — neutral outline */
+.ce-btn-pause {
+    background-color: #ffffff;
+    border-color: #d4d4d4;
+    color: #525252;
+}
+.ce-btn-pause:hover { background-color: #f5f5f5; border-color: #a3a3a3; }
+
+/* Delete — red tint */
+.ce-btn-delete {
+    background-color: #fff1f2;
+    border-color: #fecdd3;
+    color: #e11d48;
+}
+.ce-btn-delete:hover { background-color: #ffe4e6; border-color: #fda4af; }
+
+/* Cancel — neutral outline */
+.ce-btn-cancel {
+    background-color: #ffffff;
+    border-color: #d4d4d4;
+    color: #525252;
+}
+.ce-btn-cancel:hover { background-color: #f5f5f5; border-color: #a3a3a3; }
+
+/* Save — primary blue */
+.ce-btn-save {
+    background-color: #08c;
+    border-color: #08c;
+    color: #ffffff;
+}
+.ce-btn-save:hover { background-color: #0077b3; border-color: #0077b3; }

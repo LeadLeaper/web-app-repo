@@ -423,3 +423,220 @@
     </ul>
 
 </div>
+
+<!-- ── Configure Engagement Modal ─────────────────────────────────────────
+     Rendered outside <aside> (portal) so panel overflow:hidden cannot clip.
+     ──────────────────────────────────────────────────────────────────────── -->
+<div class="ce-backdrop" id="ce-backdrop" aria-hidden="true"></div>
+<div class="ce-modal" id="ce-modal"
+     role="dialog" aria-modal="true" aria-labelledby="ce-title" aria-hidden="true">
+
+    <!-- Header -->
+    <div class="ce-header">
+        <h2 class="ce-title" id="ce-title">Configure Engagement</h2>
+        <button type="button" class="ce-close-btn" id="ce-close-btn" aria-label="Close dialog">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Settings: send time + exclude weekends + sender account -->
+    <div class="ce-settings">
+        <div class="ce-settings-row">
+            <span class="ce-label">Send emails at</span>
+            <div class="ce-time-wrap">
+                <input type="number" class="ce-time-num" id="ce-time-num"
+                       value="9" min="1" max="12" aria-label="Hour">
+                <div class="ce-time-spinners">
+                    <button type="button" class="ce-time-spin-btn" data-dir="up" aria-label="Increase hour">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="ce-time-spin-btn" data-dir="down" aria-label="Decrease hour">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                        </svg>
+                    </button>
+                </div>
+                <select class="ce-time-ampm" id="ce-time-ampm" aria-label="AM or PM">
+                    <option value="AM" selected>AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </div>
+            <span class="ce-label">local time</span>
+            <label class="ce-checkbox-label">
+                <input type="checkbox" class="ce-checkbox" id="ce-excl-weekends" checked>
+                Exclude weekends
+            </label>
+        </div>
+        <div class="ce-settings-row">
+            <label class="ce-label" for="ce-sender-select">Sender Account</label>
+            <select class="ce-sender-select" id="ce-sender-select">
+                <option>ksmith@widgets2.com</option>
+                <option>sales@yourcompany.com</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Sequence section label -->
+    <div class="ce-sequence-header">
+        <span class="ce-sequence-label">Engagement Sequence</span>
+        <span class="ce-sequence-count">5 touches</span>
+    </div>
+
+    <!-- Touch list -->
+    <div class="ce-touch-list" role="list">
+
+        <!-- Touch 1: first send — no delay selector -->
+        <div class="ce-touch-item" role="listitem" data-touch-id="1">
+            <input type="checkbox" class="ce-touch-checkbox" checked
+                   aria-label="Include touch 1">
+            <span class="ce-touch-subject">I like your post on mastering iGaming peak seasons</span>
+            <div class="ce-touch-actions">
+                <button type="button" class="ce-action-btn ce-preview-btn" title="Preview message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="up" title="Move up">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="down" title="Move down">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Touch 2 -->
+        <div class="ce-touch-item" role="listitem" data-touch-id="2">
+            <input type="checkbox" class="ce-touch-checkbox" checked
+                   aria-label="Include touch 2">
+            <span class="ce-touch-subject">Just saw the post by Zendesk on AI and human service</span>
+            <select class="ce-delay-select" aria-label="Delay before touch 2">
+                <option>1 day</option><option selected>2 days</option>
+                <option>3 days</option><option>5 days</option><option>1 week</option>
+            </select>
+            <div class="ce-touch-actions">
+                <button type="button" class="ce-action-btn ce-preview-btn" title="Preview message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="up" title="Move up">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="down" title="Move down">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Touch 3 -->
+        <div class="ce-touch-item" role="listitem" data-touch-id="3">
+            <input type="checkbox" class="ce-touch-checkbox" checked
+                   aria-label="Include touch 3">
+            <span class="ce-touch-subject">Helping Zendesk overcome challenges with evolving competition</span>
+            <select class="ce-delay-select" aria-label="Delay before touch 3">
+                <option>1 day</option><option selected>2 days</option>
+                <option>3 days</option><option>5 days</option><option>1 week</option>
+            </select>
+            <div class="ce-touch-actions">
+                <button type="button" class="ce-action-btn ce-preview-btn" title="Preview message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="up" title="Move up">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="down" title="Move down">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Touch 4 -->
+        <div class="ce-touch-item" role="listitem" data-touch-id="4">
+            <input type="checkbox" class="ce-touch-checkbox" checked
+                   aria-label="Include touch 4">
+            <span class="ce-touch-subject">ZDSK expands testing services with new IELTS exams</span>
+            <select class="ce-delay-select" aria-label="Delay before touch 4">
+                <option>1 day</option><option selected>2 days</option>
+                <option>3 days</option><option>5 days</option><option>1 week</option>
+            </select>
+            <div class="ce-touch-actions">
+                <button type="button" class="ce-action-btn ce-preview-btn" title="Preview message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="up" title="Move up">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="down" title="Move down">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Touch 5 -->
+        <div class="ce-touch-item" role="listitem" data-touch-id="5">
+            <input type="checkbox" class="ce-touch-checkbox" checked
+                   aria-label="Include touch 5">
+            <span class="ce-touch-subject">Boost ZDSK's Enrollment Success Amid Competition from Online Platforms</span>
+            <select class="ce-delay-select" aria-label="Delay before touch 5">
+                <option>1 day</option><option selected>2 days</option>
+                <option>3 days</option><option>5 days</option><option>1 week</option>
+            </select>
+            <div class="ce-touch-actions">
+                <button type="button" class="ce-action-btn ce-preview-btn" title="Preview message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="up" title="Move up">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                    </svg>
+                </button>
+                <button type="button" class="ce-action-btn ce-move-btn" data-dir="down" title="Move down">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </div><!-- /.ce-touch-list -->
+
+    <!-- Footer -->
+    <div class="ce-footer">
+        <div class="ce-footer-left">
+            <button type="button" class="ce-btn ce-btn-pause">Pause</button>
+            <button type="button" class="ce-btn ce-btn-delete">Delete</button>
+        </div>
+        <div class="ce-footer-right">
+            <button type="button" class="ce-btn ce-btn-cancel" id="ce-cancel-btn">Cancel</button>
+            <button type="button" class="ce-btn ce-btn-save">Save</button>
+        </div>
+    </div>
+
+</div><!-- /.ce-modal -->
