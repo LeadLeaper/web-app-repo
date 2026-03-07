@@ -360,8 +360,12 @@
         const hash = window.location.hash.replace('#', '');
 
         if (hash) {
+            // Extract only the section portion: loadSubsection() sets hashes like
+            // "sender/sender-accounts" — split on '/' and use only the first segment
+            // so items with subsections keep their active state after click.
+            const section = hash.split('/')[0];
             $navItems.removeClass(CLASS_ACTIVE);
-            $navItems.filter('[data-section="' + hash + '"]').addClass(CLASS_ACTIVE);
+            $navItems.filter('[data-section="' + section + '"]').addClass(CLASS_ACTIVE);
             return;
         }
 
