@@ -1,0 +1,56 @@
+/**
+ * Modern Visual Design System - Theme Variables
+ *
+ * Neutral color palette and design tokens for professional SaaS aesthetic.
+ * All variables are globally scoped via :root for use throughout the application.
+ */
+
+:root {
+  /* ===== Base Colors (Neutral Grays) ===== */
+  --color-neutral-50: #fafafa;   /* Lightest backgrounds */
+  --color-neutral-100: #f5f5f5;  /* Subtle backgrounds */
+  --color-neutral-200: #e5e5e5;  /* Borders, dividers */
+  --color-neutral-300: #d4d4d4;  /* Disabled states */
+  --color-neutral-400: #a3a3a3;  /* Placeholder text */
+  --color-neutral-500: #737373;  /* Secondary text */
+  --color-neutral-600: #525252;  /* Body text */
+  --color-neutral-700: #404040;  /* Headings */
+  --color-neutral-800: #262626;  /* Strong emphasis */
+  --color-neutral-900: #171717;  /* Darkest text */
+
+  /* ===== Brand Colors ===== */
+  --color-primary: #08c;         /* Existing brand blue - CTAs and highlights */
+  --color-primary-hover: #0077b3; /* Darker for hover states */
+  --color-primary-light: #e6f4fb; /* Light backgrounds for selected items */
+
+  /* ===== Semantic Colors ===== */
+  --color-success: #22c55e;      /* Green for positive actions */
+  --color-warning: #f59e0b;      /* Amber for warnings */
+  --color-error: #ef4444;        /* Red for errors */
+  --color-info: #3b82f6;         /* Blue for informational */
+
+  /* ===== Surface Colors ===== */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: var(--color-neutral-50);
+  --color-bg-tertiary: var(--color-neutral-100);
+  --color-border: var(--color-neutral-200);
+  --color-border-focus: var(--color-primary);
+
+  /* ===== Spacing System ===== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* ===== Border Radius ===== */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* ===== Shadows ===== */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
