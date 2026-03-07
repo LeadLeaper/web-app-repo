@@ -104,7 +104,8 @@ body {
     display: flex;
 }
 
-/* Nav link fills the item — flex centering replaces fixed padding */
+/* Nav link fills the item — flex centering replaces fixed padding.
+   border-left baseline is inherited from .nav-link general rule. */
 .nav-list .nav-link {
     flex: 1;
     padding: 0;
@@ -145,26 +146,17 @@ body {
     transition: background-color 200ms ease;
     white-space: nowrap;
     position: relative;
+    border-left: 3px solid transparent;
 }
 
 .nav-link:hover {
     background-color: #e8e8e8;
 }
 
-/* Active Navigation Item — left accent bar via ::before pseudo-element.
-   Anchored to the LEFT edge of the nav-link (position: relative).
-   Immune to scroll-container top-edge clipping, fractional flex heights,
-   and background-color compositor layer artifacts — all three root causes
-   of the previous top/bottom indicator jitter. */
-.nav-item.active .nav-link::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background-color: #08c;
-    border-radius: 0 2px 2px 0;
+/* Active Navigation Item — color the transparent baseline border-left blue.
+   Pure CSS color change: no layout shift, no compositor artifacts. */
+.nav-item.active .nav-link {
+    border-left-color: #08c;
 }
 
 /* Navigation Icon */
