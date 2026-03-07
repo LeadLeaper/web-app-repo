@@ -147,6 +147,11 @@ body {
     white-space: nowrap;
     position: relative;
     border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+}
+
+.nav-link:focus {
+    outline: none; /* left-border color change is the focus indicator */
 }
 
 .nav-link:hover {
@@ -159,14 +164,15 @@ body {
     border-left-color: #08c;
 }
 
-/* Navigation Icon */
+/* Navigation Icon — width: 100% fills the nav-link's content area (60px minus the
+   3px left + 3px right transparent baseline borders = 54px), so justify-content:center
+   places the SVG at exactly the nav midpoint regardless of the border state. */
 .nav-icon {
-    width: 60px;
+    width: 100%;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
 }
 
 .nav-icon svg {
