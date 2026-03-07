@@ -104,10 +104,14 @@ body {
     display: flex;
 }
 
-/* Nav link fills the item — flex centering replaces fixed padding */
+/* Nav link fills the item — flex centering replaces fixed padding.
+   Transparent baseline borders reserve 3px top/bottom on ALL items so
+   activation is a color-only change (no layout shift, no height jitter). */
 .nav-list .nav-link {
     flex: 1;
     padding: 0;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
 }
 
 /* Navigation Footer - Bottom Utilities (User & Help) */
@@ -151,9 +155,11 @@ body {
     background-color: #e8e8e8;
 }
 
-/* Active Navigation Item — inset box-shadow bars (GPU-composited, no jitter) */
+/* Active Navigation Item — border-top/bottom (box-model; immune to compositor
+   layer artifacts, scroll-container clipping, and sub-pixel flex rounding) */
 .nav-item.active .nav-link {
-    box-shadow: inset 0 3px 0 #08c, inset 0 -3px 0 #08c;
+    border-top-color: #08c;
+    border-bottom-color: #08c;
 }
 
 /* Navigation Icon */
