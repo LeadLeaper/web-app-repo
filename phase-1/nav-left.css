@@ -104,14 +104,10 @@ body {
     display: flex;
 }
 
-/* Nav link fills the item — flex centering replaces fixed padding.
-   Transparent baseline borders reserve 3px top/bottom on ALL items so
-   activation is a color-only change (no layout shift, no height jitter). */
+/* Nav link fills the item — flex centering replaces fixed padding */
 .nav-list .nav-link {
     flex: 1;
     padding: 0;
-    border-top: 3px solid transparent;
-    border-bottom: 3px solid transparent;
 }
 
 /* Navigation Footer - Bottom Utilities (User & Help) */
@@ -155,11 +151,20 @@ body {
     background-color: #e8e8e8;
 }
 
-/* Active Navigation Item — border-top/bottom (box-model; immune to compositor
-   layer artifacts, scroll-container clipping, and sub-pixel flex rounding) */
-.nav-item.active .nav-link {
-    border-top-color: #08c;
-    border-bottom-color: #08c;
+/* Active Navigation Item — left accent bar via ::before pseudo-element.
+   Anchored to the LEFT edge of the nav-link (position: relative).
+   Immune to scroll-container top-edge clipping, fractional flex heights,
+   and background-color compositor layer artifacts — all three root causes
+   of the previous top/bottom indicator jitter. */
+.nav-item.active .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #08c;
+    border-radius: 0 2px 2px 0;
 }
 
 /* Navigation Icon */
