@@ -201,6 +201,32 @@
     function updatePanelContent(contactData) {
         const $panel = $('.profile-panel');
         const $content = $('.profile-content');
+
+        // If currently in AI Engagement view, reset back to CRM view before loading the new
+        // contact. updatePanelContent() renders into .profile-content (the CRM container);
+        // jQuery's fadeIn() sets display:block inline, which overrides the CSS display:none
+        // applied by .ai-view-active — causing both views to appear simultaneously.
+        if (panelCurrentView === 'ai') {
+            switchToCrmView();
+            if (quillsInitialized) {
+                $('.ai-editor').empty();
+                quillsInitialized = false;
+            }
+            // Reset AI section collapse states
+            $('.ai-section').removeClass('collapsed');
+            $('.ai-section-toggle').text('hide').attr('data-state', 'visible');
+            $('.ai-post-block').addClass('collapsed');
+            $('.ai-post-block-toggle').text('show more').attr('aria-label', 'Show post text');
+            $('.ai-comment-textarea').val('').each(function() { this.style.height = ''; });
+            // Close and reset all AI+ dropdown states
+            $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
+            $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
+            $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
+            $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
+        }
+
         $content.fadeOut(200, function() {
             $content.html('<div class="loading-spinner"></div>').show();
             setTimeout(function() {
