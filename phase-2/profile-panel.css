@@ -2,6 +2,66 @@
    Profile Panel — Interaction Skeleton
    ======================================== */
 
+/* ============================================================
+   BOOTSTRAP v3 BLEED OVERRIDES (v29)
+   Scoped to new-UI components only. Counters Bootstrap v3
+   global rules that would otherwise leak into the panel and
+   modals. Load order: this file loads after grav8ai.css, so
+   these scoped rules win without needing !important.
+   ============================================================ */
+
+/* Bootstrap v3: p { margin: 0 0 10px; } — adds unwanted bottom
+   margin to paragraphs inside all new-UI components */
+.profile-panel p,
+.ce-modal p,
+#rp-employer-modal p,
+#rp-ll-modal p {
+    margin: 0;
+}
+
+/* Bootstrap v3: h2 { font-size: 30px; font-weight: 500; line-height: 1.1; }
+   — inflates modal titles (.rp-title, .ce-title) which are <h2> elements */
+.ce-modal h2,
+#rp-employer-modal h2,
+#rp-ll-modal h2 {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    margin: 0;
+}
+
+/* Bootstrap v3: h3 { font-size: 22px; } — inflates .rp-section-heading */
+#rp-employer-modal h3,
+#rp-ll-modal h3 {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    margin: 0;
+}
+
+/* Bootstrap v3: ul, ol { margin: 0 0 10px; padding-left: 25px; }
+   — adds unwanted margin/padding to lists inside research modal content */
+#rp-employer-modal ul,
+#rp-ll-modal ul {
+    margin: 4px 0 0 0;
+    padding-left: 18px;
+}
+
+/* ll-main-content layout (companion to #left-nav position:fixed in ll-nav-left.css) */
+#ll-main-content {
+    margin-left: 60px;
+    min-height: 100vh;
+    padding: 20px;
+    background-color: #f5f5f5;
+    box-sizing: border-box;
+}
+
+/* Legacy nav item visibility — controlled by body.ll-legacy class */
+body.ll-legacy  .ll-legacy-only { display: list-item; }
+body:not(.ll-legacy) .ll-legacy-only { display: none; }
+
+/* ============================================================ */
+
 /* Panel container + slide animation */
 .profile-panel {
     position: fixed;
