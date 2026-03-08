@@ -258,6 +258,8 @@
         if (!$panel.hasClass('open')) return;
         $panel.removeClass('open');
         $('#panel-view-toggle').removeClass('visible ai-view');
+        // Close any open research modals
+        closeEmployerResearchModal();
         // Close any open AI+ dropdowns and reset their states to "start"
         $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-engagement-dropdown')
@@ -386,6 +388,31 @@
         console.log('[AI View] Quill editors initialized');
     }
 
+    // ─── Employer Research modal ─────────────────────────────────────────────
+
+    function openEmployerResearchModal(contactData) {
+        var company = (contactData && contactData.company) || '';
+        $('#rp-employer-subtitle').text(company ? '· ' + company : '');
+        var content = (contactData && contactData.employerResearch) || '';
+        if (!content) {
+            content = '<div class="rp-section"><p style="color:#a3a3a3;font-size:13px;">No employer research available for this contact yet.</p></div>';
+        }
+        $('#rp-employer-content').html(content);
+        // Reset scroll to top
+        $('#rp-employer-modal .rp-body').scrollTop(0);
+        $('#rp-employer-modal').addClass('open').attr('aria-hidden', 'false');
+        $('#rp-employer-backdrop').addClass('open');
+        setTimeout(function() {
+            var btn = document.getElementById('rp-employer-close-btn');
+            if (btn) btn.focus();
+        }, 50);
+    }
+
+    function closeEmployerResearchModal() {
+        $('#rp-employer-modal').removeClass('open').attr('aria-hidden', 'true');
+        $('#rp-employer-backdrop').removeClass('open');
+    }
+
     // ─── Configure Engagement modal ─────────────────────────────────────────
 
     function openCeModal() {
@@ -405,10 +432,11 @@
 
     // ⑤ All panel event handlers
     function setupPanelHandlers() {
-        // ESC to close — modal takes priority over panel
+        // ESC to close — modals take priority over panel
         $(document).on('keydown', function(e) {
             if (e.which === 27) {
                 if ($('#ce-modal').hasClass('open')) { closeCeModal(); return; }
+                if ($('#rp-employer-modal').hasClass('open')) { closeEmployerResearchModal(); return; }
                 var $panel = $('.profile-panel');
                 if ($panel.hasClass('open')) closeProfilePanel();
             }
@@ -423,6 +451,11 @@
 
         // Close on backdrop click, X button, or Cancel
         $(document).on('click', '#ce-backdrop, #ce-close-btn, #ce-cancel-btn', closeCeModal);
+
+        // ── Employer Research modal ──────────────────────────────────────────
+
+        $(document).on('click', '#rp-employer-backdrop, #rp-employer-close-btn, #rp-employer-close-btn2',
+            closeEmployerResearchModal);
 
         // Hour spinner up/down buttons
         $(document).on('click', '.ce-time-spin-btn', function() {
@@ -673,6 +706,11 @@
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'employer-research') {
                 const currentState = $('#ai-research-dropdown').attr('data-state');
                 if (currentState === 'start') setAiResearchState('active');
+                // Open Employer Research modal with current contact's data
+                const currentId = $('.profile-panel').data('contact-id');
+                const contacts = window.currentContactList || [];
+                const contactData = contacts.find(c => c.id === currentId) || {};
+                openEmployerResearchModal(contactData);
             }
             if (dropdownId === 'ai-slack-dropdown' && aiAction === 'post-vsr-channel') {
                 const currentState = $('#ai-slack-dropdown').attr('data-state');
@@ -689,10 +727,12 @@
         });
     }
 
-    window.openProfilePanel      = openProfilePanel;
-    window.closeProfilePanel     = closeProfilePanel;
-    window.openCeModal           = openCeModal;
-    window.closeCeModal          = closeCeModal;
+    window.openProfilePanel            = openProfilePanel;
+    window.closeProfilePanel           = closeProfilePanel;
+    window.openCeModal                 = openCeModal;
+    window.closeCeModal                = closeCeModal;
+    window.openEmployerResearchModal   = openEmployerResearchModal;
+    window.closeEmployerResearchModal  = closeEmployerResearchModal;
     window.updatePanelContent    = updatePanelContent;
     window.navigateContact       = navigateContact;
     window.setupPanelHandlers    = setupPanelHandlers;

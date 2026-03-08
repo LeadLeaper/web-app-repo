@@ -14,7 +14,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=25">
+    <link rel="stylesheet" href="profile-panel.css?v=27">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1606,12 +1606,45 @@
 
 </div><!-- /.ce-modal -->
 
+<!-- ════════════════════════════════════════════════════════════════════════
+     Employer Research Modal
+     Opened by: AI+ Research → "Employer Research" dropdown item.
+     Portal pattern: sibling of <aside> to escape overflow:hidden.
+     ════════════════════════════════════════════════════════════════════════ -->
+<div class="rp-backdrop" id="rp-employer-backdrop" aria-hidden="true"></div>
+<div class="rp-modal" id="rp-employer-modal"
+     role="dialog" aria-modal="true" aria-labelledby="rp-employer-title" aria-hidden="true">
+
+    <div class="rp-header">
+        <div class="rp-header-left">
+            <h2 class="rp-title" id="rp-employer-title">Employer Research</h2>
+            <span class="rp-subtitle" id="rp-employer-subtitle"></span>
+        </div>
+        <button type="button" class="rp-close-btn" id="rp-employer-close-btn" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="rp-body">
+        <div id="rp-employer-content">
+            <!-- Populated dynamically from contact's employerResearch data -->
+        </div>
+    </div>
+
+    <div class="rp-footer">
+        <button type="button" class="ce-btn ce-btn-cancel" id="rp-employer-close-btn2">Close</button>
+    </div>
+
+</div><!-- /.rp-modal#rp-employer-modal -->
+
     <!-- jQuery and Navigation Script -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="../phase-1/nav-left.js?v=2"></script>
     <!-- Quill.js (must load before profile-panel.js) -->
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=24"></script>
+    <script src="profile-panel.js?v=25"></script>
 
     <!-- Section Switching Script -->
     <script>
@@ -1702,7 +1735,8 @@
                     emailsSent: 8,
                     about: 'Results-driven sales leader with 12+ years driving enterprise revenue growth. Passionate about building high-performance teams and leveraging data-driven strategies to exceed targets. Experienced in SaaS, fintech, and enterprise software verticals. Consistently delivered 130%+ quota attainment through consultative selling and strong executive relationships.',
                     leadOwner: 'Greg Hensonsworth',
-                    createdAt: 'Feb 1, 2026 @ 9:15 AM'
+                    createdAt: 'Feb 1, 2026 @ 9:15 AM',
+                    employerResearch: `<div class="rp-section"><h3 class="rp-section-heading">Company Name</h3><p class="rp-company-value">Acme Corp</p></div><div class="rp-section"><h3 class="rp-section-heading">Company Overview</h3><p>Acme Corp is a leading enterprise software company headquartered in San Francisco, CA. Founded in 1998, the company specializes in cloud-based solutions for enterprise resource planning, customer relationship management, and supply chain optimization. Serving over 4,000 enterprise clients across 60+ countries, Acme Corp has established itself as a trusted partner for digital transformation initiatives across manufacturing, financial services, and healthcare verticals.</p></div><div class="rp-section"><h3 class="rp-section-heading">Mission and Objectives</h3><p>Acme Corp's mission is to empower organizations through intelligent, scalable software that eliminates operational friction and accelerates growth. Their primary objectives center on delivering measurable ROI for enterprise clients, expanding market share in the mid-market segment, and deepening AI integration across their product suite to drive automation and predictive analytics capabilities.</p></div><div class="rp-section"><h3 class="rp-section-heading">Value Proposition</h3><p>Acme Corp differentiates through its unified platform architecture, which reduces integration complexity and total cost of ownership. Clients benefit from a single vendor relationship for core business functions, supported by a professional services network of 2,000+ certified implementation partners. Their enterprise-grade SLA commitments and 99.9% uptime record underpin strong customer retention rates above industry average.</p></div><div class="rp-section"><h3 class="rp-section-heading">Products and Services</h3><ul><li>Acme ERP Cloud — unified financial and operations management platform</li><li>Acme CRM Pro — sales pipeline and customer lifecycle management</li><li>Acme Supply Chain Intelligence — AI-powered inventory and logistics optimization</li><li>Acme Analytics Studio — self-service BI and reporting dashboards</li><li>Acme Integration Hub — pre-built connectors for 500+ enterprise systems</li><li>Professional Services & Implementation — enterprise onboarding and customization</li></ul></div><div class="rp-section"><h3 class="rp-section-heading">Customer Pain Points</h3><p>Enterprise buyers frequently cite concerns around implementation timelines and the complexity of migrating legacy data systems. Competitive pressure from niche-focused ERP providers has prompted Acme to accelerate its modular adoption model, allowing smaller deployments to prove value before full commitment.</p></div>`
                 },
                 {
                     id: 2,
@@ -1738,7 +1772,8 @@
                     emailLinksViewed: 8,
                     emailsSent: 4,
                     leadOwner: 'Greg Hensonsworth',
-                    createdAt: 'Jan 15, 2026 @ 11:30 AM'
+                    createdAt: 'Jan 15, 2026 @ 11:30 AM',
+                    employerResearch: `<div class="rp-section"><h3 class="rp-section-heading">Company Name</h3><p class="rp-company-value">TechStart Inc</p></div><div class="rp-section"><h3 class="rp-section-heading">Company Overview</h3><p>TechStart Inc is a fast-growing B2B SaaS company based in Austin, TX, focused on marketing intelligence and go-to-market automation. Founded in 2019, the company has grown to 75 employees and raised $28M in Series B funding. TechStart's platform helps revenue teams identify intent signals, automate prospect engagement, and measure multi-touch attribution across digital channels.</p></div><div class="rp-section"><h3 class="rp-section-heading">Mission and Objectives</h3><p>TechStart's mission is to make data-driven marketing accessible to every B2B sales and marketing team. Near-term objectives include doubling ARR within 18 months, expanding into the European market, and launching an AI-powered content personalization module that integrates directly with major CRM platforms.</p></div><div class="rp-section"><h3 class="rp-section-heading">Value Proposition</h3><p>TechStart offers a lightweight, developer-friendly alternative to enterprise marketing automation suites. Their real-time intent data engine and no-code workflow builder allow small teams to deploy sophisticated campaigns without dedicated marketing operations staff. Average customer time-to-value is under 14 days.</p></div><div class="rp-section"><h3 class="rp-section-heading">Products and Services</h3><ul><li>Intent Signal Engine — real-time buyer intent data across 40M+ B2B profiles</li><li>Campaign Orchestrator — no-code multi-channel outreach automation</li><li>Attribution Intelligence — multi-touch revenue attribution and pipeline reporting</li><li>CRM Sync — native integrations with Salesforce, HubSpot, and Pipedrive</li><li>TechStart API — developer access for custom workflow and data integrations</li></ul></div>`
                 },
                 {
                     id: 3,
@@ -1769,7 +1804,8 @@
                     about: 'Marketing executive with expertise in brand strategy, demand generation, and multi-channel campaigns for global enterprise brands. Led teams across 8 countries driving measurable pipeline impact. Speaker at MozCon, B2B Summit, and Marketing Week. Passionate about data-driven storytelling and sustainable growth.',
                     emailReplies: 0,
                     emailLinksViewed: 2,
-                    emailsSent: 3
+                    emailsSent: 3,
+                    employerResearch: `<div class="rp-section"><h3 class="rp-section-heading">Company Name</h3><p class="rp-company-value">Global Systems</p></div><div class="rp-section"><h3 class="rp-section-heading">Company Overview</h3><p>Global Systems is a multinational logistics and supply chain management company headquartered in New York, NY. With over 1,000 employees and operations in 22 countries, the company provides integrated freight forwarding, warehousing, customs brokerage, and last-mile delivery solutions to enterprise and mid-market clients.</p></div><div class="rp-section"><h3 class="rp-section-heading">Mission and Objectives</h3><p>Global Systems aims to deliver end-to-end supply chain visibility and reliability for clients navigating complex global trade environments. Current objectives include automating customs documentation workflows, expanding their cold-chain logistics network into Southeast Asia, and deploying predictive ETD/ETA tooling across their carrier network.</p></div><div class="rp-section"><h3 class="rp-section-heading">Value Proposition</h3><p>Global Systems differentiates through its proprietary TradePath platform, which centralizes carrier communication, document management, and shipment tracking into a single interface. Clients reduce freight administration overhead by an average of 35% and gain real-time exceptions management across all trade lanes.</p></div><div class="rp-section"><h3 class="rp-section-heading">Products and Services</h3><ul><li>International freight forwarding — air, ocean, and ground</li><li>Customs brokerage and trade compliance consulting</li><li>Contract warehousing and distribution center management</li><li>TradePath platform — visibility, document management, and analytics</li><li>Cold-chain and temperature-controlled logistics</li></ul></div>`
                 },
                 {
                     id: 4,
@@ -1805,7 +1841,8 @@
                     about: 'Engineering leader and AI researcher exploring the boundaries of what machines can learn. 15+ years building distributed systems at scale. Published researcher in NLP and computer vision. I believe the next decade belongs to teams that can move fast without breaking trust. Open to speaking engagements on AI ethics and ML infrastructure.',
                     emailReplies: 3,
                     emailLinksViewed: 15,
-                    emailsSent: 5
+                    emailsSent: 5,
+                    employerResearch: `<div class="rp-section"><h3 class="rp-section-heading">Company Name</h3><p class="rp-company-value">Innovation Labs</p></div><div class="rp-section"><h3 class="rp-section-heading">Company Overview</h3><p>Innovation Labs is an applied AI research and development company based in Seattle, WA. With 100–200 employees, the company bridges academic research and commercial deployment — building production-ready ML infrastructure, NLP systems, and computer vision tooling for enterprise clients across healthcare, financial services, and autonomous systems.</p></div><div class="rp-section"><h3 class="rp-section-heading">Mission and Objectives</h3><p>Innovation Labs' mission is to accelerate the responsible deployment of AI in high-stakes environments. Near-term objectives include commercializing their large-scale document understanding API, growing their healthcare vertical through partnerships with major health systems, and expanding their team of ML researchers with expertise in alignment and interpretability.</p></div><div class="rp-section"><h3 class="rp-section-heading">Value Proposition</h3><p>Unlike pure research labs or general-purpose AI vendors, Innovation Labs operates at the intersection of rigorous research and production engineering. Clients receive access to state-of-the-art models fine-tuned on domain-specific data, with full audit trails and explainability tooling built in from day one.</p></div><div class="rp-section"><h3 class="rp-section-heading">Products and Services</h3><ul><li>Document AI Platform — intelligent extraction and classification at scale</li><li>ML Infrastructure-as-a-Service — managed training pipelines and inference endpoints</li><li>Computer Vision APIs — object detection, medical imaging analysis, and quality control</li><li>NLP Research Partnerships — custom model development and fine-tuning engagements</li><li>AI Audit & Explainability Toolkit — governance and compliance for regulated industries</li></ul></div>`
                 },
                 {
                     id: 5,
@@ -1834,7 +1871,8 @@
                     about: 'Relationship-focused account manager with a track record of growing enterprise accounts and navigating complex stakeholder environments. Specialized in digital transformation consulting across financial services and healthcare. Committed to understanding client goals first and delivering solutions that actually stick.',
                     emailReplies: 0,
                     emailLinksViewed: 0,
-                    emailsSent: 2
+                    emailsSent: 2,
+                    employerResearch: `<div class="rp-section"><h3 class="rp-section-heading">Company Name</h3><p class="rp-company-value">Enterprise Solutions</p></div><div class="rp-section"><h3 class="rp-section-heading">Company Overview</h3><p>Enterprise Solutions is a mid-sized management consulting firm headquartered in Chicago, IL. With 500–1,000 employees across North America and Europe, the firm provides digital transformation advisory, technology implementation, and change management services to Fortune 1000 clients in financial services, healthcare, and the public sector.</p></div><div class="rp-section"><h3 class="rp-section-heading">Mission and Objectives</h3><p>Enterprise Solutions' mission is to help large organizations navigate complex transformations with confidence. Current strategic objectives include expanding their data and analytics practice, deepening their hyperscaler partnerships (AWS, Azure, GCP), and growing recurring managed services revenue to represent 40% of total billings within two years.</p></div><div class="rp-section"><h3 class="rp-section-heading">Value Proposition</h3><p>Enterprise Solutions combines deep industry expertise with hands-on delivery capability, positioning itself between boutique specialists and the large systems integrators. Clients value their ability to deploy senior practitioners — not junior staff — throughout engagements, and their track record in navigating regulated environments where change carries real organizational risk.</p></div><div class="rp-section"><h3 class="rp-section-heading">Products and Services</h3><ul><li>Digital transformation strategy and roadmapping</li><li>ERP and CRM implementation (Salesforce, SAP, Oracle)</li><li>Data modernization and cloud migration</li><li>Organizational change management and training</li><li>Managed IT services and application support</li></ul></div>`
                 }
             ];
 
