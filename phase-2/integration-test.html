@@ -14,7 +14,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=27">
+    <link rel="stylesheet" href="profile-panel.css?v=28">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1639,12 +1639,74 @@
 
 </div><!-- /.rp-modal#rp-employer-modal -->
 
+<!-- ════════════════════════════════════════════════════════════════════════
+     LeadLeaper (User Company) Research Modal
+     Opened by: AI+ Research → "LeadLeaper Research" dropdown item.
+     Content is pre-defined HTML (user's own company — not per-contact).
+     Edit mode: .rp-editable fields become contenteditable; amber border.
+     ════════════════════════════════════════════════════════════════════════ -->
+<div class="rp-backdrop" id="rp-ll-backdrop" aria-hidden="true"></div>
+<div class="rp-modal" id="rp-ll-modal"
+     role="dialog" aria-modal="true" aria-labelledby="rp-ll-title" aria-hidden="true">
+
+    <div class="rp-header">
+        <div class="rp-header-left">
+            <h2 class="rp-title" id="rp-ll-title">LeadLeaper Research</h2>
+        </div>
+        <button type="button" class="rp-close-btn" id="rp-ll-close-btn-x" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="rp-body">
+
+        <div class="rp-section">
+            <h3 class="rp-section-heading">Company Name</h3>
+            <div class="rp-editable rp-company-val" contenteditable="false">LeadLeaper</div>
+        </div>
+
+        <div class="rp-section">
+            <h3 class="rp-section-heading">Company Overview</h3>
+            <div class="rp-editable" contenteditable="false"><p>LeadLeaper is a sales automation platform designed to streamline lead generation and outreach processes for sales professionals. The platform provides tools to capture leads directly from social professional networks and automate personalized email campaigns. It serves as a bridge between lead discovery and active sales engagement, aiming to increase the efficiency of cold outreach efforts.</p></div>
+        </div>
+
+        <div class="rp-section">
+            <h3 class="rp-section-heading">Mission and Objectives</h3>
+            <div class="rp-editable" contenteditable="false"><p>The mission of the organization is to simplify the sales prospecting process by providing accurate lead data and automated communication tools. Their objectives include helping sales teams save time on manual data entry, improving email deliverability, and increasing the overall volume of qualified leads in the sales pipeline.</p></div>
+        </div>
+
+        <div class="rp-section">
+            <h3 class="rp-section-heading">Value Proposition</h3>
+            <div class="rp-editable" contenteditable="false"><p>LeadLeaper offers a cost-effective and user-friendly solution for sales professionals to find verified contact information and execute outreach at scale. By integrating directly with browsers and email clients, it minimizes friction in the lead generation workflow.</p></div>
+        </div>
+
+        <div class="rp-section">
+            <h3 class="rp-section-heading">Products and Services</h3>
+            <div class="rp-editable" contenteditable="false"><p>LeadLeaper provides a suite of tools focused on sales engagement and lead management.</p><ul><li><strong>LeadLeaper Browser Extension</strong> — captures lead information and email addresses directly from LinkedIn profiles.</li><li><strong>Email Campaign Automation</strong> — sets up and schedules automated, personalized email sequences for outreach.</li><li><strong>Lead Management Dashboard</strong> — centralizes lead organization, engagement tracking, and follow-up management.</li><li><strong>Email Tracking</strong> — notifies users when prospects open their emails, providing real-time engagement data.</li><li><strong>Email Verification</strong> — validates found email addresses to ensure high deliverability and low bounce rates.</li></ul></div>
+        </div>
+
+        <div class="rp-section">
+            <h3 class="rp-section-heading">Customer Pain Points</h3>
+            <div class="rp-editable" contenteditable="false"><p>The company addresses several key challenges faced by modern sales and recruitment teams.</p><ul><li><strong>Manual Data Entry</strong> — sales teams waste hours manually copying lead information from social media into internal systems.</li><li><strong>Inaccurate Contact Data</strong> — sending emails to incorrect addresses leads to high bounce rates and damaged sender reputation.</li><li><strong>Low Prospecting Efficiency</strong> — finding and contacting leads individually is time-consuming and difficult to scale without automation.</li><li><strong>Lack of Engagement Tracking</strong> — sales reps often don't know if their outreach is being read, making it hard to prioritize follow-ups.</li></ul></div>
+        </div>
+
+    </div><!-- /.rp-body -->
+
+    <div class="rp-footer">
+        <button type="button" class="ce-btn ce-btn-cancel" id="rp-ll-close-btn">Close</button>
+        <button type="button" class="ce-btn ce-btn-save" id="rp-ll-action-btn">Edit</button>
+    </div>
+
+</div><!-- /.rp-modal#rp-ll-modal -->
+
     <!-- jQuery and Navigation Script -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="../phase-1/nav-left.js?v=2"></script>
     <!-- Quill.js (must load before profile-panel.js) -->
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=25"></script>
+    <script src="profile-panel.js?v=26"></script>
 
     <!-- Section Switching Script -->
     <script>

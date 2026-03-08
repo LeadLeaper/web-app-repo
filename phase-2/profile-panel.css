@@ -1606,3 +1606,53 @@
     background-color: #f8f9fa;
     flex-shrink: 0;
 }
+
+/* ── Editable value fields (LeadLeaper Research modal) ── */
+/* View mode: renders like plain text, no border */
+.rp-editable {
+    font-size: var(--text-sm, 13px);
+    color: #404040;
+    line-height: 1.65;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;   /* collapse padding so it aligns flush in view mode */
+    word-break: break-word;
+    transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+/* Inline text nodes inside .rp-editable don't need the p-margin reset */
+.rp-editable p { margin: 0 0 8px 0; }
+.rp-editable p:last-child { margin-bottom: 0; }
+.rp-editable ul { margin: 0; padding-left: 20px; }
+.rp-editable li { margin-bottom: 4px; }
+.rp-editable li:last-child { margin-bottom: 0; }
+
+/* Company name value — blue accent */
+.rp-editable.rp-company-val {
+    font-size: var(--text-base, 15px);
+    font-weight: 500;
+    color: #08c;
+}
+
+/* Edit mode: amber highlight on all editable fields */
+#rp-ll-modal.edit-mode .rp-editable {
+    border-color: #f59e0b;
+    background-color: #fffef5;
+    padding: 6px 8px;
+    margin: 0;
+    cursor: text;
+    outline: none;
+}
+#rp-ll-modal.edit-mode .rp-editable:focus {
+    border-color: #d97706;
+    background-color: #fffbf0;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
+}
+
+/* Save button shown in edit mode (green) */
+.rp-btn-save-green {
+    background-color: #22c55e;
+    border-color: #22c55e;
+    color: #ffffff;
+}
+.rp-btn-save-green:hover { background-color: #16a34a; border-color: #16a34a; }

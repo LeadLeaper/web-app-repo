@@ -260,6 +260,7 @@
         $('#panel-view-toggle').removeClass('visible ai-view');
         // Close any open research modals
         closeEmployerResearchModal();
+        closeLeadLeaperResearchModal();
         // Close any open AI+ dropdowns and reset their states to "start"
         $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-engagement-dropdown')
@@ -413,6 +414,60 @@
         $('#rp-employer-backdrop').removeClass('open');
     }
 
+    // ─── LeadLeaper Research modal ───────────────────────────────────────────
+
+    function openLeadLeaperResearchModal() {
+        // Ensure we open in view mode (reset any lingering edit state)
+        exitLlEditMode(false);
+        $('#rp-ll-modal .rp-body').scrollTop(0);
+        $('#rp-ll-modal').addClass('open').attr('aria-hidden', 'false');
+        $('#rp-ll-backdrop').addClass('open');
+        setTimeout(function() {
+            var btn = document.getElementById('rp-ll-close-btn-x');
+            if (btn) btn.focus();
+        }, 50);
+    }
+
+    function closeLeadLeaperResearchModal() {
+        exitLlEditMode(false);   // discard any unsaved edits
+        $('#rp-ll-modal').removeClass('open').attr('aria-hidden', 'true');
+        $('#rp-ll-backdrop').removeClass('open');
+    }
+
+    function enterLlEditMode() {
+        // Store original HTML of each editable field so we can revert on cancel
+        $('#rp-ll-modal .rp-editable').each(function() {
+            $(this).data('ll-original', $(this).html());
+        });
+        $('#rp-ll-modal').addClass('edit-mode');
+        $('#rp-ll-modal .rp-editable').attr('contenteditable', 'true');
+        $('#rp-ll-action-btn')
+            .text('Save')
+            .removeClass('ce-btn-save')
+            .addClass('rp-btn-save-green');
+        // Focus the first editable field
+        $('#rp-ll-modal .rp-editable').first().focus();
+    }
+
+    function exitLlEditMode(save) {
+        if (!$('#rp-ll-modal').hasClass('edit-mode')) return;
+        if (!save) {
+            // Revert each field to its original HTML
+            $('#rp-ll-modal .rp-editable').each(function() {
+                var orig = $(this).data('ll-original');
+                if (orig !== undefined) $(this).html(orig);
+            });
+        }
+        // Clear stored originals
+        $('#rp-ll-modal .rp-editable').removeData('ll-original').blur();
+        $('#rp-ll-modal').removeClass('edit-mode');
+        $('#rp-ll-modal .rp-editable').attr('contenteditable', 'false');
+        $('#rp-ll-action-btn')
+            .text('Edit')
+            .removeClass('rp-btn-save-green')
+            .addClass('ce-btn-save');
+    }
+
     // ─── Configure Engagement modal ─────────────────────────────────────────
 
     function openCeModal() {
@@ -436,6 +491,12 @@
         $(document).on('keydown', function(e) {
             if (e.which === 27) {
                 if ($('#ce-modal').hasClass('open')) { closeCeModal(); return; }
+                // LL modal: ESC in edit mode → exit edit (stay open); ESC in view mode → close
+                if ($('#rp-ll-modal').hasClass('open')) {
+                    if ($('#rp-ll-modal').hasClass('edit-mode')) { exitLlEditMode(false); }
+                    else { closeLeadLeaperResearchModal(); }
+                    return;
+                }
                 if ($('#rp-employer-modal').hasClass('open')) { closeEmployerResearchModal(); return; }
                 var $panel = $('.profile-panel');
                 if ($panel.hasClass('open')) closeProfilePanel();
@@ -456,6 +517,23 @@
 
         $(document).on('click', '#rp-employer-backdrop, #rp-employer-close-btn, #rp-employer-close-btn2',
             closeEmployerResearchModal);
+
+        // ── LeadLeaper Research modal ────────────────────────────────────────
+
+        // Backdrop + X close → close (discards edits)
+        $(document).on('click', '#rp-ll-backdrop, #rp-ll-close-btn-x', closeLeadLeaperResearchModal);
+
+        // Close button in footer → also closes (discards edits)
+        $(document).on('click', '#rp-ll-close-btn', closeLeadLeaperResearchModal);
+
+        // Edit / Save toggle button
+        $(document).on('click', '#rp-ll-action-btn', function() {
+            if ($('#rp-ll-modal').hasClass('edit-mode')) {
+                exitLlEditMode(true);   // save changes
+            } else {
+                enterLlEditMode();
+            }
+        });
 
         // Hour spinner up/down buttons
         $(document).on('click', '.ce-time-spin-btn', function() {
@@ -712,6 +790,9 @@
                 const contactData = contacts.find(c => c.id === currentId) || {};
                 openEmployerResearchModal(contactData);
             }
+            if (dropdownId === 'ai-research-dropdown' && aiAction === 'leadleaper-research') {
+                openLeadLeaperResearchModal();
+            }
             if (dropdownId === 'ai-slack-dropdown' && aiAction === 'post-vsr-channel') {
                 const currentState = $('#ai-slack-dropdown').attr('data-state');
                 if (currentState === 'start') setAiSlackState('active');
@@ -733,6 +814,10 @@
     window.closeCeModal                = closeCeModal;
     window.openEmployerResearchModal   = openEmployerResearchModal;
     window.closeEmployerResearchModal  = closeEmployerResearchModal;
+    window.openLeadLeaperResearchModal = openLeadLeaperResearchModal;
+    window.closeLeadLeaperResearchModal= closeLeadLeaperResearchModal;
+    window.enterLlEditMode             = enterLlEditMode;
+    window.exitLlEditMode              = exitLlEditMode;
     window.updatePanelContent    = updatePanelContent;
     window.navigateContact       = navigateContact;
     window.setupPanelHandlers    = setupPanelHandlers;
