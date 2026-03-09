@@ -56,9 +56,35 @@
     box-sizing: border-box;
 }
 
-/* Legacy nav item visibility — controlled by body.ll-legacy class */
-body.ll-legacy  .ll-legacy-only { display: list-item; }
+/* Nav item visibility — controlled by body.ll-legacy class.
+   Engagement (legacy) and Templates (new-UI) are mutually exclusive:
+   only one is shown at a time depending on the user's access tier.
+   Set the body class from JS: if (llLegacyUI) document.body.classList.add('ll-legacy'); */
+body.ll-legacy  .ll-legacy-only { display: list-item; }   /* Engagement  → legacy users   */
 body:not(.ll-legacy) .ll-legacy-only { display: none; }
+
+body:not(.ll-legacy) .ll-new-only { display: list-item; } /* Templates  → new-UI users    */
+body.ll-legacy .ll-new-only { display: none; }
+
+/* Company logo in nav-header: transparent bg, fixed 32×32, with text fallback */
+.nav-logo-placeholder {
+    background-color: transparent !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.logo-img {
+    width: 32px;
+    height: 32px;
+    display: block;
+}
+.logo-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-inverse, #ffffff);
+}
 
 /* ============================================================ */
 
