@@ -25,6 +25,9 @@
     // Popover delay timer
     let popoverTimer = null;
 
+    // Module-level reference to the lists popover for on-demand refresh
+    let $listsPopover = null;
+
     /**
      * Set up icon popovers with delay
      * Shows subsections or lists when hovering over icons
@@ -202,30 +205,23 @@
     }
 
     /**
-     * Create special Lists popover with dynamic 1-3 column layout and Archived section
-     * Column logic based on total items (lists + "+ Add a List" link):
-     *   1-7 items = 1 col, 8-14 items = 2 cols, 15-21 items = 3 cols
-     * Max 7 items per column, max 20 lists total
+     * Render (or re-render) the list <ul> inside the lists popover.
+     * Replaces only the <ul> — the header and archived footer are untouched,
+     * and all delegated event handlers remain bound.
+     *
+     * Column logic (lists + "+ Add a List" entry):
+     *   1–7 total = 1 col, 8–14 = 2 cols, 15–21 = 3 cols (max 7 per col)
+     * Max 20 lists enforced here.
+     *
+     * @param {jQuery} $popover  The lists popover element
+     * @param {Array}  lists     Array of { id, name } objects
      */
-    function createListsPopover(section) {
-        const $popover = $('<div class="nav-popover lists-popover"></div>');
+    function renderListsContent($popover, lists) {
+        const section = 'lists';
 
-        // Header
-        $popover.append(`<div class="nav-popover-header">Your Lists</div>`);
-
-        // Sample lists (in production, this would come from data)
-        // Using 18 lists to demonstrate 3-column layout
-        const sampleLists = [
-            'My Leads', 'Hot Prospects', 'Follow-ups', 'Cold Leads',
-            'Q1 Targets', 'Enterprise Deals', 'SMB Pipeline', 'Nurture Campaigns',
-            'Warm Leads', 'New Contacts', 'Re-engagement', 'VIP Clients',
-            'Trial Users', 'Qualified Leads', 'Web Signups', 'Event Attendees',
-            'Referrals', 'Partner Leads'
-        ];
-
-        // Limit to 20 lists maximum
-        const lists = sampleLists.slice(0, 20);
-        const listCount = lists.length;
+        // Clamp to 20 lists max
+        const cappedLists = (lists || []).slice(0, 20);
+        const listCount = cappedLists.length;
 
         // Determine columns based on total items (lists + "+ Add a List" link)
         const totalItems = listCount + 1;
@@ -236,21 +232,21 @@
             columnCount = 2;
         }
 
-        // Multi-column list grid with dynamic columns
+        // Build the new <ul>
         const $list = $(`<ul class="nav-popover-list multi-column column-${columnCount}"></ul>`);
 
-        lists.forEach(function(listName, index) {
+        cappedLists.forEach(function(listObj, index) {
             const $listItem = $(`
                 <li class="nav-popover-item">
-                    <a href="#" class="nav-popover-link" data-section="${section}" data-item-id="${listName}" data-item-index="${index}">
-                        ${listName}
+                    <a href="#" class="nav-popover-link" data-section="${section}" data-item-id="${listObj.id}" data-item-index="${index}">
+                        ${listObj.name}
                     </a>
                 </li>
             `);
             $list.append($listItem);
         });
 
-        // "+ Add a List" as the last entry in the list grid
+        // "+ Add a List" as the last entry in the grid
         const $addItem = $(`
             <li class="nav-popover-item">
                 <a href="#" class="nav-popover-link nav-popover-add-list-link" data-section="${section}">
@@ -260,9 +256,23 @@
         `);
         $list.append($addItem);
 
-        $popover.append($list);
+        // Swap out the old <ul>, keeping the header and archived footer intact
+        $popover.find('.nav-popover-list').remove();
+        $popover.find('.nav-popover-archived').before($list);
+    }
 
-        // Archived Lists Section
+    /**
+     * Create the lists popover shell (header + archived footer).
+     * List content starts empty — call window.navSetLists() once AJAX data arrives.
+     * All click handlers use event delegation so they survive renderListsContent() re-renders.
+     */
+    function createListsPopover(section) {
+        const $popover = $('<div class="nav-popover lists-popover"></div>');
+
+        // Header
+        $popover.append(`<div class="nav-popover-header">Your Lists</div>`);
+
+        // Archived footer — appended now so renderListsContent() can insert <ul> before it
         const $archived = $(`
             <div class="nav-popover-archived">
                 <span class="archived-label">View Archived Lists</span>
@@ -273,23 +283,24 @@
         `);
         $popover.append($archived);
 
-        // Handle "+ Add a List" link click
+        // Render empty list on build; app calls navSetLists() once data is ready
+        renderListsContent($popover, []);
+
+        // --- Event handlers — all delegated, survive renderListsContent() re-renders ---
+
+        // Handle "+ Add a List" click
         $popover.on('click', '.nav-popover-add-list-link', function(e) {
             e.preventDefault();
             e.stopPropagation();
             $popover.removeClass('visible');
-
-            // Trigger custom event for app to handle
             $(document).trigger('nav:list:add', { section: section });
         });
 
-        // Handle list item clicks (exclude the add link)
+        // Handle list item clicks (excludes the add link)
         $popover.on('click', '.nav-popover-link:not(.nav-popover-add-list-link)', function(e) {
             e.preventDefault();
             e.stopPropagation();
-
             const itemId = $(this).data('item-id');
-
             $popover.removeClass('visible');
             loadList(section, itemId);
         });
@@ -299,10 +310,11 @@
             e.preventDefault();
             e.stopPropagation();
             $popover.removeClass('visible');
-
-            // Trigger custom event for app to handle
             $(document).trigger('nav:list:archived', { section: section });
         });
+
+        // Cache for navSetLists()
+        $listsPopover = $popover;
 
         return $popover;
     }
@@ -533,6 +545,27 @@
 
     // Expose functions globally for main app to use
     window.navStoreSelectedList = storeSelectedList;
+
+    /**
+     * Populate or refresh the Lists popover with live data.
+     * Call this:
+     *   1. On app load, after the AJAX call returns the user's lists
+     *   2. After a list is added (pass the full updated array)
+     *   3. After a list is deleted (pass the full updated array)
+     *
+     * @param {Array} lists  Array of { id, name } objects (max 20 enforced internally)
+     *
+     * @example
+     *   window.navSetLists([
+     *       { id: 'list-101', name: 'My Leads' },
+     *       { id: 'list-102', name: 'Hot Prospects' }
+     *   ]);
+     */
+    window.navSetLists = function(lists) {
+        if ($listsPopover) {
+            renderListsContent($listsPopover, lists);
+        }
+    };
 
     /**
      * Restore active section from sessionStorage if available
