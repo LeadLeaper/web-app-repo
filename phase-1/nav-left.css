@@ -143,6 +143,7 @@ body {
     padding: 16px 0;
     color: #525252;
     text-decoration: none;
+    cursor: pointer; /* href is stripped by nav-left.js to suppress status bar URL display */
     transition: background-color 200ms ease;
     white-space: nowrap;
     position: relative;

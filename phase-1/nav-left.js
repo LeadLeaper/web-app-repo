@@ -610,6 +610,12 @@
      * Initialize the navigation panel
      */
     function init() {
+        // Remove href from all nav links so the browser status bar stays clean on hover.
+        // All navigation is handled by JS click handlers (which call e.preventDefault()),
+        // so href values are never used for actual navigation.
+        // cursor:pointer is preserved via CSS since <a> without href loses it by default.
+        $('.nav-link').removeAttr('href');
+
         // Set up interaction behaviors
         setupLogoClick();
         setupIconPopovers();
