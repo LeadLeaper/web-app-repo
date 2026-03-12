@@ -14,7 +14,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=29">
+    <link rel="stylesheet" href="profile-panel.css?v=30">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -981,6 +981,18 @@
                     </svg>
                 </button>
             </div>
+            <!-- Edit button: visible in view mode; hidden by CSS when .edit-mode -->
+            <button type="button" class="panel-edit-btn" id="panel-edit-btn" aria-label="Edit contact">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                Edit
+            </button>
+            <!-- Cancel + Save: visible only when .edit-mode (via CSS) -->
+            <div class="panel-edit-actions" id="panel-edit-actions" aria-live="polite">
+                <button type="button" class="panel-edit-cancel-btn" id="panel-edit-cancel-btn">Cancel</button>
+                <button type="button" class="panel-edit-save-btn" id="panel-edit-save-btn">Save</button>
+            </div>
             <button type="button" class="panel-close-btn" aria-label="Close panel">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -1706,7 +1718,7 @@
     <script src="../phase-1/nav-left.js?v=2"></script>
     <!-- Quill.js (must load before profile-panel.js) -->
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=26"></script>
+    <script src="profile-panel.js?v=27"></script>
 
     <!-- Section Switching Script -->
     <script>

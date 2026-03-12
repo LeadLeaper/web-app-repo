@@ -15,6 +15,43 @@
     let panelCurrentView = 'crm';   // 'crm' | 'ai'
     let quillsInitialized = false;  // lazy-init Quill editors on first AI view open
 
+    // ─── Edit mode state ──────────────────────────────────────────────────────
+    let panelEditMode     = false;
+    let panelIsDirty      = false;
+    let panelEditOriginal = null;   // editableFields snapshot before edits began
+
+    // ─── Backend integration callbacks ───────────────────────────────────────
+    // Assign handlers before calling openProfilePanel to wire up backend integration.
+    //
+    //   onChange(contactId, fieldName, newValue)
+    //     Fired on blur for every edit field. Use for real-time draft persistence.
+    //     fieldName is one of: 'name' | 'company' | 'title' | 'email' | 'phone' |
+    //                          'mobile' | 'location' | 'website' | 'linkedin'
+    //
+    //   onSave(contactId, editedFields, done)
+    //     Fired when Save is clicked. editedFields contains all 9 named fields.
+    //     Call done() on success; done(errorMessage) to surface an error and keep
+    //     the panel in edit mode.
+    //
+    //   onClose(contactId)
+    //     Fired when the panel closes (× button or ESC). contactId is the contact
+    //     that was displayed. Any unsaved edits are already discarded at this point.
+    //
+    //   onNext(prevContactId, nextContactId)
+    //     Fired after navigating to the next contact. Both IDs supplied.
+    //     Any unsaved edits on prevContactId are already discarded.
+    //
+    //   onPrev(prevContactId, nextContactId)
+    //     Same as onNext but for the ‹ Previous button.
+    //
+    window.profilePanelCallbacks = {
+        onChange : null,   // function(contactId, fieldName, newValue)
+        onSave   : null,   // function(contactId, editedFields, done)
+        onClose  : null,   // function(contactId)
+        onNext   : null,   // function(prevContactId, nextContactId)
+        onPrev   : null    // function(prevContactId, nextContactId)
+    };
+
     // ─── Identity card ───────────────────────────────────────────────────────
 
     function updatePanelIdentity(contactData) {
@@ -60,6 +97,232 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    // ─── Edit mode helpers ────────────────────────────────────────────────────
+
+    // Returns the full contactData object for the currently-displayed contact.
+    function getCurrentContactData() {
+        var currentId = $('.profile-panel').data('contact-id');
+        var contacts  = window.currentContactList || [];
+        return contacts.find(function(c) { return c.id === currentId; }) || null;
+    }
+
+    // Flattens contactData arrays into the 9 named editable fields.
+    function extractEditableFields(cd) {
+        var f = { name: cd.name || '', company: cd.company || '', title: cd.title || '',
+                  email: '', phone: '', mobile: '', location: '', website: '', linkedin: '' };
+        (cd.details || []).forEach(function(item) {
+            if (item.type === 'email' && !f.email)   { f.email    = item.value; return; }
+            if (item.type === 'phone') {
+                var isMobile = item.label && /mobile/i.test(item.label);
+                if (isMobile && !f.mobile) { f.mobile = item.value; }
+                else if (!isMobile && !f.phone) { f.phone = item.value; }
+                return;
+            }
+            if (item.type === 'text'  && !f.location) { f.location = item.value; }
+        });
+        (cd.companyInfo || []).forEach(function(item) {
+            if (item.type === 'url' && !f.website) f.website = item.value;
+        });
+        (cd.socialLinks || []).forEach(function(item) {
+            if (item.platform === 'LinkedIn' && !f.linkedin) f.linkedin = item.url;
+        });
+        return f;
+    }
+
+    // Writes edited field values back into the live contactData arrays in place.
+    function mergeEditableFields(cd, ef) {
+        cd.name    = ef.name;
+        cd.company = ef.company;
+        cd.title   = ef.title;
+        var phoneSet = false, mobileSet = false, emailSet = false, locSet = false;
+        (cd.details || []).forEach(function(item) {
+            if (item.type === 'email' && !emailSet)   { item.value = ef.email;    emailSet  = true; }
+            else if (item.type === 'phone') {
+                var isMobile = item.label && /mobile/i.test(item.label);
+                if (isMobile && !mobileSet) { item.value = ef.mobile; mobileSet = true; }
+                else if (!isMobile && !phoneSet) { item.value = ef.phone; phoneSet = true; }
+            }
+            else if (item.type === 'text' && !locSet) { item.value = ef.location; locSet    = true; }
+        });
+        if (!mobileSet && ef.mobile) {
+            cd.details = cd.details || [];
+            cd.details.push({ label: 'Mobile', value: ef.mobile, type: 'phone' });
+        }
+        var webSet = false;
+        (cd.companyInfo || []).forEach(function(item) {
+            if (item.type === 'url' && !webSet) { item.value = ef.website; webSet = true; }
+        });
+        if (!webSet && ef.website) {
+            cd.companyInfo = cd.companyInfo || [];
+            cd.companyInfo.push({ label: 'Website', value: ef.website, type: 'url' });
+        }
+        var liSet = false;
+        (cd.socialLinks || []).forEach(function(item) {
+            if (item.platform === 'LinkedIn' && !liSet) { item.url = ef.linkedin; liSet = true; }
+        });
+        if (!liSet && ef.linkedin) {
+            cd.socialLinks = cd.socialLinks || [];
+            cd.socialLinks.push({ platform: 'LinkedIn', url: ef.linkedin });
+        }
+        return cd;
+    }
+
+    // Collects current values from all edit inputs into a flat fields object.
+    function collectEditFormData() {
+        var f = {};
+        $('.panel-identity-input[data-field], .edit-field-input[data-field]').each(function() {
+            f[$(this).data('field')] = $(this).val().trim();
+        });
+        return f;
+    }
+
+    // Builds the structured edit form HTML for the details card.
+    function buildContactDetailsEditHTML(ef) {
+        function row(name, label, value, inputType, placeholder) {
+            return '<div class="edit-field-row">' +
+                '<label class="edit-field-label" for="edit-field-' + name + '">' + label + '</label>' +
+                '<input class="edit-field-input" type="' + inputType + '"' +
+                ' id="edit-field-' + name + '" data-field="' + name + '"' +
+                ' value="' + escHtml(value) + '" placeholder="' + escHtml(placeholder) + '"' +
+                ' autocomplete="off">' +
+                '</div>';
+        }
+        return '<div class="contact-details-card contact-details-edit">' +
+            row('email',    'Email',        ef.email,    'email', 'Office email') +
+            row('phone',    'Office Phone', ef.phone,    'tel',   'Office phone') +
+            row('mobile',   'Mobile Phone', ef.mobile,   'tel',   'Mobile phone') +
+            row('location', 'Location',     ef.location, 'text',  'City, State') +
+            row('website',  'Website',      ef.website,  'url',   'https://company.com') +
+            row('linkedin', 'LinkedIn',     ef.linkedin, 'url',   'https://linkedin.com/in/...') +
+            '</div>';
+    }
+
+    // ─── Enter / exit edit mode ───────────────────────────────────────────────
+
+    function enterPanelEditMode() {
+        var cd = getCurrentContactData();
+        if (!cd || panelEditMode) return;
+
+        // If panel is in AI view, return to CRM view first
+        if (panelCurrentView === 'ai') switchToCrmView();
+
+        panelEditMode     = true;
+        panelIsDirty      = false;
+        panelEditOriginal = extractEditableFields(cd);
+
+        var $panel = $('.profile-panel');
+        $panel.addClass('edit-mode');
+
+        // Close any open dropdowns
+        $('#ai-engagement-dropdown, #ai-research-dropdown, #ai-slack-dropdown')
+            .removeClass('open').attr('aria-hidden', 'true');
+        $('#ai-engagement-btn, #ai-research-btn, #ai-slack-btn')
+            .removeClass('open').attr('aria-expanded', 'false');
+
+        // Inject name/company/title inputs into .panel-info (shown via CSS edit-mode rule)
+        var ef = panelEditOriginal;
+        if (!$('.panel-info-edit').length) {
+            $('.panel-info').append(
+                '<div class="panel-info-edit">' +
+                '<input class="panel-identity-input" type="text" data-field="name"' +
+                ' value="' + escHtml(ef.name) + '" placeholder="Full name"' +
+                ' autocomplete="off" aria-label="Contact name">' +
+                '<input class="panel-identity-input" type="text" data-field="company"' +
+                ' value="' + escHtml(ef.company) + '" placeholder="Company"' +
+                ' autocomplete="off" aria-label="Company">' +
+                '<input class="panel-identity-input" type="text" data-field="title"' +
+                ' value="' + escHtml(ef.title) + '" placeholder="Job title"' +
+                ' autocomplete="off" aria-label="Job title">' +
+                '</div>'
+            );
+        }
+
+        // Replace scrollable content with edit form only (no accordion while editing)
+        $('.profile-content').html(buildContactDetailsEditHTML(ef));
+
+        // Focus the name field
+        setTimeout(function() {
+            $('.panel-identity-input[data-field="name"]').focus().select();
+        }, 50);
+    }
+
+    // save = true  → collect form values, call onSave, then commit + re-render
+    // save = false → discard all changes, re-render from original contactData
+    function exitPanelEditMode(save) {
+        if (!panelEditMode) return;
+
+        if (!save) {
+            _exitEditCleanup(false);
+            return;
+        }
+
+        var cd = getCurrentContactData();
+        if (!cd) { _exitEditCleanup(false); return; }
+
+        var editedFields = collectEditFormData();
+        var $saveBtn     = $('#panel-edit-save-btn');
+        $saveBtn.prop('disabled', true).text('Saving\u2026');
+        hidePanelEditError();
+
+        function onDone(err) {
+            if (err) {
+                $saveBtn.prop('disabled', false).text('Save');
+                showPanelEditError(typeof err === 'string' ? err : 'Save failed. Please try again.');
+                return;
+            }
+            mergeEditableFields(cd, editedFields);
+            _exitEditCleanup(true, cd);
+        }
+
+        var cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onSave === 'function') {
+            cb.onSave(cd.id, editedFields, onDone);
+        } else {
+            onDone(); // no handler registered — treat as instant success
+        }
+    }
+
+    // Shared teardown used by both cancel and post-save paths.
+    function _exitEditCleanup(committed, cd) {
+        panelEditMode = false;
+        panelIsDirty  = false;
+        $('.profile-panel').removeClass('edit-mode');
+        $('.panel-info-edit').remove();
+        hidePanelEditError();
+        var contactData = cd || getCurrentContactData();
+        if (contactData) {
+            updatePanelIdentity(contactData);
+            renderMainContent(contactData);
+        }
+    }
+
+    // Called before any navigation or panel close when edit mode is active.
+    // Silently discards unsaved changes and resets state without re-rendering
+    // (the caller will immediately re-render or close the panel anyway).
+    function _discardEditModeQuiet() {
+        if (!panelEditMode) return;
+        panelEditMode = false;
+        panelIsDirty  = false;
+        $('.profile-panel').removeClass('edit-mode');
+        $('.panel-info-edit').remove();
+        hidePanelEditError();
+    }
+
+    function showPanelEditError(msg) {
+        var $err = $('#panel-edit-error');
+        if (!$err.length) {
+            $('.panel-controls').after(
+                '<div class="panel-edit-error" id="panel-edit-error"></div>'
+            );
+            $err = $('#panel-edit-error');
+        }
+        $err.text(msg).addClass('visible');
+    }
+
+    function hidePanelEditError() {
+        $('#panel-edit-error').removeClass('visible');
     }
 
     // Contact details card (location, email, phone, URLs, social, lead owner)
@@ -240,22 +503,42 @@
 
     // ③ Prev/next with wrap-around
     function navigateContact(direction) {
-        const $panel = $('.profile-panel');
+        const $panel    = $('.profile-panel');
         const currentId = $panel.data('contact-id');
-        const contacts = window.currentContactList || [];
+        const contacts  = window.currentContactList || [];
         if (!contacts.length) return;
         const idx = contacts.findIndex(c => c.id === currentId);
         if (idx === -1) return;
-        const next = direction === 'next'
+        const nextIdx = direction === 'next'
             ? (idx + 1) % contacts.length
             : (idx - 1 + contacts.length) % contacts.length;
-        updatePanelContent(contacts[next]);
+        const nextContactId = contacts[nextIdx].id;
+
+        // Discard any in-progress edits silently before navigating
+        _discardEditModeQuiet();
+
+        const cb = window.profilePanelCallbacks;
+        if (cb) {
+            if (direction === 'prev' && typeof cb.onPrev === 'function') {
+                cb.onPrev(currentId, nextContactId);
+            } else if (direction === 'next' && typeof cb.onNext === 'function') {
+                cb.onNext(currentId, nextContactId);
+            }
+        }
+
+        updatePanelContent(contacts[nextIdx]);
     }
 
     // ④ Slide out + clear
     function closeProfilePanel() {
         const $panel = $('.profile-panel');
         if (!$panel.hasClass('open')) return;
+
+        const closingContactId = $panel.data('contact-id');
+
+        // Discard any in-progress edits silently before closing
+        _discardEditModeQuiet();
+
         $panel.removeClass('open');
         $('#panel-view-toggle').removeClass('visible ai-view');
         // Close any open research modals
@@ -291,6 +574,11 @@
         $('.ai-post-block-toggle').text('show more').attr('aria-label', 'Show post text');
         // Clear and reset comment textarea height
         $('.ai-comment-textarea').val('').each(function() { this.style.height = ''; });
+
+        const cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onClose === 'function') {
+            cb.onClose(closingContactId);
+        }
 
         setTimeout(function() {
             $('.profile-content').html('');
@@ -506,6 +794,40 @@
         // Close button
         $(document).on('click', '.panel-close-btn', function() {
             closeProfilePanel();
+        });
+
+        // ── Contact edit mode ────────────────────────────────────────────────
+
+        // Enter edit mode
+        $(document).on('click', '#panel-edit-btn', function() {
+            enterPanelEditMode();
+        });
+
+        // Cancel — discard changes
+        $(document).on('click', '#panel-edit-cancel-btn', function() {
+            exitPanelEditMode(false);
+        });
+
+        // Save — collect + persist via onSave callback
+        $(document).on('click', '#panel-edit-save-btn', function() {
+            exitPanelEditMode(true);
+        });
+
+        // Track dirty state on any edit field keystroke
+        $(document).on('input', '.edit-field-input, .panel-identity-input', function() {
+            panelIsDirty = true;
+        });
+
+        // Fire onChange on blur (backend can use for real-time draft persistence)
+        $(document).on('blur', '.edit-field-input, .panel-identity-input', function() {
+            if (!panelEditMode) return;
+            var fieldName   = $(this).data('field');
+            var newValue    = $(this).val().trim();
+            var cd          = getCurrentContactData();
+            var cb          = window.profilePanelCallbacks;
+            if (cb && typeof cb.onChange === 'function' && cd) {
+                cb.onChange(cd.id, fieldName, newValue);
+            }
         });
 
         // ── Configure Engagement modal ───────────────────────────────────────
@@ -818,15 +1140,19 @@
     window.closeLeadLeaperResearchModal= closeLeadLeaperResearchModal;
     window.enterLlEditMode             = enterLlEditMode;
     window.exitLlEditMode              = exitLlEditMode;
-    window.updatePanelContent    = updatePanelContent;
-    window.navigateContact       = navigateContact;
-    window.setupPanelHandlers    = setupPanelHandlers;
-    window.setAiEngagementState  = setAiEngagementState;
-    window.setAiResearchState    = setAiResearchState;
-    window.setAiSlackState       = setAiSlackState;
-    window.switchToAiView        = switchToAiView;
-    window.switchToCrmView       = switchToCrmView;
-    window.togglePanelView       = togglePanelView;
+    window.updatePanelContent          = updatePanelContent;
+    window.navigateContact             = navigateContact;
+    window.setupPanelHandlers          = setupPanelHandlers;
+    window.setAiEngagementState        = setAiEngagementState;
+    window.setAiResearchState          = setAiResearchState;
+    window.setAiSlackState             = setAiSlackState;
+    window.switchToAiView              = switchToAiView;
+    window.switchToCrmView             = switchToCrmView;
+    window.togglePanelView             = togglePanelView;
+    // Edit mode
+    window.enterPanelEditMode          = enterPanelEditMode;
+    window.exitPanelEditMode           = exitPanelEditMode;
+    window.extractEditableFields       = extractEditableFields;
 
     $(document).ready(function() { setupPanelHandlers(); });
 
