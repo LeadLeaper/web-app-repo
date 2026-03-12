@@ -18,36 +18,51 @@
     // ─── Per-field inline edit state ─────────────────────────────────────────
     var $currentFieldEdit = null;   // the .field-editable currently being edited
 
+    // ─── Current contact reference ────────────────────────────────────────────
+    var _currentContactData = null; // full contactData object for the displayed contact
+
     // ─── Backend integration callbacks ───────────────────────────────────────
     // Assign handlers before calling openProfilePanel to wire up backend integration.
     //
     //   onChange(contactId, fieldName, newValue)
-    //     Fired on blur for every edit field. Use for real-time draft persistence.
+    //     Fired on every field edit. Use for real-time draft persistence.
     //     fieldName is one of: 'name' | 'company' | 'title' | 'email' | 'phone' |
     //                          'mobile' | 'location' | 'website' | 'linkedin'
     //
-    //   onSave(contactId, editedFields, done)
-    //     Fired when Save is clicked. editedFields contains all 9 named fields.
-    //     Call done() on success; done(errorMessage) to surface an error and keep
-    //     the panel in edit mode.
+    //   onSave(contactId, patch, done)
+    //     Fired when a field is confirmed. patch is a single-key object, e.g.
+    //     { email: 'new@example.com' }. Call done() on success or
+    //     done(errorMessage) to surface an inline error and keep the editor open.
     //
     //   onClose(contactId)
-    //     Fired when the panel closes (× button or ESC). contactId is the contact
-    //     that was displayed. Any unsaved edits are already discarded at this point.
+    //     Fired when the panel closes (× button or ESC). Any unsaved edits are
+    //     already discarded at this point.
     //
-    //   onNext(prevContactId, nextContactId)
-    //     Fired after navigating to the next contact. Both IDs supplied.
-    //     Any unsaved edits on prevContactId are already discarded.
+    //   onNext(currentContactId, done)
+    //     Fired when the › Next button is clicked. The host resolves the adjacent
+    //     contact (handling sort order, pagination, etc.) and calls
+    //     done(contactData) to load it, or done(null) if at the boundary.
     //
-    //   onPrev(prevContactId, nextContactId)
+    //   onPrev(currentContactId, done)
     //     Same as onNext but for the ‹ Previous button.
     //
+    //   onLoadActivity(contactId, done)
+    //     Fired after the panel renders with basic contact info. Fetch and return
+    //     activity data by calling done({ notes, meetings, calls, reminders,
+    //     emailReplies, emailLinksViewed, emailsSent }).
+    //
+    //   onLoadResearch(contactId, done)
+    //     Fired when the Employer Research modal is opened and no cached data
+    //     exists yet. Fetch and return the HTML string by calling done(htmlString).
+    //
     window.profilePanelCallbacks = {
-        onChange : null,   // function(contactId, fieldName, newValue)
-        onSave   : null,   // function(contactId, editedFields, done)
-        onClose  : null,   // function(contactId)
-        onNext   : null,   // function(prevContactId, nextContactId)
-        onPrev   : null    // function(prevContactId, nextContactId)
+        onChange       : null,   // function(contactId, fieldName, newValue)
+        onSave         : null,   // function(contactId, patch, done)
+        onClose        : null,   // function(contactId)
+        onNext         : null,   // function(currentContactId, done)
+        onPrev         : null,   // function(currentContactId, done)
+        onLoadActivity : null,   // function(contactId, done)
+        onLoadResearch : null    // function(contactId, done)
     };
 
     // ─── Identity card ───────────────────────────────────────────────────────
@@ -74,11 +89,17 @@
     // ─── Main content renderer ───────────────────────────────────────────────
 
     function renderMainContent(contactData) {
-        const $content = $('.profile-content');
+        var $content = $('.profile-content');
         $content.html(
             buildContactDetailsHTML(contactData) +
-            buildActivityAccordionHTML(contactData)
+            buildActivitySkeletonHTML()
         );
+        var cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onLoadActivity === 'function') {
+            cb.onLoadActivity(contactData.id, function(activityData) {
+                loadPanelActivity(activityData);
+            });
+        }
     }
 
     // SVG snippets reused in renderers
@@ -101,9 +122,7 @@
 
     // Returns the full contactData object for the currently-displayed contact.
     function getCurrentContactData() {
-        var currentId = $('.profile-panel').data('contact-id');
-        var contacts  = window.currentContactList || [];
-        return contacts.find(function(c) { return c.id === currentId; }) || null;
+        return _currentContactData;
     }
 
     // Flattens contactData arrays into the 9 named editable fields.
@@ -310,16 +329,19 @@
         return '<div class="contact-details-card">' + rows + meta + '</div>';
     }
 
-    // Activity accordion (notes, meetings, calls, reminders, email metrics)
-    function buildActivityAccordionHTML(contactData) {
+    // Activity accordion (notes, meetings, calls, reminders, email metrics).
+    // activityData: { notes, meetings, calls, reminders,
+    //                 emailReplies, emailLinksViewed, emailsSent }
+    function buildActivityAccordionHTML(activityData) {
+        var ad = activityData || {};
         const sections = [
-            { key: 'notes',        label: 'Notes',             action: 'Add Note', items: contactData.notes     || [] },
-            { key: 'meetings',     label: 'Meetings',          action: 'Schedule', items: contactData.meetings  || [] },
-            { key: 'calls',        label: 'Calls',             action: 'Log Call', items: contactData.calls     || [] },
-            { key: 'reminders',    label: 'Tasks / Reminders', action: 'Add Task', items: contactData.reminders || [] },
-            { key: 'email-replies', label: 'Email Replies',      action: null, count: contactData.emailReplies     || 0 },
-            { key: 'email-links',   label: 'Email Links Viewed', action: null, count: contactData.emailLinksViewed || 0 },
-            { key: 'emails-sent',   label: 'Emails Sent',        action: null, count: contactData.emailsSent       || 0 }
+            { key: 'notes',        label: 'Notes',             action: 'Add Note', items: ad.notes     || [] },
+            { key: 'meetings',     label: 'Meetings',          action: 'Schedule', items: ad.meetings  || [] },
+            { key: 'calls',        label: 'Calls',             action: 'Log Call', items: ad.calls     || [] },
+            { key: 'reminders',    label: 'Tasks / Reminders', action: 'Add Task', items: ad.reminders || [] },
+            { key: 'email-replies', label: 'Email Replies',      action: null, count: ad.emailReplies     || 0 },
+            { key: 'email-links',   label: 'Email Links Viewed', action: null, count: ad.emailLinksViewed || 0 },
+            { key: 'emails-sent',   label: 'Emails Sent',        action: null, count: ad.emailsSent       || 0 }
         ];
 
         let html = '<div class="activity-accordion">' +
@@ -380,14 +402,42 @@
             '</div>';
     }
 
+    // Renders the activity section shell while async data is in flight.
+    function buildActivitySkeletonHTML() {
+        return '<div class="activity-accordion">' +
+            '<div class="panel-section-label">Engagement History</div>' +
+            '<div class="accordion-loading"><span class="detail-muted">Loading\u2026</span></div>' +
+            '</div>';
+    }
+
+    // Replaces the skeleton (or existing accordion) with fully rendered activity data.
+    // Called by the host via the onLoadActivity done() callback.
+    function loadPanelActivity(activityData) {
+        var $accordion = $('.activity-accordion');
+        if (!$accordion.length) return;
+        $accordion.replaceWith(buildActivityAccordionHTML(activityData));
+    }
+
+    // Patches the Employer Research modal with fetched HTML and caches it on the
+    // current contact so subsequent opens don't re-fire onLoadResearch.
+    // Called by the host via the onLoadResearch done() callback.
+    function loadPanelResearch(htmlString) {
+        if (_currentContactData) {
+            _currentContactData.employerResearch = htmlString;
+        }
+        var content = htmlString ||
+            '<div class="rp-section"><p style="color:#a3a3a3;font-size:13px;">' +
+            'No employer research available for this contact yet.</p></div>';
+        $('#rp-employer-content').html(content);
+        $('#rp-employer-modal .rp-body').scrollTop(0);
+    }
+
     // ─── Core panel behaviors ────────────────────────────────────────────────
 
     // ① Slide in → spinner → fade in on initial open; refresh/switch routing when already open
-    function openProfilePanel(contactData, contactList) {
-        const $panel = $('.profile-panel');
-        if (contactList && Array.isArray(contactList)) {
-            window.currentContactList = contactList;
-        }
+    function openProfilePanel(contactData) {
+        var $panel = $('.profile-panel');
+        _currentContactData = contactData;
         if ($panel.hasClass('open')) {
             updatePanelContent(contactData); // behaviors 2 & 3
             return;
@@ -406,8 +456,9 @@
 
     // ② Fade out → spinner → fade in (behaviors 2 & 3)
     function updatePanelContent(contactData) {
-        const $panel = $('.profile-panel');
-        const $content = $('.profile-content');
+        _currentContactData = contactData;
+        var $panel = $('.profile-panel');
+        var $content = $('.profile-content');
 
         // If currently in AI Engagement view, reset back to CRM view before loading the new
         // contact. updatePanelContent() renders into .profile-content (the CRM container);
@@ -445,32 +496,20 @@
         });
     }
 
-    // ③ Prev/next with wrap-around
+    // ③ Prev/next — host resolves adjacent contact via callback
     function navigateContact(direction) {
-        const $panel    = $('.profile-panel');
-        const currentId = $panel.data('contact-id');
-        const contacts  = window.currentContactList || [];
-        if (!contacts.length) return;
-        const idx = contacts.findIndex(c => c.id === currentId);
-        if (idx === -1) return;
-        const nextIdx = direction === 'next'
-            ? (idx + 1) % contacts.length
-            : (idx - 1 + contacts.length) % contacts.length;
-        const nextContactId = contacts[nextIdx].id;
-
-        // Cancel any in-progress field edit silently before navigating
+        var currentId = $('.profile-panel').data('contact-id');
         closeCurrentFieldEdit();
-
-        const cb = window.profilePanelCallbacks;
-        if (cb) {
-            if (direction === 'prev' && typeof cb.onPrev === 'function') {
-                cb.onPrev(currentId, nextContactId);
-            } else if (direction === 'next' && typeof cb.onNext === 'function') {
-                cb.onNext(currentId, nextContactId);
-            }
+        var cb = window.profilePanelCallbacks;
+        var handler = direction === 'prev'
+            ? (cb && cb.onPrev)
+            : (cb && cb.onNext);
+        if (typeof handler === 'function') {
+            handler(currentId, function(contactData) {
+                if (!contactData) return;   // boundary — host signals no more contacts
+                updatePanelContent(contactData);
+            });
         }
-
-        updatePanelContent(contacts[nextIdx]);
     }
 
     // ④ Slide out + clear
@@ -527,6 +566,7 @@
         setTimeout(function() {
             $('.profile-content').html('');
             $panel.removeData('contact-id');
+            _currentContactData = null;
         }, ANIMATION_DURATION);
     }
 
@@ -1113,11 +1153,18 @@
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'employer-research') {
                 const currentState = $('#ai-research-dropdown').attr('data-state');
                 if (currentState === 'start') setAiResearchState('active');
-                // Open Employer Research modal with current contact's data
-                const currentId = $('.profile-panel').data('contact-id');
-                const contacts = window.currentContactList || [];
-                const contactData = contacts.find(c => c.id === currentId) || {};
-                openEmployerResearchModal(contactData);
+                // Open modal immediately (may already have cached employerResearch HTML)
+                openEmployerResearchModal(_currentContactData || {});
+                // Fire async load only if not already cached on this contact
+                if (!(_currentContactData && _currentContactData.employerResearch)) {
+                    var cb2 = window.profilePanelCallbacks;
+                    if (cb2 && typeof cb2.onLoadResearch === 'function') {
+                        var researchContactId = $('.profile-panel').data('contact-id');
+                        cb2.onLoadResearch(researchContactId, function(html) {
+                            loadPanelResearch(html);
+                        });
+                    }
+                }
             }
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'leadleaper-research') {
                 openLeadLeaperResearchModal();
@@ -1148,6 +1195,8 @@
     window.enterLlEditMode             = enterLlEditMode;
     window.exitLlEditMode              = exitLlEditMode;
     window.updatePanelContent          = updatePanelContent;
+    window.loadPanelActivity           = loadPanelActivity;
+    window.loadPanelResearch           = loadPanelResearch;
     window.navigateContact             = navigateContact;
     window.setupPanelHandlers          = setupPanelHandlers;
     window.setAiEngagementState        = setAiEngagementState;

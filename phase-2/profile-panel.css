@@ -769,6 +769,10 @@ body.ll-legacy .ll-new-only { display: none; }
     -webkit-box-orient: vertical;
 }
 
+.accordion-loading {
+    padding: 10px 0 6px;
+}
+
 .accordion-item-plain {
     padding: 6px 0;
     font-size: var(--text-xs, 12px);
