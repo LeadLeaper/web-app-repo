@@ -14,7 +14,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=30">
+    <link rel="stylesheet" href="profile-panel.css?v=31">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -232,7 +232,7 @@
         </div>
 
         <ul class="nav-list">
-            <li class="nav-item active" data-section="team">
+            <li class="nav-item" data-section="team">
                 <a href="#team" class="nav-link">
                     <span class="nav-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -254,7 +254,7 @@
                 </a>
             </li>
 
-            <li class="nav-item" data-section="lists" data-lists='["My Leads", "Hot Prospects", "Follow-ups", "Cold Leads"]'>
+            <li class="nav-item active" data-section="lists" data-lists='["My Leads", "Hot Prospects", "Follow-ups", "Cold Leads"]'>
                 <a href="#lists" class="nav-link">
                     <span class="nav-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -344,7 +344,7 @@
             </div>
 
             <!-- Section 1: Team (Management Dashboard) -->
-            <div id="team" class="section-content active">
+            <div id="team" class="section-content">
                 <div class="sample-panel">
                     <h2>Team Management Dashboard</h2>
                     <div class="card-grid">
@@ -475,7 +475,7 @@
             </div>
 
             <!-- Section 3: Lists (User-Created Lists) -->
-            <div id="lists" class="section-content">
+            <div id="lists" class="section-content active">
                 <div class="sample-panel">
                     <h2>Your Contact Lists</h2>
 
@@ -981,18 +981,6 @@
                     </svg>
                 </button>
             </div>
-            <!-- Edit button: visible in view mode; hidden by CSS when .edit-mode -->
-            <button type="button" class="panel-edit-btn" id="panel-edit-btn" aria-label="Edit contact">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                </svg>
-                Edit
-            </button>
-            <!-- Cancel + Save: visible only when .edit-mode (via CSS) -->
-            <div class="panel-edit-actions" id="panel-edit-actions" aria-live="polite">
-                <button type="button" class="panel-edit-cancel-btn" id="panel-edit-cancel-btn">Cancel</button>
-                <button type="button" class="panel-edit-save-btn" id="panel-edit-save-btn">Save</button>
-            </div>
             <button type="button" class="panel-close-btn" aria-label="Close panel">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -1006,12 +994,31 @@
                 <img class="panel-photo" src="" alt="Contact photo">
             </div>
             <div class="panel-info">
-                <div class="panel-name-row">
-                    <span class="panel-name"></span>
-                    <span class="panel-badge-live" aria-label="Live contact">LIVE</span>
+                <div class="field-editable" data-field="name">
+                    <div class="field-view panel-name-row">
+                        <span class="panel-name"></span>
+                        <span class="panel-badge-live" aria-label="Live contact">LIVE</span>
+                    </div>
+                    <button class="field-pencil" type="button" aria-label="Edit name">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
                 </div>
-                <div class="panel-company"></div>
-                <div class="panel-title-text"></div>
+                <div class="field-editable" data-field="company">
+                    <div class="field-view">
+                        <div class="panel-company"></div>
+                    </div>
+                    <button class="field-pencil" type="button" aria-label="Edit company">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
+                </div>
+                <div class="field-editable" data-field="title">
+                    <div class="field-view">
+                        <div class="panel-title-text"></div>
+                    </div>
+                    <button class="field-pencil" type="button" aria-label="Edit title">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
+                </div>
             </div>
             <!-- LinkedIn About snippet: fills remaining identity row space; AI view only -->
             <div class="panel-about-snippet" id="panel-about-snippet"
@@ -1718,7 +1725,7 @@
     <script src="../phase-1/nav-left.js?v=2"></script>
     <!-- Quill.js (must load before profile-panel.js) -->
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=27"></script>
+    <script src="profile-panel.js?v=28"></script>
 
     <!-- Section Switching Script -->
     <script>

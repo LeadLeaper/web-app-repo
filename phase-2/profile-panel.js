@@ -15,10 +15,8 @@
     let panelCurrentView = 'crm';   // 'crm' | 'ai'
     let quillsInitialized = false;  // lazy-init Quill editors on first AI view open
 
-    // ─── Edit mode state ──────────────────────────────────────────────────────
-    let panelEditMode     = false;
-    let panelIsDirty      = false;
-    let panelEditOriginal = null;   // editableFields snapshot before edits began
+    // ─── Per-field inline edit state ─────────────────────────────────────────
+    var $currentFieldEdit = null;   // the .field-editable currently being edited
 
     // ─── Backend integration callbacks ───────────────────────────────────────
     // Assign handlers before calling openProfilePanel to wire up backend integration.
@@ -99,7 +97,7 @@
             .replace(/"/g, '&quot;');
     }
 
-    // ─── Edit mode helpers ────────────────────────────────────────────────────
+    // ─── Field data helpers ───────────────────────────────────────────────────
 
     // Returns the full contactData object for the currently-displayed contact.
     function getCurrentContactData() {
@@ -131,28 +129,36 @@
         return f;
     }
 
-    // Writes edited field values back into the live contactData arrays in place.
+    // Writes a single edited field value back into the live contactData arrays in place.
     function mergeEditableFields(cd, ef) {
-        cd.name    = ef.name;
-        cd.company = ef.company;
-        cd.title   = ef.title;
+        cd.name    = ef.name    !== undefined ? ef.name    : cd.name;
+        cd.company = ef.company !== undefined ? ef.company : cd.company;
+        cd.title   = ef.title   !== undefined ? ef.title   : cd.title;
         var phoneSet = false, mobileSet = false, emailSet = false, locSet = false;
         (cd.details || []).forEach(function(item) {
-            if (item.type === 'email' && !emailSet)   { item.value = ef.email;    emailSet  = true; }
+            if (item.type === 'email' && !emailSet && ef.email !== undefined)   { item.value = ef.email;    emailSet  = true; }
             else if (item.type === 'phone') {
                 var isMobile = item.label && /mobile/i.test(item.label);
-                if (isMobile && !mobileSet) { item.value = ef.mobile; mobileSet = true; }
-                else if (!isMobile && !phoneSet) { item.value = ef.phone; phoneSet = true; }
+                if (isMobile && !mobileSet && ef.mobile !== undefined) { item.value = ef.mobile; mobileSet = true; }
+                else if (!isMobile && !phoneSet && ef.phone !== undefined) { item.value = ef.phone; phoneSet = true; }
             }
-            else if (item.type === 'text' && !locSet) { item.value = ef.location; locSet    = true; }
+            else if (item.type === 'text' && !locSet && ef.location !== undefined) { item.value = ef.location; locSet = true; }
         });
         if (!mobileSet && ef.mobile) {
             cd.details = cd.details || [];
             cd.details.push({ label: 'Mobile', value: ef.mobile, type: 'phone' });
         }
+        if (ef.email && !emailSet) {
+            cd.details = cd.details || [];
+            cd.details.push({ value: ef.email, type: 'email' });
+        }
+        if (ef.location && !locSet) {
+            cd.details = cd.details || [];
+            cd.details.push({ value: ef.location, type: 'text' });
+        }
         var webSet = false;
         (cd.companyInfo || []).forEach(function(item) {
-            if (item.type === 'url' && !webSet) { item.value = ef.website; webSet = true; }
+            if (item.type === 'url' && !webSet && ef.website !== undefined) { item.value = ef.website; webSet = true; }
         });
         if (!webSet && ef.website) {
             cd.companyInfo = cd.companyInfo || [];
@@ -160,7 +166,7 @@
         }
         var liSet = false;
         (cd.socialLinks || []).forEach(function(item) {
-            if (item.platform === 'LinkedIn' && !liSet) { item.url = ef.linkedin; liSet = true; }
+            if (item.platform === 'LinkedIn' && !liSet && ef.linkedin !== undefined) { item.url = ef.linkedin; liSet = true; }
         });
         if (!liSet && ef.linkedin) {
             cd.socialLinks = cd.socialLinks || [];
@@ -169,201 +175,139 @@
         return cd;
     }
 
-    // Collects current values from all edit inputs into a flat fields object.
-    function collectEditFormData() {
-        var f = {};
-        $('.panel-identity-input[data-field], .edit-field-input[data-field]').each(function() {
-            f[$(this).data('field')] = $(this).val().trim();
-        });
-        return f;
+    // ─── Per-field inline edit ────────────────────────────────────────────────
+
+    var FIELD_PENCIL_SVG =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+        '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z' +
+        'M20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>' +
+        '</svg>';
+
+    var FIE_CONFIRM_SVG =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+        '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>' +
+        '</svg>';
+
+    var FIE_CANCEL_SVG =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+        '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>' +
+        '</svg>';
+
+    // Opens the inline editor for a .field-editable row.
+    // If another field is already open, it is silently cancelled first.
+    function openFieldEdit($editable, value) {
+        if ($currentFieldEdit) {
+            if ($currentFieldEdit[0] === $editable[0]) return; // already editing
+            closeCurrentFieldEdit();
+        }
+        $currentFieldEdit = $editable;
+        $editable.addClass('editing');
+        $editable.append(
+            '<div class="field-inline-edit">' +
+            '<div class="fie-input-wrap">' +
+            '<input class="fie-input" type="text" value="' + escHtml(value) + '" autocomplete="off">' +
+            '<button class="fie-clear-btn" type="button" tabindex="-1" aria-label="Clear">\u00d7</button>' +
+            '</div>' +
+            '<button class="fie-confirm-btn" type="button" aria-label="Save">' + FIE_CONFIRM_SVG + '</button>' +
+            '<button class="fie-cancel-btn" type="button" aria-label="Cancel">' + FIE_CANCEL_SVG + '</button>' +
+            '</div>'
+        );
+        setTimeout(function() {
+            var $input = $editable.find('.fie-input');
+            $input.focus();
+            if ($editable.data('field') === 'name') $input.select();
+        }, 30);
     }
 
-    // Builds the structured edit form HTML for the details card.
-    function buildContactDetailsEditHTML(ef) {
-        function row(name, label, value, inputType, placeholder) {
-            return '<div class="edit-field-row">' +
-                '<label class="edit-field-label" for="edit-field-' + name + '">' + label + '</label>' +
-                '<input class="edit-field-input" type="' + inputType + '"' +
-                ' id="edit-field-' + name + '" data-field="' + name + '"' +
-                ' value="' + escHtml(value) + '" placeholder="' + escHtml(placeholder) + '"' +
-                ' autocomplete="off">' +
+    // Silently cancels any active inline field editor (no save, no re-render).
+    function closeCurrentFieldEdit() {
+        if (!$currentFieldEdit) return;
+        var $e = $currentFieldEdit;
+        $currentFieldEdit = null;
+        $e.removeClass('editing');
+        $e.find('.field-inline-edit').remove();
+        $e.find('.fie-error').remove();
+    }
+
+    // Contact details card — all editable fields wrapped in .field-editable with hover pencil.
+    // Empty phone/mobile always rendered as placeholder. Other empty fields also shown so
+    // users can add them via the pencil.
+    function buildContactDetailsHTML(contactData) {
+        var ef = extractEditableFields(contactData);
+
+        function pencilBtn(label) {
+            return '<button class="field-pencil" type="button" aria-label="Edit ' + escHtml(label) + '">' +
+                FIELD_PENCIL_SVG + '</button>';
+        }
+
+        function editableRow(fieldName, viewHTML, label) {
+            return '<div class="field-editable" data-field="' + fieldName + '">' +
+                '<div class="field-view">' + viewHTML + '</div>' +
+                pencilBtn(label) +
                 '</div>';
         }
-        return '<div class="contact-details-card contact-details-edit">' +
-            row('email',    'Email',        ef.email,    'email', 'Office email') +
-            row('phone',    'Office Phone', ef.phone,    'tel',   'Office phone') +
-            row('mobile',   'Mobile Phone', ef.mobile,   'tel',   'Mobile phone') +
-            row('location', 'Location',     ef.location, 'text',  'City, State') +
-            row('website',  'Website',      ef.website,  'url',   'https://company.com') +
-            row('linkedin', 'LinkedIn',     ef.linkedin, 'url',   'https://linkedin.com/in/...') +
-            '</div>';
-    }
 
-    // ─── Enter / exit edit mode ───────────────────────────────────────────────
+        var rows = '';
 
-    function enterPanelEditMode() {
-        var cd = getCurrentContactData();
-        if (!cd || panelEditMode) return;
+        // Location — always show (placeholder if empty)
+        rows += editableRow('location',
+            ef.location
+                ? '<span class="detail-plain">' + escHtml(ef.location) + '</span>'
+                : '<span class="detail-muted">location</span>',
+            'location');
 
-        // If panel is in AI view, return to CRM view first
-        if (panelCurrentView === 'ai') switchToCrmView();
+        // Email — always show
+        rows += editableRow('email',
+            ef.email
+                ? '<a href="mailto:' + escHtml(ef.email) + '" class="detail-link">' + escHtml(ef.email) + '</a>'
+                : '<span class="detail-muted">office email</span>',
+            'email');
 
-        panelEditMode     = true;
-        panelIsDirty      = false;
-        panelEditOriginal = extractEditableFields(cd);
+        // Office phone — always show
+        rows += editableRow('phone',
+            ef.phone
+                ? '<a href="tel:' + escHtml(ef.phone.replace(/\s/g,'')) + '" class="detail-link">' + escHtml(ef.phone) + '</a>'
+                : '<span class="detail-muted">office phone</span>',
+            'office phone');
 
-        var $panel = $('.profile-panel');
-        $panel.addClass('edit-mode');
+        // Mobile phone — always show
+        rows += editableRow('mobile',
+            ef.mobile
+                ? '<a href="tel:' + escHtml(ef.mobile.replace(/\s/g,'')) + '" class="detail-link">' + escHtml(ef.mobile) + '</a>'
+                : '<span class="detail-muted">mobile phone</span>',
+            'mobile phone');
 
-        // Close any open dropdowns
-        $('#ai-engagement-dropdown, #ai-research-dropdown, #ai-slack-dropdown')
-            .removeClass('open').attr('aria-hidden', 'true');
-        $('#ai-engagement-btn, #ai-research-btn, #ai-slack-btn')
-            .removeClass('open').attr('aria-expanded', 'false');
+        // Website — always show
+        rows += editableRow('website',
+            ef.website
+                ? '<a href="' + escHtml(ef.website) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(ef.website) + EXT_ICON + '</a>'
+                : '<span class="detail-muted">company website</span>',
+            'website');
 
-        // Inject name/company/title inputs into .panel-info (shown via CSS edit-mode rule)
-        var ef = panelEditOriginal;
-        if (!$('.panel-info-edit').length) {
-            $('.panel-info').append(
-                '<div class="panel-info-edit">' +
-                '<input class="panel-identity-input" type="text" data-field="name"' +
-                ' value="' + escHtml(ef.name) + '" placeholder="Full name"' +
-                ' autocomplete="off" aria-label="Contact name">' +
-                '<input class="panel-identity-input" type="text" data-field="company"' +
-                ' value="' + escHtml(ef.company) + '" placeholder="Company"' +
-                ' autocomplete="off" aria-label="Company">' +
-                '<input class="panel-identity-input" type="text" data-field="title"' +
-                ' value="' + escHtml(ef.title) + '" placeholder="Job title"' +
-                ' autocomplete="off" aria-label="Job title">' +
-                '</div>'
-            );
-        }
+        // LinkedIn — always show
+        rows += editableRow('linkedin',
+            ef.linkedin
+                ? '<a href="' + escHtml(ef.linkedin) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(ef.linkedin) + EXT_ICON + '</a>'
+                : '<span class="detail-muted">linkedin url</span>',
+            'linkedin');
 
-        // Replace scrollable content with edit form only (no accordion while editing)
-        $('.profile-content').html(buildContactDetailsEditHTML(ef));
-
-        // Focus the name field
-        setTimeout(function() {
-            $('.panel-identity-input[data-field="name"]').focus().select();
-        }, 50);
-    }
-
-    // save = true  → collect form values, call onSave, then commit + re-render
-    // save = false → discard all changes, re-render from original contactData
-    function exitPanelEditMode(save) {
-        if (!panelEditMode) return;
-
-        if (!save) {
-            _exitEditCleanup(false);
-            return;
-        }
-
-        var cd = getCurrentContactData();
-        if (!cd) { _exitEditCleanup(false); return; }
-
-        var editedFields = collectEditFormData();
-        var $saveBtn     = $('#panel-edit-save-btn');
-        $saveBtn.prop('disabled', true).text('Saving\u2026');
-        hidePanelEditError();
-
-        function onDone(err) {
-            if (err) {
-                $saveBtn.prop('disabled', false).text('Save');
-                showPanelEditError(typeof err === 'string' ? err : 'Save failed. Please try again.');
-                return;
-            }
-            mergeEditableFields(cd, editedFields);
-            _exitEditCleanup(true, cd);
-        }
-
-        var cb = window.profilePanelCallbacks;
-        if (cb && typeof cb.onSave === 'function') {
-            cb.onSave(cd.id, editedFields, onDone);
-        } else {
-            onDone(); // no handler registered — treat as instant success
-        }
-    }
-
-    // Shared teardown used by both cancel and post-save paths.
-    function _exitEditCleanup(committed, cd) {
-        panelEditMode = false;
-        panelIsDirty  = false;
-        $('.profile-panel').removeClass('edit-mode');
-        $('.panel-info-edit').remove();
-        hidePanelEditError();
-        var contactData = cd || getCurrentContactData();
-        if (contactData) {
-            updatePanelIdentity(contactData);
-            renderMainContent(contactData);
-        }
-    }
-
-    // Called before any navigation or panel close when edit mode is active.
-    // Silently discards unsaved changes and resets state without re-rendering
-    // (the caller will immediately re-render or close the panel anyway).
-    function _discardEditModeQuiet() {
-        if (!panelEditMode) return;
-        panelEditMode = false;
-        panelIsDirty  = false;
-        $('.profile-panel').removeClass('edit-mode');
-        $('.panel-info-edit').remove();
-        hidePanelEditError();
-    }
-
-    function showPanelEditError(msg) {
-        var $err = $('#panel-edit-error');
-        if (!$err.length) {
-            $('.panel-controls').after(
-                '<div class="panel-edit-error" id="panel-edit-error"></div>'
-            );
-            $err = $('#panel-edit-error');
-        }
-        $err.text(msg).addClass('visible');
-    }
-
-    function hidePanelEditError() {
-        $('#panel-edit-error').removeClass('visible');
-    }
-
-    // Contact details card (location, email, phone, URLs, social, lead owner)
-    function buildContactDetailsHTML(contactData) {
-        let rows = '';
-
-        // Detail fields: email → mailto link, phone → tel link, url → ext link, text → plain
-        (contactData.details || []).forEach(function(item) {
-            if (!item.value) return;
-            let valueHTML;
-            if (item.type === 'email') {
-                valueHTML = '<a href="mailto:' + escHtml(item.value) + '" class="detail-link">' + escHtml(item.value) + '</a>';
-            } else if (item.type === 'phone') {
-                valueHTML = '<a href="tel:' + escHtml(item.value.replace(/\s/g,'')) + '" class="detail-link">' + escHtml(item.value) + '</a>';
-            } else if (item.type === 'url') {
-                valueHTML = '<a href="' + escHtml(item.value) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.value) + EXT_ICON + '</a>';
-            } else {
-                valueHTML = '<span class="detail-plain">' + escHtml(item.value) + '</span>';
-            }
-            rows += '<div class="detail-row">' + valueHTML + '</div>';
-        });
-
-        // Website from companyInfo (type: url)
-        (contactData.companyInfo || []).filter(function(i) { return i.type === 'url'; }).forEach(function(item) {
-            rows += '<div class="detail-row"><a href="' + escHtml(item.value) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.value) + EXT_ICON + '</a></div>';
-        });
-
-        // Social links
+        // Additional social links beyond the first LinkedIn
         (contactData.socialLinks || []).forEach(function(item) {
-            rows += '<div class="detail-row"><a href="' + escHtml(item.url) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.url) + EXT_ICON + '</a></div>';
+            if (item.url && item.url !== ef.linkedin) {
+                rows += '<div class="detail-row"><a href="' + escHtml(item.url) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.url) + EXT_ICON + '</a></div>';
+            }
         });
 
-        // Lead owner + created date
+        // Lead owner + created date (non-editable)
+        var meta = '';
         if (contactData.leadOwner) {
-            rows += '<div class="detail-row detail-row-meta"><span class="detail-label">Lead Owner:</span> <span class="detail-plain">' + escHtml(contactData.leadOwner) + '</span></div>';
+            meta += '<div class="detail-row detail-row-meta"><span class="detail-label">Lead Owner:</span> <span class="detail-plain">' + escHtml(contactData.leadOwner) + '</span></div>';
         }
         if (contactData.createdAt) {
-            rows += '<div class="detail-row detail-row-meta"><span class="detail-muted">' + escHtml(contactData.createdAt) + '</span></div>';
+            meta += '<div class="detail-row detail-row-meta"><span class="detail-muted">' + escHtml(contactData.createdAt) + '</span></div>';
         }
 
-        return rows ? '<div class="contact-details-card">' + rows + '</div>' : '';
+        return '<div class="contact-details-card">' + rows + meta + '</div>';
     }
 
     // Activity accordion (notes, meetings, calls, reminders, email metrics)
@@ -514,8 +458,8 @@
             : (idx - 1 + contacts.length) % contacts.length;
         const nextContactId = contacts[nextIdx].id;
 
-        // Discard any in-progress edits silently before navigating
-        _discardEditModeQuiet();
+        // Cancel any in-progress field edit silently before navigating
+        closeCurrentFieldEdit();
 
         const cb = window.profilePanelCallbacks;
         if (cb) {
@@ -536,8 +480,8 @@
 
         const closingContactId = $panel.data('contact-id');
 
-        // Discard any in-progress edits silently before closing
-        _discardEditModeQuiet();
+        // Cancel any in-progress field edit silently before closing
+        closeCurrentFieldEdit();
 
         $panel.removeClass('open');
         $('#panel-view-toggle').removeClass('visible ai-view');
@@ -786,6 +730,8 @@
                     return;
                 }
                 if ($('#rp-employer-modal').hasClass('open')) { closeEmployerResearchModal(); return; }
+                // ESC in an active field edit → cancel that edit only (don't close panel)
+                if ($currentFieldEdit) { closeCurrentFieldEdit(); return; }
                 var $panel = $('.profile-panel');
                 if ($panel.hasClass('open')) closeProfilePanel();
             }
@@ -796,37 +742,98 @@
             closeProfilePanel();
         });
 
-        // ── Contact edit mode ────────────────────────────────────────────────
+        // ── Per-field inline edit ────────────────────────────────────────────
 
-        // Enter edit mode
-        $(document).on('click', '#panel-edit-btn', function() {
-            enterPanelEditMode();
+        // Pencil click — open inline editor for that field
+        $(document).on('click', '.field-pencil', function(e) {
+            e.stopPropagation();
+            var $editable = $(this).closest('.field-editable');
+            var fieldName = $editable.data('field');
+            var cd = getCurrentContactData();
+            if (!cd) return;
+            var ef = extractEditableFields(cd);
+            openFieldEdit($editable, ef[fieldName] || '');
         });
 
-        // Cancel — discard changes
-        $(document).on('click', '#panel-edit-cancel-btn', function() {
-            exitPanelEditMode(false);
+        // Clear button — empty the input
+        $(document).on('click', '.fie-clear-btn', function(e) {
+            e.stopPropagation();
+            $(this).closest('.fie-input-wrap').find('.fie-input').val('').focus();
         });
 
-        // Save — collect + persist via onSave callback
-        $(document).on('click', '#panel-edit-save-btn', function() {
-            exitPanelEditMode(true);
+        // Cancel button — discard and close
+        $(document).on('click', '.fie-cancel-btn', function(e) {
+            e.stopPropagation();
+            closeCurrentFieldEdit();
         });
 
-        // Track dirty state on any edit field keystroke
-        $(document).on('input', '.edit-field-input, .panel-identity-input', function() {
-            panelIsDirty = true;
+        // Confirm button — save single field
+        $(document).on('click', '.fie-confirm-btn', function(e) {
+            e.stopPropagation();
+            var $editable  = $(this).closest('.field-editable');
+            var fieldName  = $editable.data('field');
+            var newValue   = $editable.find('.fie-input').val().trim();
+            var cd         = getCurrentContactData();
+            if (!cd) { closeCurrentFieldEdit(); return; }
+
+            var $confirm = $(this);
+            var $cancel  = $editable.find('.fie-cancel-btn');
+            var $input   = $editable.find('.fie-input');
+            $confirm.prop('disabled', true);
+            $cancel.prop('disabled', true);
+            $input.prop('disabled', true);
+
+            function onDone(err) {
+                if (err) {
+                    $confirm.prop('disabled', false);
+                    $cancel.prop('disabled', false);
+                    $input.prop('disabled', false).focus();
+                    var $err = $editable.find('.fie-error');
+                    if (!$err.length) {
+                        $editable.find('.field-inline-edit').after('<div class="fie-error"></div>');
+                        $err = $editable.find('.fie-error');
+                    }
+                    $err.text(typeof err === 'string' ? err : 'Save failed.').addClass('visible');
+                    return;
+                }
+                // Merge single field into contactData
+                var patch = {};
+                patch[fieldName] = newValue;
+                mergeEditableFields(cd, patch);
+                // Close editor
+                $currentFieldEdit = null;
+                $editable.removeClass('editing');
+                $editable.find('.field-inline-edit, .fie-error').remove();
+                // Re-render identity zone or details card
+                if (fieldName === 'name' || fieldName === 'company' || fieldName === 'title') {
+                    updatePanelIdentity(cd);
+                } else {
+                    renderMainContent(cd);
+                }
+            }
+
+            var cb = window.profilePanelCallbacks;
+            var fields = {};
+            fields[fieldName] = newValue;
+            if (cb && typeof cb.onSave === 'function') {
+                cb.onSave(cd.id, fields, onDone);
+            } else {
+                onDone();
+            }
         });
 
-        // Fire onChange on blur (backend can use for real-time draft persistence)
-        $(document).on('blur', '.edit-field-input, .panel-identity-input', function() {
-            if (!panelEditMode) return;
-            var fieldName   = $(this).data('field');
-            var newValue    = $(this).val().trim();
-            var cd          = getCurrentContactData();
-            var cb          = window.profilePanelCallbacks;
-            if (cb && typeof cb.onChange === 'function' && cd) {
-                cb.onChange(cd.id, fieldName, newValue);
+        // Enter key in field input — trigger confirm
+        $(document).on('keydown', '.fie-input', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $(this).closest('.field-editable').find('.fie-confirm-btn').trigger('click');
+            }
+        });
+
+        // Click outside any active field edit — cancel it
+        $(document).on('click.fieldEdit', function(e) {
+            if ($currentFieldEdit && !$(e.target).closest('.field-editable').length) {
+                closeCurrentFieldEdit();
             }
         });
 
@@ -1149,9 +1156,7 @@
     window.switchToAiView              = switchToAiView;
     window.switchToCrmView             = switchToCrmView;
     window.togglePanelView             = togglePanelView;
-    // Edit mode
-    window.enterPanelEditMode          = enterPanelEditMode;
-    window.exitPanelEditMode           = exitPanelEditMode;
+    // Field data / edit helpers
     window.extractEditableFields       = extractEditableFields;
 
     $(document).ready(function() { setupPanelHandlers(); });

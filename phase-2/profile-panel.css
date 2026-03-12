@@ -1744,184 +1744,162 @@ body.ll-legacy .ll-new-only { display: none; }
 .rp-btn-save-green:hover { background-color: #16a34a; border-color: #16a34a; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Contact Edit Mode  (CSS v30)
+   Inline Field Edit  (CSS v31)
    ─────────────────────────────────────────────────────────────────────────
-   Edit button lives in .panel-controls at all times.
-   Entering edit mode:
-     • swaps nav buttons → Cancel + Save in the controls bar
-     • hides the AI+ action buttons row
-     • replaces .profile-content with a structured edit form
-     • unlocks name/company/title inputs inside .panel-identity
+   Per-field hover-pencil + inline editor pattern.
+   Each editable row is a .field-editable[data-field] wrapper containing:
+     .field-view   — the normal read-only display content
+     .field-pencil — hidden pencil button, revealed on hover
+   Clicking the pencil adds .editing to the wrapper, which:
+     • hides .field-view
+     • hides .field-pencil
+     • shows .field-inline-edit (injected by JS: input + ✓ + ✗)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Controls-bar Edit button (view mode only) ──────────────── */
-.panel-edit-btn {
-    display: inline-flex;
+/* ── Editable row wrapper ──────────────────────────────────────── */
+.field-editable {
+    display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 9px;
-    background: none;
-    border: 1px solid #d4d4d4;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: var(--text-sm, 13px);
-    font-weight: 500;
-    color: #525252;
-    line-height: 1;
-    flex-shrink: 0;
-    font-family: inherit;
-    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
-}
-.panel-edit-btn svg {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
-}
-.panel-edit-btn:hover {
-    color: #08c;
-    border-color: #08c;
-    background-color: #f0f7ff;
 }
 
-/* ── Controls-bar Cancel + Save (edit mode only, hidden by default) ── */
-.panel-edit-actions {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
+.field-view {
+    flex: 1;
+    min-width: 0;
 }
-.panel-edit-cancel-btn,
-.panel-edit-save-btn {
-    padding: 4px 13px;
+
+/* ── Hover-reveal pencil button ─────────────────────────────────── */
+.field-pencil {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    margin-left: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #b0b0b0;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+.field-pencil svg {
+    width: 13px;
+    height: 13px;
+    pointer-events: none;
+}
+.field-editable:hover .field-pencil,
+.field-editable:focus-within .field-pencil { opacity: 1; }
+.field-pencil:hover { color: #08c; background-color: #f0f7ff; }
+
+/* Hide pencil and view while this row is being edited */
+.field-editable.editing .field-pencil { display: none; }
+.field-editable.editing .field-view   { display: none; }
+
+/* ── Inline edit container ──────────────────────────────────────── */
+.field-inline-edit {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Input wrapper — provides the visible border + focus ring */
+.fie-input-wrap {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #0099cc;
+    border-radius: 4px;
+    background: #ffffff;
+    box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.14);
+    overflow: hidden;
+}
+.fie-input {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 6px;
+    border: none;
+    outline: none;
+    font-size: var(--text-sm, 13px);
+    font-family: inherit;
+    color: #262626;
+    background: transparent;
+}
+.fie-input:disabled { background-color: #f5f5f5; color: #737373; }
+
+/* Clear (×) button inside the input wrapper */
+.fie-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin-right: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #a3a3a3;
+    font-size: 15px;
+    line-height: 1;
+}
+.fie-clear-btn:hover { color: #525252; }
+
+/* Confirm (✓) and Cancel (✗) action buttons */
+.fie-confirm-btn,
+.fie-cancel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     border-radius: 4px;
     cursor: pointer;
-    font-size: var(--text-sm, 13px);
-    font-weight: 500;
-    line-height: 1.5;
     border: 1px solid;
-    font-family: inherit;
-    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+    transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
 }
-.panel-edit-cancel-btn {
-    background: #ffffff;
-    border-color: #d4d4d4;
-    color: #525252;
-}
-.panel-edit-cancel-btn:hover {
-    border-color: #a3a3a3;
-    background-color: #f5f5f5;
-}
-.panel-edit-save-btn {
-    background: #08c;
+.fie-confirm-btn svg,
+.fie-cancel-btn svg { width: 14px; height: 14px; pointer-events: none; }
+.fie-confirm-btn {
+    background-color: #08c;
     border-color: #08c;
     color: #ffffff;
 }
-.panel-edit-save-btn:hover {
-    background: #0077b3;
-    border-color: #0077b3;
+.fie-confirm-btn:hover    { background-color: #0077b3; border-color: #0077b3; }
+.fie-confirm-btn:disabled { background-color: #a3a3a3; border-color: #a3a3a3; cursor: not-allowed; }
+.fie-cancel-btn {
+    background-color: #ffffff;
+    border-color: #d4d4d4;
+    color: #737373;
 }
-.panel-edit-save-btn:disabled {
-    background: #a3a3a3;
-    border-color: #a3a3a3;
-    cursor: not-allowed;
-}
+.fie-cancel-btn:hover    { background-color: #f5f5f5; border-color: #a3a3a3; color: #404040; }
+.fie-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Edit-mode: swap controls bar + hide AI+ action row ──────── */
-.profile-panel.edit-mode .panel-controls-nav  { display: none; }
-.profile-panel.edit-mode .panel-edit-btn      { display: none; }
-.profile-panel.edit-mode .panel-edit-actions  { display: flex; }
-.profile-panel.edit-mode .panel-actions       { display: none; }
-
-/* ── Save-error banner (injected by JS when onSave returns err) ── */
-.panel-edit-error {
+/* Save error — appears below the inline editor row */
+.fie-error {
     display: none;
-    padding: 6px 16px;
-    background: #fff1f2;
-    border-bottom: 1px solid #fecdd3;
     font-size: var(--text-xs, 12px);
     color: #be123c;
-    flex-shrink: 0;
+    padding: 2px 0 0;
 }
-.panel-edit-error.visible { display: block; }
+.fie-error.visible { display: block; }
 
-/* ── Identity section: hide read-only spans, show edit inputs ── */
-.profile-panel.edit-mode .panel-name-row    { display: none; }
-.profile-panel.edit-mode .panel-company     { display: none; }
-.profile-panel.edit-mode .panel-title-text  { display: none; }
+/* ── Identity zone overrides ────────────────────────────────────── */
+.panel-info .field-editable { padding: 0; }
+.panel-info .field-pencil   { width: 20px; height: 20px; }
 
-/* Container for name/company/title inputs — hidden until edit-mode */
-.panel-info-edit {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-    flex: 1;
-}
-.profile-panel.edit-mode .panel-info-edit { display: flex; }
-
-.panel-identity-input {
-    width: 100%;
-    padding: 3px 7px;
-    border: 1px solid #d4d4d4;
-    border-radius: 4px;
+/* ── Contact details card overrides ─────────────────────────────── */
+/* Mirrors former .detail-row typography + spacing */
+.contact-details-card .field-editable {
+    padding: 3px 0;
     font-size: var(--text-sm, 13px);
-    font-family: inherit;
-    color: #262626;
-    background: #ffffff;
-    box-sizing: border-box;
-    min-width: 0;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    line-height: 1.5;
 }
-.panel-identity-input[data-field="name"] {
-    font-size: var(--text-base, 15px);
-    font-weight: 600;
-}
-.panel-identity-input:focus {
-    outline: none;
-    border-color: #08c;
-    box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.15);
-}
-.panel-identity-input::placeholder { color: #a3a3a3; }
-
-/* ── Contact details edit form ───────────────────────────────── */
-.contact-details-edit {
-    /* overrides .contact-details-card defaults where needed */
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: 8px 16px 14px;
-    border-bottom: 1px solid #e0e0e0;
-    background-color: var(--color-bg-primary, #ffffff);
-}
-
-.edit-field-row {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 5px 0;
-}
-.edit-field-label {
-    font-size: var(--text-xs, 12px);
-    font-weight: 500;
-    color: #737373;
-    line-height: 1.3;
-    user-select: none;
-}
-.edit-field-input {
-    width: 100%;
-    padding: 5px 8px;
-    border: 1px solid #d4d4d4;
-    border-radius: 4px;
-    font-size: var(--text-sm, 13px);
-    font-family: inherit;
-    color: #262626;
-    background: #ffffff;
-    box-sizing: border-box;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
-}
-.edit-field-input:focus {
-    outline: none;
-    border-color: #08c;
-    box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.15);
-}
-.edit-field-input::placeholder { color: #b0b0b0; }
