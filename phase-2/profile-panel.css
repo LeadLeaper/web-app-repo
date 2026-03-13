@@ -256,10 +256,75 @@
 }
 
 .panel-status-badge.hidden        { display: none; }
-.panel-status-badge--draft        { background-color: #0891b2; }   /* cyan   */
-.panel-status-badge--live         { background-color: #29c329; }   /* green — matches AI+ Engagement button */
-.panel-status-badge--paused       { background-color: #9333ea; }   /* purple */
-.panel-status-badge--done         { background-color: #64748b; }   /* slate  */
+.panel-status-badge--draft        { background-color: #38bdf8; }   /* sky-400  — light blue  */
+.panel-status-badge--live         { background-color: #29c329; }   /* green    — matches AI+ Engagement button */
+.panel-status-badge--paused       { background-color: #9333ea; }   /* purple   */
+.panel-status-badge--done         { background-color: #0891b2; }   /* cyan-600 — moved from DRAFT */
+
+/* ── Equal width: DRAFT / LIVE / DONE share the same rendered width ──────
+   PAUSED is intentionally wider (longer label — acceptable as-is)       */
+.panel-status-badge--draft,
+.panel-status-badge--live,
+.panel-status-badge--done {
+    min-width: 46px;
+    justify-content: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STYLE B — Pill + gradient + drop shadow
+   ══════════════════════════════════════════════════════════════════════════ */
+.badge-style-b {
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.badge-style-b.panel-status-badge--draft  { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%); }
+.badge-style-b.panel-status-badge--live   { background: linear-gradient(135deg, #2dd62d 0%, #1a9e1a 100%); }
+.badge-style-b.panel-status-badge--paused { background: linear-gradient(135deg, #a855f7 0%, #7a1fd1 100%); }
+.badge-style-b.panel-status-badge--done   { background: linear-gradient(135deg, #0891b2 0%, #066d8a 100%); }
+
+.badge-style-b.panel-status-badge--draft,
+.badge-style-b.panel-status-badge--live,
+.badge-style-b.panel-status-badge--done { min-width: 54px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STYLE D — Dot indicator (LIVE dot pulses)
+   ══════════════════════════════════════════════════════════════════════════ */
+.badge-style-d {
+    padding: 2px 7px 2px 5px;
+    gap: 5px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+.badge-style-d::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.badge-style-d.panel-status-badge--draft  { background: rgba(56,189,248,0.14);  color: #0284c7; }
+.badge-style-d.panel-status-badge--draft::before  { background: #38bdf8; }
+.badge-style-d.panel-status-badge--live   { background: rgba(41,195,41,0.12);   color: #1a8a1a; }
+.badge-style-d.panel-status-badge--live::before   { background: #29c329; animation: panel-pulse-dot 1.6s ease-in-out infinite; }
+.badge-style-d.panel-status-badge--paused { background: rgba(147,51,234,0.12);  color: #7c22d4; }
+.badge-style-d.panel-status-badge--paused::before { background: #9333ea; }
+.badge-style-d.panel-status-badge--done   { background: rgba(8,145,178,0.12);   color: #0772a0; }
+.badge-style-d.panel-status-badge--done::before   { background: #0891b2; }
+
+.badge-style-d.panel-status-badge--draft,
+.badge-style-d.panel-status-badge--live,
+.badge-style-d.panel-status-badge--done {
+    min-width: 62px;
+    justify-content: flex-start;
+}
+
+@keyframes panel-pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1);   box-shadow: 0 0 0 0 rgba(41,195,41,0.55); }
+    50%       { opacity: 1; transform: scale(1.1); box-shadow: 0 0 0 4px rgba(41,195,41,0); }
+}
 
 .panel-company {
     font-size: var(--text-sm, 13px);

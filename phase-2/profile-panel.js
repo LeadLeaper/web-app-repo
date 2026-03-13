@@ -11,6 +11,12 @@
 
     const ANIMATION_DURATION = 300;
 
+    // ─── Badge style ──────────────────────────────────────────────────────────
+    // Change this single value to switch the visual treatment of all status badges.
+    //   'b' — Pill + gradient + drop shadow
+    //   'd' — Dot indicator (LIVE dot pulses)
+    const BADGE_STYLE = 'b';
+
     // ─── AI Engagement view state ─────────────────────────────────────────────
     var panelCurrentView = 'crm';   // 'crm' | 'ai'
     var quillsInitialized = false;  // lazy-init Quill editors on first AI view open
@@ -90,8 +96,8 @@
             $badge
                 .text(statusCfg.label)
                 .attr('aria-label', statusCfg.label + ' contact')
-                .removeClass(STATUS_ALL_CLASSES)
-                .addClass(statusCfg.cls)
+                .removeClass(STATUS_ALL_CLASSES + ' badge-style-b badge-style-d')
+                .addClass(statusCfg.cls + ' badge-style-' + BADGE_STYLE)
                 .removeClass('hidden');
         } else {
             $badge.addClass('hidden');

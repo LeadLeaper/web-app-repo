@@ -88,10 +88,10 @@
     text-transform: uppercase;
     line-height: 1.4;
   }
-  .a-draft  { background: #0891b2; }
+  .a-draft  { background: #38bdf8; }
   .a-live   { background: #29c329; }
   .a-paused { background: #9333ea; }
-  .a-done   { background: #64748b; }
+  .a-done   { background: #0891b2; }
 
   /* ══════════════════════════════════════════════════
      STYLE B — Pill with gradient + inset shine
@@ -110,10 +110,10 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.22),
                 inset 0 1px 0 rgba(255,255,255,0.22);
   }
-  .b-draft  { background: linear-gradient(135deg, #0891b2 0%, #066d8a 100%); }
+  .b-draft  { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%); }
   .b-live   { background: linear-gradient(135deg, #2dd62d 0%, #1a9e1a 100%); }
   .b-paused { background: linear-gradient(135deg, #a855f7 0%, #7a1fd1 100%); }
-  .b-done   { background: linear-gradient(135deg, #7a8fa3 0%, #4d5a6b 100%); }
+  .b-done   { background: linear-gradient(135deg, #0891b2 0%, #066d8a 100%); }
 
   /* ══════════════════════════════════════════════════
      STYLE C — Soft tint (pastel fill + colored text)
@@ -131,10 +131,10 @@
     line-height: 1.4;
     border: 1px solid transparent;
   }
-  .c-draft  { background: rgba(8,145,178,0.10);  color: #0772a0; border-color: rgba(8,145,178,0.28); }
-  .c-live   { background: rgba(41,195,41,0.10);  color: #1a8a1a; border-color: rgba(41,195,41,0.30); }
-  .c-paused { background: rgba(147,51,234,0.10); color: #7c22d4; border-color: rgba(147,51,234,0.28); }
-  .c-done   { background: rgba(100,116,139,0.10); color: #4d5f72; border-color: rgba(100,116,139,0.28); }
+  .c-draft  { background: rgba(56,189,248,0.12);  color: #0284c7; border-color: rgba(56,189,248,0.35); }
+  .c-live   { background: rgba(41,195,41,0.10);   color: #1a8a1a; border-color: rgba(41,195,41,0.30); }
+  .c-paused { background: rgba(147,51,234,0.10);  color: #7c22d4; border-color: rgba(147,51,234,0.28); }
+  .c-done   { background: rgba(8,145,178,0.10);   color: #0772a0; border-color: rgba(8,145,178,0.28); }
 
   /* ══════════════════════════════════════════════════
      STYLE D — Dot indicator (LIVE dot pulses)
@@ -159,14 +159,14 @@
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .d-draft  { background: rgba(8,145,178,0.12);  color: #0772a0; }
-  .d-draft::before  { background: #0891b2; }
-  .d-live   { background: rgba(41,195,41,0.12);  color: #1a8a1a; }
+  .d-draft  { background: rgba(56,189,248,0.14);  color: #0284c7; }
+  .d-draft::before  { background: #38bdf8; }
+  .d-live   { background: rgba(41,195,41,0.12);   color: #1a8a1a; }
   .d-live::before   { background: #29c329; animation: pulse-dot 1.6s ease-in-out infinite; }
-  .d-paused { background: rgba(147,51,234,0.12); color: #7c22d4; }
+  .d-paused { background: rgba(147,51,234,0.12);  color: #7c22d4; }
   .d-paused::before { background: #9333ea; }
-  .d-done   { background: rgba(100,116,139,0.12); color: #4d5f72; }
-  .d-done::before   { background: #64748b; }
+  .d-done   { background: rgba(8,145,178,0.12);   color: #0772a0; }
+  .d-done::before   { background: #0891b2; }
 
   @keyframes pulse-dot {
     0%, 100% { opacity: 1; transform: scale(1);   box-shadow: 0 0 0 0 rgba(41,195,41,0.55); }
@@ -189,10 +189,10 @@
     background: transparent;
     border: 1.5px solid;
   }
-  .e-draft  { color: #0891b2; border-color: #0891b2; }
+  .e-draft  { color: #0ea5e9; border-color: #0ea5e9; }
   .e-live   { color: #29c329; border-color: #29c329; }
   .e-paused { color: #9333ea; border-color: #9333ea; }
-  .e-done   { color: #64748b; border-color: #64748b; }
+  .e-done   { color: #0891b2; border-color: #0891b2; }
 
   /* ── Context strip: show badges as they'd appear next to a name ── */
   .context-section {
@@ -240,8 +240,10 @@
 
 <h1>Status Badge Design Alternatives</h1>
 <p class="subtitle">
-  All options use the existing status colors &nbsp;·&nbsp;
-  LIVE updated to <strong>#29c329</strong> to match AI+ Engagement &nbsp;·&nbsp;
+  DRAFT <strong>#38bdf8</strong> (sky-400) &nbsp;·&nbsp;
+  LIVE <strong>#29c329</strong> (matches AI+ Engagement) &nbsp;·&nbsp;
+  PAUSED <strong>#9333ea</strong> &nbsp;·&nbsp;
+  DONE <strong>#0891b2</strong> (moved from DRAFT) &nbsp;·&nbsp;
   Scroll down to see each option in context next to a contact name
 </p>
 
