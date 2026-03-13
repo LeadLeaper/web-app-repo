@@ -350,14 +350,22 @@
             }
         });
 
-        // Lead owner + created date (non-editable)
+        // Lead owner + created date — single flex row: label | [name / date stacked]
+        // createdAt rendered as HTML so hosts can embed markup (e.g. <span class="dt-at">@</span>)
         var meta = '';
-        if (contactData.leadOwner) {
-            meta += '<div class="detail-row detail-row-meta"><span class="detail-label">Lead Owner:</span> <span class="detail-plain">' + escHtml(contactData.leadOwner) + '</span></div>';
-        }
-        if (contactData.createdAt) {
-            // createdAt is rendered as HTML so hosts can embed markup (e.g. <span class="dt-at">@</span>)
-            meta += '<div class="detail-row detail-row-meta"><span class="detail-muted">' + contactData.createdAt + '</span></div>';
+        if (contactData.leadOwner || contactData.createdAt) {
+            meta += '<div class="detail-row detail-row-meta">';
+            if (contactData.leadOwner) {
+                meta += '<span class="detail-label">Lead Owner:</span>';
+            }
+            meta += '<div class="detail-meta-values">';
+            if (contactData.leadOwner) {
+                meta += '<span class="detail-plain">' + escHtml(contactData.leadOwner) + '</span>';
+            }
+            if (contactData.createdAt) {
+                meta += '<span class="detail-muted">' + contactData.createdAt + '</span>';
+            }
+            meta += '</div></div>';
         }
 
         return '<div class="contact-details-card">' + rows + meta + '</div>';

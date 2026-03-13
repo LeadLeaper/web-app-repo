@@ -709,15 +709,23 @@
 }
 
 .detail-row-meta {
+    display: flex;
+    align-items: flex-start;
     margin-top: 4px;
     padding-top: 2px;
 }
 
-/* Lead Owner name sits inline with its label (overrides the global display:block on .detail-plain) */
-.detail-row-meta .detail-plain {
-    display: inline;
-    overflow: visible;
-    white-space: normal;
+/* Label (e.g. "Lead Owner:") — pinned to the left, never shrinks */
+.detail-row-meta > .detail-label {
+    flex-shrink: 0;
+    padding-top: 1px;   /* optical alignment with name baseline */
+}
+
+/* Right column: name on line 1, date on line 2 — both aligned to label's right edge */
+.detail-meta-values {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 .dt-at {
