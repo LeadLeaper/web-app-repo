@@ -1910,3 +1910,10 @@
     font-size: var(--text-sm, 13px);
     line-height: 1.5;
 }
+
+/* Non-editable rows (e.g. additional social links) have no pencil button,
+   so pad-right by the same amount the pencil occupies (22px width + 2px
+   margin-left) to keep ext-link icons aligned with editable rows. */
+.contact-details-card .detail-row {
+    padding-right: 24px;
+}
