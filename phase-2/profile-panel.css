@@ -713,6 +713,13 @@
     padding-top: 2px;
 }
 
+/* Lead Owner name sits inline with its label (overrides the global display:block on .detail-plain) */
+.detail-row-meta .detail-plain {
+    display: inline;
+    overflow: visible;
+    white-space: normal;
+}
+
 .dt-at {
     color: #b8b8b8;
     font-style: normal;
