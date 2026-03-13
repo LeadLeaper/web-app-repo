@@ -56,15 +56,6 @@
     box-sizing: border-box;
 }
 
-/* Nav item visibility — controlled by body.ll-legacy class.
-   Engagement (legacy) and Templates (new-UI) are mutually exclusive:
-   only one is shown at a time depending on the user's access tier.
-   Set the body class from JS: if (llLegacyUI) document.body.classList.add('ll-legacy'); */
-body.ll-legacy  .ll-legacy-only { display: list-item; }   /* Engagement  → legacy users   */
-body:not(.ll-legacy) .ll-legacy-only { display: none; }
-
-body:not(.ll-legacy) .ll-new-only { display: list-item; } /* Templates  → new-UI users    */
-body.ll-legacy .ll-new-only { display: none; }
 
 /* Company logo in nav-header: transparent bg, fixed 32×32, with text fallback */
 .nav-logo-placeholder {
@@ -601,10 +592,10 @@ body.ll-legacy .ll-new-only { display: none; }
 .detail-link {
     color: #08c;
     text-decoration: none;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 3px;
-    word-break: break-all;
+    overflow: hidden;
 }
 
 .detail-link:hover {
@@ -612,8 +603,12 @@ body.ll-legacy .ll-new-only { display: none; }
     text-decoration: underline;
 }
 
-.detail-link-ext {
-    word-break: break-all;
+.detail-link-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .detail-ext-icon {
@@ -626,11 +621,19 @@ body.ll-legacy .ll-new-only { display: none; }
 .detail-plain {
     color: #404040;
     font-size: var(--text-sm, 13px);
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .detail-muted {
     color: #737373;
     font-size: var(--text-xs, 12px);
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .detail-label {

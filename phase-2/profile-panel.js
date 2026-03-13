@@ -299,42 +299,42 @@
         // Email — always show
         rows += editableRow('email',
             ef.email
-                ? '<a href="mailto:' + escHtml(ef.email) + '" class="detail-link">' + escHtml(ef.email) + '</a>'
+                ? '<a href="mailto:' + escHtml(ef.email) + '" class="detail-link"><span class="detail-link-text">' + escHtml(ef.email) + '</span></a>'
                 : '<span class="detail-muted">office email</span>',
             'email');
 
         // Office phone — always show
         rows += editableRow('phone',
             ef.phone
-                ? '<a href="tel:' + escHtml(ef.phone.replace(/\s/g,'')) + '" class="detail-link">' + escHtml(ef.phone) + '</a>'
+                ? '<a href="tel:' + escHtml(ef.phone.replace(/\s/g,'')) + '" class="detail-link"><span class="detail-link-text">' + escHtml(ef.phone) + '</span></a>'
                 : '<span class="detail-muted">office phone</span>',
             'office phone');
 
         // Mobile phone — always show
         rows += editableRow('mobile',
             ef.mobile
-                ? '<a href="tel:' + escHtml(ef.mobile.replace(/\s/g,'')) + '" class="detail-link">' + escHtml(ef.mobile) + '</a>'
+                ? '<a href="tel:' + escHtml(ef.mobile.replace(/\s/g,'')) + '" class="detail-link"><span class="detail-link-text">' + escHtml(ef.mobile) + '</span></a>'
                 : '<span class="detail-muted">mobile phone</span>',
             'mobile phone');
 
         // Website — always show
         rows += editableRow('website',
             ef.website
-                ? '<a href="' + escHtml(ef.website) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(ef.website) + EXT_ICON + '</a>'
+                ? '<a href="' + escHtml(ef.website) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext"><span class="detail-link-text">' + escHtml(ef.website) + '</span>' + EXT_ICON + '</a>'
                 : '<span class="detail-muted">company website</span>',
             'website');
 
         // LinkedIn — always show
         rows += editableRow('linkedin',
             ef.linkedin
-                ? '<a href="' + escHtml(ef.linkedin) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(ef.linkedin) + EXT_ICON + '</a>'
+                ? '<a href="' + escHtml(ef.linkedin) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext"><span class="detail-link-text">' + escHtml(ef.linkedin) + '</span>' + EXT_ICON + '</a>'
                 : '<span class="detail-muted">linkedin url</span>',
             'linkedin');
 
         // Additional social links beyond the first LinkedIn
         (contactData.socialLinks || []).forEach(function(item) {
             if (item.url && item.url !== ef.linkedin) {
-                rows += '<div class="detail-row"><a href="' + escHtml(item.url) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext">' + escHtml(item.url) + EXT_ICON + '</a></div>';
+                rows += '<div class="detail-row"><a href="' + escHtml(item.url) + '" target="_blank" rel="noopener" class="detail-link detail-link-ext"><span class="detail-link-text">' + escHtml(item.url) + '</span>' + EXT_ICON + '</a></div>';
             }
         });
 
