@@ -115,6 +115,12 @@
             buildContactDetailsHTML(contactData) +
             buildActivitySkeletonHTML()
         );
+        // Use cached activity data if already loaded for this contact (e.g. same-contact
+        // refresh), otherwise fire the async callback and cache the result on arrival.
+        if (contactData.activityData !== undefined) {
+            loadPanelActivity(contactData.activityData);
+            return;
+        }
         var cb = window.profilePanelCallbacks;
         if (cb && typeof cb.onLoadActivity === 'function') {
             cb.onLoadActivity(contactData.id, function(activityData) {
@@ -432,10 +438,15 @@
     }
 
     // Replaces the skeleton (or existing accordion) with fully rendered activity data.
+    // Also caches the data on the current contact so same-contact refreshes skip
+    // the onLoadActivity callback entirely.
     // Called by the host via the onLoadActivity done() callback.
     function loadPanelActivity(activityData) {
         var $accordion = $('.activity-accordion');
         if (!$accordion.length) return;
+        if (_currentContactData && _currentContactData.activityData === undefined) {
+            _currentContactData.activityData = activityData;
+        }
         $accordion.replaceWith(buildActivityAccordionHTML(activityData));
     }
 
