@@ -67,18 +67,39 @@
 
     // ─── Identity card ───────────────────────────────────────────────────────
 
+    // Status values → badge label + CSS modifier class
+    var STATUS_CONFIG = {
+        draft:  { label: 'Draft',  cls: 'panel-status-badge--draft'  },
+        live:   { label: 'Live',   cls: 'panel-status-badge--live'   },
+        paused: { label: 'Paused', cls: 'panel-status-badge--paused' },
+        done:   { label: 'Done',   cls: 'panel-status-badge--done'   }
+    };
+    var STATUS_ALL_CLASSES = 'panel-status-badge--draft panel-status-badge--live panel-status-badge--paused panel-status-badge--done';
+
     function updatePanelIdentity(contactData) {
-        const $identity = $('.panel-identity');
+        var $identity = $('.panel-identity');
         if (!$identity.length) return;
         $identity.find('.panel-photo')
             .attr('src', contactData.photo || '')
             .attr('alt', contactData.name || '');
         $identity.find('.panel-name').text(contactData.name || '');
-        $identity.find('.panel-badge-live').toggleClass('hidden', !contactData.isLive);
+        // Status badge — set label + colour, or hide if status is unset
+        var statusCfg = STATUS_CONFIG[contactData.status] || null;
+        var $badge = $identity.find('.panel-status-badge');
+        if (statusCfg) {
+            $badge
+                .text(statusCfg.label)
+                .attr('aria-label', statusCfg.label + ' contact')
+                .removeClass(STATUS_ALL_CLASSES)
+                .addClass(statusCfg.cls)
+                .removeClass('hidden');
+        } else {
+            $badge.addClass('hidden');
+        }
         $identity.find('.panel-company').text(contactData.company || '');
         $identity.find('.panel-title-text').text(contactData.title || '');
         // Populate LinkedIn About snippet + popover (shown only in AI view via CSS)
-        const about = contactData.about || '';
+        var about = contactData.about || '';
         $('#panel-about-text').text(about);
         $('#panel-about-popover-text').text(about);
         // Ensure popover is closed when contact changes

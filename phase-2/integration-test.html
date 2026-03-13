@@ -997,7 +997,7 @@
                 <div class="field-editable" data-field="name">
                     <div class="field-view panel-name-row">
                         <span class="panel-name"></span>
-                        <span class="panel-badge-live" aria-label="Live contact">LIVE</span>
+                        <span class="panel-status-badge hidden"></span>
                     </div>
                     <button class="field-pencil" type="button" aria-label="Edit name">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -1782,7 +1782,7 @@
                     email: 'sarah.johnson@acmecorp.com',
                     phone: '+1 (555) 123-4567',
                     photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%234CAF50"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3ESJ%3C/text%3E%3C/svg%3E',
-                    isLive: true,
+                    status: 'live',
                     details: [
                         { label: 'Email', value: 'sarah.johnson@acmecorp.com', type: 'email' },
                         { label: 'Phone', value: '+1 (555) 123-4567', type: 'phone' },
@@ -1827,7 +1827,7 @@
                     email: 'm.chen@techstart.io',
                     phone: '+1 (555) 234-5678',
                     photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%232196F3"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EMC%3C/text%3E%3C/svg%3E',
-                    isLive: true,
+                    status: 'draft',
                     details: [
                         { label: 'Email', value: 'm.chen@techstart.io', type: 'email' },
                         { label: 'Phone', value: '+1 (555) 234-5678', type: 'phone' },
@@ -1864,7 +1864,7 @@
                     email: 'e.rodriguez@globalsys.com',
                     phone: '+1 (555) 345-6789',
                     photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%23FF9800"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EER%3C/text%3E%3C/svg%3E',
-                    isLive: false,
+                    status: 'paused',
                     details: [
                         { label: 'Email', value: 'e.rodriguez@globalsys.com', type: 'email' },
                         { label: 'Phone', value: '+1 (555) 345-6789', type: 'phone' },
@@ -1896,7 +1896,7 @@
                     email: 'david.park@innovlabs.com',
                     phone: '+1 (555) 456-7890',
                     photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%239C27B0"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EDP%3C/text%3E%3C/svg%3E',
-                    isLive: true,
+                    status: 'done',
                     details: [
                         { label: 'Email', value: 'david.park@innovlabs.com', type: 'email' },
                         { label: 'Phone', value: '+1 (555) 456-7890', type: 'phone' },
@@ -1933,7 +1933,7 @@
                     email: 'j.martinez@entsolutions.com',
                     phone: '+1 (555) 567-8901',
                     photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%23795548"/%3E%3Ctext x="24" y="32" text-anchor="middle" fill="white" font-size="20" font-family="Arial"%3EJM%3C/text%3E%3C/svg%3E',
-                    isLive: false,
+                    status: null,
                     details: [
                         { label: 'Email', value: 'j.martinez@entsolutions.com', type: 'email' },
                         { label: 'Phone', value: '+1 (555) 567-8901', type: 'phone' },
