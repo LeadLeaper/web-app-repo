@@ -74,7 +74,7 @@
         paused: { label: 'Paused', cls: 'panel-status-badge--paused' },
         done:   { label: 'Done',   cls: 'panel-status-badge--done'   }
     };
-    var STATUS_ALL_CLASSES = 'panel-status-badge--draft panel-status-badge--live panel-status-badge--paused panel-status-badge--done';
+    var STATUS_ALL_CLASSES = Object.keys(STATUS_CONFIG).map(function(k) { return STATUS_CONFIG[k].cls; }).join(' ');
 
     function updatePanelIdentity(contactData) {
         var $identity = $('.panel-identity');
@@ -1176,15 +1176,15 @@
                 if (currentState === 'start') setAiResearchState('active');
                 // Open modal immediately (may already have cached employerResearch HTML)
                 openEmployerResearchModal(_currentContactData || {});
-                // Fire async load only if not already cached on this contact
-                if (!(_currentContactData && _currentContactData.employerResearch)) {
-                    var cb2 = window.profilePanelCallbacks;
-                    if (cb2 && typeof cb2.onLoadResearch === 'function') {
-                        var researchContactId = $('.profile-panel').data('contact-id');
-                        cb2.onLoadResearch(researchContactId, function(html) {
-                            loadPanelResearch(html);
-                        });
-                    }
+                // Fire async load only if not already fetched (undefined = never loaded;
+                // null/'' = loaded with no data — both are valid cached states)
+                var cbR = window.profilePanelCallbacks;
+                if (_currentContactData &&
+                    _currentContactData.employerResearch === undefined &&
+                    cbR && typeof cbR.onLoadResearch === 'function') {
+                    cbR.onLoadResearch(_currentContactData.id, function(html) {
+                        loadPanelResearch(html);
+                    });
                 }
             }
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'leadleaper-research') {

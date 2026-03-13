@@ -257,7 +257,7 @@
 
 .panel-status-badge.hidden        { display: none; }
 .panel-status-badge--draft        { background-color: #0891b2; }   /* cyan   */
-.panel-status-badge--live         { background-color: #16a34a; }   /* green  */
+.panel-status-badge--live         { background-color: #29c329; }   /* green — matches AI+ Engagement button */
 .panel-status-badge--paused       { background-color: #9333ea; }   /* purple */
 .panel-status-badge--done         { background-color: #64748b; }   /* slate  */
 
