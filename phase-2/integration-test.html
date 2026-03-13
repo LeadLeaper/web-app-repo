@@ -1957,17 +1957,27 @@
                 }
             ];
 
+            // ── Test-harness helpers ──────────────────────────────────────────
+            function findContactById(id) {
+                return sampleContacts.find(function(c) { return c.id === id; }) || null;
+            }
+            function getAdjacentContact(currentId, direction) {
+                var idx = sampleContacts.findIndex(function(c) { return c.id === currentId; });
+                if (idx === -1) return null;
+                return direction === 'next'
+                    ? (idx + 1 < sampleContacts.length ? sampleContacts[idx + 1] : null)
+                    : (idx > 0 ? sampleContacts[idx - 1] : null);
+            }
+
             // ── Wire profile panel callbacks ─────────────────────────────────
             window.profilePanelCallbacks.onNext = function(currentId, done) {
-                var idx = sampleContacts.findIndex(function(c) { return c.id === currentId; });
-                done(idx !== -1 && idx + 1 < sampleContacts.length ? sampleContacts[idx + 1] : null);
+                done(getAdjacentContact(currentId, 'next'));
             };
             window.profilePanelCallbacks.onPrev = function(currentId, done) {
-                var idx = sampleContacts.findIndex(function(c) { return c.id === currentId; });
-                done(idx > 0 ? sampleContacts[idx - 1] : null);
+                done(getAdjacentContact(currentId, 'prev'));
             };
             window.profilePanelCallbacks.onLoadActivity = function(contactId, done) {
-                var cd = sampleContacts.find(function(c) { return c.id === contactId; });
+                var cd = findContactById(contactId);
                 if (!cd) { done({}); return; }
                 // Simulate async fetch with a short delay
                 setTimeout(function() {
@@ -1983,7 +1993,7 @@
                 }, 300);
             };
             window.profilePanelCallbacks.onLoadResearch = function(contactId, done) {
-                var cd = sampleContacts.find(function(c) { return c.id === contactId; });
+                var cd = findContactById(contactId);
                 // Simulate async fetch with a short delay
                 setTimeout(function() {
                     done(cd && cd.employerResearch ? cd.employerResearch : null);
@@ -1994,8 +2004,8 @@
             $(document).on('click', '.contact-row .contact-name', function(e) {
                 e.preventDefault();
 
-                const contactId = parseInt($(this).closest('.contact-row').data('contact-id'));
-                const contactData = sampleContacts.find(c => c.id === contactId);
+                var contactId = parseInt($(this).closest('.contact-row').data('contact-id'));
+                var contactData = findContactById(contactId);
 
                 if (contactData && typeof openProfilePanel === 'function') {
                     console.log('Opening profile panel for:', contactData.name);
