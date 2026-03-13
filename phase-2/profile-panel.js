@@ -12,8 +12,8 @@
     const ANIMATION_DURATION = 300;
 
     // ─── AI Engagement view state ─────────────────────────────────────────────
-    let panelCurrentView = 'crm';   // 'crm' | 'ai'
-    let quillsInitialized = false;  // lazy-init Quill editors on first AI view open
+    var panelCurrentView = 'crm';   // 'crm' | 'ai'
+    var quillsInitialized = false;  // lazy-init Quill editors on first AI view open
 
     // ─── Per-field inline edit state ─────────────────────────────────────────
     var $currentFieldEdit = null;   // the .field-editable currently being edited
@@ -355,7 +355,7 @@
     //                 emailReplies, emailLinksViewed, emailsSent }
     function buildActivityAccordionHTML(activityData) {
         var ad = activityData || {};
-        const sections = [
+        var sections = [
             { key: 'notes',        label: 'Notes',             action: 'Add Note', items: ad.notes     || [] },
             { key: 'meetings',     label: 'Meetings',          action: 'Schedule', items: ad.meetings  || [] },
             { key: 'calls',        label: 'Calls',             action: 'Log Call', items: ad.calls     || [] },
@@ -365,11 +365,11 @@
             { key: 'emails-sent',   label: 'Emails Sent',        action: null, count: ad.emailsSent       || 0 }
         ];
 
-        let html = '<div class="activity-accordion">' +
+        var html = '<div class="activity-accordion">' +
             '<div class="panel-section-label">Engagement History</div>';
         sections.forEach(function(section) {
-            const count = section.items ? section.items.length : (section.count || 0);
-            const actionLink = section.action
+            var count = section.items ? section.items.length : (section.count || 0);
+            var actionLink = section.action
                 ? '<a class="accordion-action" data-action="' + section.key + '" href="#">' + section.action + '</a>'
                 : '';
 
@@ -396,7 +396,7 @@
     }
 
     function buildAccordionItemHTML(sectionKey, item) {
-        let date = '', desc = '';
+        var date = '', desc = '';
         switch (sectionKey) {
             case 'notes':
                 date = item.date || '';
@@ -466,7 +466,7 @@
         $panel.data('contact-id', contactData.id);
         $panel.addClass('open');             // slide in (behavior 1)
         $('#panel-view-toggle').addClass('visible');
-        const $content = $('.profile-content');
+        var $content = $('.profile-content');
         $content.hide().html('<div class="loading-spinner"></div>').show();
         setTimeout(function() {
             updatePanelIdentity(contactData);
@@ -535,10 +535,10 @@
 
     // ④ Slide out + clear
     function closeProfilePanel() {
-        const $panel = $('.profile-panel');
+        var $panel = $('.profile-panel');
         if (!$panel.hasClass('open')) return;
 
-        const closingContactId = $panel.data('contact-id');
+        var closingContactId = $panel.data('contact-id');
 
         // Cancel any in-progress field edit silently before closing
         closeCurrentFieldEdit();
@@ -579,7 +579,7 @@
         // Clear and reset comment textarea height
         $('.ai-comment-textarea').val('').each(function() { this.style.height = ''; });
 
-        const cb = window.profilePanelCallbacks;
+        var cb = window.profilePanelCallbacks;
         if (cb && typeof cb.onClose === 'function') {
             cb.onClose(closingContactId);
         }
@@ -610,7 +610,7 @@
 
     // Switch panel to AI Engagement view (expand width, show AI content)
     function switchToAiView() {
-        const $panel = $('.profile-panel');
+        var $panel = $('.profile-panel');
         $panel.addClass('ai-view-active');
         $('#panel-view-toggle')
             .addClass('ai-view')
@@ -622,7 +622,7 @@
 
     // Switch panel back to CRM view (contract width, show CRM content)
     function switchToCrmView() {
-        const $panel = $('.profile-panel');
+        var $panel = $('.profile-panel');
         $panel.removeClass('ai-view-active');
         $('#panel-view-toggle')
             .removeClass('ai-view')
@@ -647,22 +647,22 @@
             console.warn('[AI View] Quill.js not loaded — editors will not initialize');
             return;
         }
-        const toolbarOptions = [
+        var toolbarOptions = [
             ['bold', 'italic', 'underline'],
             [{ list: 'ordered' }, { list: 'bullet' }],
             ['code-block'],
             ['clean']
         ];
-        const demoContent = {
+        var demoContent = {
             linkedin:     '<p>Hi Sarah,</p><p>Great post about mastering peak seasons in iGaming and Betting. Your insights on leveraging key CX metrics, data-driven forecasting, and AI-driven tools highlight how the platform empowers operators to maintain top-notch player experiences when pressure peaks. It\'s a strategic approach that can truly redefine support readiness during critical moments.</p>',
             challenges:   '<p>Hi Sarah,</p><p>Growing competition from language schools and the surge in online platforms have likely put pressure on Zendesk to maintain consistent student satisfaction while managing teacher transitions. Streamlining outreach to schools, educators, and decision-makers using verified contacts can help Zendesk expand its influence and adopt more personalized, timely engagement to stay ahead.</p>',
             competitors:  '<p>Hi Sarah,</p><p>I wanted to share how our approach differs from the solutions your team may currently be evaluating. LeadLeaper\'s verified contact data and AI-powered engagement tools are purpose-built for sales teams that need to move fast without sacrificing accuracy or personalization. I\'d love to show you how teams like yours are seeing results in their first week.</p>',
             announcement: '<p>Hi Sarah,</p><p>I wanted to reach out with some exciting news that I think could be a great fit for your team at Zendesk. We\'ve just launched a new capability that directly addresses the challenges we discussed around pipeline visibility and engagement velocity — and early results from similar teams have been very promising.</p>'
         };
         ['linkedin', 'challenges', 'competitors', 'announcement'].forEach(function(key) {
-            const el = document.getElementById('ai-editor-' + key);
+            var el = document.getElementById('ai-editor-' + key);
             if (!el || el.querySelector('.ql-container')) return; // already initialized
-            const quill = new Quill(el, {
+            var quill = new Quill(el, {
                 theme: 'snow',
                 modules: { toolbar: toolbarOptions },
                 placeholder: 'AI-generated draft will appear here\u2026'
@@ -672,7 +672,7 @@
         quillsInitialized = true;
 
         // Populate the LinkedIn comment textarea with demo content and auto-size it
-        const commentEl = document.getElementById('ai-comment-linkedin');
+        var commentEl = document.getElementById('ai-comment-linkedin');
         if (commentEl && !commentEl.value) {
             commentEl.value = 'Great post on the challenges of demand peaks.';
             commentEl.style.height = 'auto';
@@ -689,7 +689,7 @@
         $('#rp-employer-subtitle').text(company ? '· ' + company : '');
         var content = (contactData && contactData.employerResearch) || '';
         if (!content) {
-            content = '<div class="rp-section"><p style="color:#a3a3a3;font-size:13px;">No employer research available for this contact yet.</p></div>';
+            content = '<div class="rp-section"><p class="rp-empty-state">No employer research available for this contact yet.</p></div>';
         }
         $('#rp-employer-content').html(content);
         // Reset scroll to top
@@ -968,7 +968,7 @@
         // Accordion toggle (skip if click landed on the action link)
         $(document).on('click', '.accordion-header', function(e) {
             if ($(e.target).closest('.accordion-action').length) return;
-            const $row = $(this).closest('.accordion-row');
+            var $row = $(this).closest('.accordion-row');
             $row.find('.accordion-body').slideToggle(150);
             $row.toggleClass('open');
         });
@@ -990,8 +990,8 @@
 
         // Section-level toggle (all 4 AI engagement sections)
         $(document).on('click', '.ai-section-toggle', function() {
-            const $section = $(this).closest('.ai-section');
-            const isCollapsed = $section.hasClass('collapsed');
+            var $section = $(this).closest('.ai-section');
+            var isCollapsed = $section.hasClass('collapsed');
             $section.toggleClass('collapsed', !isCollapsed);
             $(this).text(isCollapsed ? 'hide' : 'show')
                    .attr('data-state', isCollapsed ? 'visible' : 'hidden');
@@ -999,8 +999,8 @@
 
         // LinkedIn post content sub-section toggle (show/hide post text independently)
         $(document).on('click', '.ai-post-block-toggle', function() {
-            const $block = $(this).closest('.ai-post-block');
-            const isCollapsed = $block.hasClass('collapsed');
+            var $block = $(this).closest('.ai-post-block');
+            var isCollapsed = $block.hasClass('collapsed');
             $block.toggleClass('collapsed', !isCollapsed);
             $(this).text(isCollapsed ? 'show less' : 'show more')
                    .attr('aria-label', isCollapsed ? 'Hide post text' : 'Show post text');
@@ -1017,8 +1017,8 @@
         // Click toggles the full About popover open/closed
         $(document).on('click', '#panel-about-snippet', function(e) {
             e.stopPropagation();
-            const $popover = $('#panel-about-popover');
-            const isOpen   = $popover.hasClass('open');
+            var $popover = $('#panel-about-popover');
+            var isOpen   = $popover.hasClass('open');
             $popover.toggleClass('open', !isOpen)
                     .attr('aria-hidden', String(isOpen));
             $(this).attr('aria-expanded', String(!isOpen));
@@ -1037,9 +1037,9 @@
         // Toggle open/close on button click
         $(document).on('click', '#ai-engagement-btn', function(e) {
             e.stopPropagation();
-            const $btn      = $(this);
-            const $dropdown = $('#ai-engagement-dropdown');
-            const isOpen    = $btn.hasClass('open');
+            var $btn      = $(this);
+            var $dropdown = $('#ai-engagement-dropdown');
+            var isOpen    = $btn.hasClass('open');
 
             // Always close research + slack dropdowns when toggling engagement
             $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
@@ -1052,7 +1052,7 @@
                 $dropdown.removeClass('open').attr('aria-hidden', 'true');
             } else {
                 // Left-anchor: dropdown extends rightward from button's left edge
-                const rect = this.getBoundingClientRect();
+                var rect = this.getBoundingClientRect();
                 $dropdown.css({
                     top:   (rect.bottom + 4) + 'px',
                     left:  rect.left + 'px',
@@ -1069,9 +1069,9 @@
         // Toggle open/close on button click
         $(document).on('click', '#ai-research-btn', function(e) {
             e.stopPropagation();
-            const $btn      = $(this);
-            const $dropdown = $('#ai-research-dropdown');
-            const isOpen    = $btn.hasClass('open');
+            var $btn      = $(this);
+            var $dropdown = $('#ai-research-dropdown');
+            var isOpen    = $btn.hasClass('open');
 
             // Always close engagement + slack dropdowns when toggling research
             $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
@@ -1084,7 +1084,7 @@
                 $dropdown.removeClass('open').attr('aria-hidden', 'true');
             } else {
                 // Left-anchor: dropdown extends rightward from button's left edge
-                const rect = this.getBoundingClientRect();
+                var rect = this.getBoundingClientRect();
                 $dropdown.css({
                     top:   (rect.bottom + 4) + 'px',
                     left:  rect.left + 'px',
@@ -1101,9 +1101,9 @@
         // Toggle open/close on button click (right-anchored: extends leftward)
         $(document).on('click', '#ai-slack-btn', function(e) {
             e.stopPropagation();
-            const $btn      = $(this);
-            const $dropdown = $('#ai-slack-dropdown');
-            const isOpen    = $btn.hasClass('open');
+            var $btn      = $(this);
+            var $dropdown = $('#ai-slack-dropdown');
+            var isOpen    = $btn.hasClass('open');
 
             // Always close engagement + research dropdowns when toggling slack
             $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
@@ -1116,7 +1116,7 @@
                 $dropdown.removeClass('open').attr('aria-hidden', 'true');
             } else {
                 // Right-anchor: dropdown extends leftward from button's right edge
-                const rect = this.getBoundingClientRect();
+                var rect = this.getBoundingClientRect();
                 $dropdown.css({
                     top:   (rect.bottom + 4) + 'px',
                     right: (window.innerWidth - rect.right) + 'px',
@@ -1151,9 +1151,9 @@
 
         $(document).on('click', '.ai-dropdown-item', function(e) {
             e.stopPropagation();
-            const $item        = $(this);
-            const aiAction     = $item.data('ai-action');
-            const dropdownId   = $item.closest('.ai-engagement-dropdown').attr('id');
+            var $item        = $(this);
+            var aiAction     = $item.data('ai-action');
+            var dropdownId   = $item.closest('.ai-engagement-dropdown').attr('id');
 
             // Close all dropdowns and their buttons
             $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
@@ -1168,11 +1168,11 @@
 
             // Demo state toggles
             if (dropdownId === 'ai-engagement-dropdown' && aiAction === 'ping-linkedin') {
-                const currentState = $('#ai-engagement-dropdown').attr('data-state');
+                var currentState = $('#ai-engagement-dropdown').attr('data-state');
                 if (currentState === 'start') setAiEngagementState('active');
             }
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'employer-research') {
-                const currentState = $('#ai-research-dropdown').attr('data-state');
+                var currentState = $('#ai-research-dropdown').attr('data-state');
                 if (currentState === 'start') setAiResearchState('active');
                 // Open modal immediately (may already have cached employerResearch HTML)
                 openEmployerResearchModal(_currentContactData || {});
@@ -1191,7 +1191,7 @@
                 openLeadLeaperResearchModal();
             }
             if (dropdownId === 'ai-slack-dropdown' && aiAction === 'post-vsr-channel') {
-                const currentState = $('#ai-slack-dropdown').attr('data-state');
+                var currentState = $('#ai-slack-dropdown').attr('data-state');
                 if (currentState === 'start') setAiSlackState('active');
             }
 
