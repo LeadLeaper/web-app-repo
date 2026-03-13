@@ -719,6 +719,7 @@
 .detail-row-meta > .detail-label {
     flex-shrink: 0;
     padding-top: 1px;   /* optical alignment with name baseline */
+    margin-right: 3px;  /* gap between label and name/date block */
 }
 
 /* Right column: name on line 1, date on line 2 — both aligned to label's right edge */
@@ -726,6 +727,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    gap: 5px;           /* vertical spacing between name and date */
 }
 
 .dt-at {
