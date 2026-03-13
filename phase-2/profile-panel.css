@@ -318,7 +318,7 @@
 .badge-style-d.panel-status-badge--live,
 .badge-style-d.panel-status-badge--done {
     min-width: 62px;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
 @keyframes panel-pulse-dot {
