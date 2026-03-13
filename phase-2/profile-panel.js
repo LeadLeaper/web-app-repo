@@ -356,7 +356,8 @@
             meta += '<div class="detail-row detail-row-meta"><span class="detail-label">Lead Owner:</span> <span class="detail-plain">' + escHtml(contactData.leadOwner) + '</span></div>';
         }
         if (contactData.createdAt) {
-            meta += '<div class="detail-row detail-row-meta"><span class="detail-muted">' + escHtml(contactData.createdAt) + '</span></div>';
+            // createdAt is rendered as HTML so hosts can embed markup (e.g. <span class="dt-at">@</span>)
+            meta += '<div class="detail-row detail-row-meta"><span class="detail-muted">' + contactData.createdAt + '</span></div>';
         }
 
         return '<div class="contact-details-card">' + rows + meta + '</div>';

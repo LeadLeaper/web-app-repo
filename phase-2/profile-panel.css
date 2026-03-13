@@ -710,8 +710,12 @@
 
 .detail-row-meta {
     margin-top: 4px;
-    padding-top: 6px;
-    border-top: 1px solid #f0f0f0;
+    padding-top: 2px;
+}
+
+.dt-at {
+    color: #b8b8b8;
+    font-style: normal;
 }
 
 /* ── Section label ───────────────────────────────────────── */
