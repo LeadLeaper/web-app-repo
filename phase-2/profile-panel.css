@@ -1112,6 +1112,14 @@
 .panel-ai-view::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
 .panel-ai-view::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
 
+/* ── AI view loading state ────────────────────────────────── */
+/* While onLoadAiView callback is in flight, hide section cards */
+.panel-ai-view.ai-view--loading .ai-section { display: none; }
+.ai-view-loading {
+    padding: 20px 0 8px;
+    font-size: var(--text-sm, 13px);
+}
+
 /* ── AI section card ────────────────────────────────────────── */
 .ai-section {
     background-color: #ffffff;

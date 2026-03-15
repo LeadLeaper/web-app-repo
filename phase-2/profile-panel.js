@@ -83,9 +83,21 @@
     //                  store notes as a plain-text blob.
     //
     //   onSaveNote(contactId, content, done)
-    //     (textarea mode only) Fired when the Save button is clicked.
-    //     content is the full textarea string. Call done() on success or
-    //     done(errorMessage) to surface an inline error and re-enable the button.
+    //     (textarea mode only) Fired when the textarea auto-save triggers on
+    //     close / next / prev after focus. Call done() on success or
+    //     done(errorMessage) on failure.
+    //
+    //   onToggleView(contactId, proceed)
+    //     Fired when the Toggle View button is clicked before any view switch
+    //     occurs. Call proceed() to allow the switch. Omitting the call (or
+    //     not registering this callback) leaves the toggle disabled — register
+    //     it to gate AI view access per-user.
+    //
+    //   onLoadAiView(contactId, done)
+    //     Fired the first time the AI view is opened for a contact (i.e. when
+    //     Quill has not yet been initialized). A "Loading…" placeholder is shown
+    //     until done() is called, at which point the AI sections are revealed.
+    //     If not registered, the AI view initialises synchronously as before.
     //
     window.profilePanelCallbacks = {
         onChange         : null,   // function(contactId, fieldName, newValue)
@@ -99,7 +111,9 @@
         onActivityEdit   : null,   // function(contactId, sectionKey, itemIndex, item)
         notesMode        : 'list', // 'list' | 'textarea'
         onSaveNote       : null,   // function(contactId, content, done)  — textarea mode only
-        badgeStyle       : null    // 'b' | 'd' — overrides the BADGE_STYLE constant when set
+        badgeStyle       : null,   // 'b' | 'd' — overrides the BADGE_STYLE constant when set
+        onToggleView     : null,   // function(contactId, proceed) — gate AI view access
+        onLoadAiView     : null    // function(contactId, done) — async AI content loader
     };
 
     // ─── Identity card ───────────────────────────────────────────────────────
@@ -794,16 +808,52 @@
 
     // ─── AI Engagement view switching ────────────────────────────────────────
 
-    // Switch panel to AI Engagement view (expand width, show AI content)
+    // Show a "Loading…" placeholder over the AI sections (used before first init).
+    function showAiLoadingState() {
+        $('#panel-ai-view').addClass('ai-view--loading');
+        if (!$('#ai-view-loading').length) {
+            $('#panel-ai-view').prepend(
+                '<div class="ai-view-loading" id="ai-view-loading">' +
+                '<span class="detail-muted">Loading\u2026</span>' +
+                '</div>'
+            );
+        }
+        $('#ai-view-loading').show();
+    }
+
+    // Remove the loading placeholder and reveal AI sections.
+    function hideAiLoadingState() {
+        $('#panel-ai-view').removeClass('ai-view--loading');
+        $('#ai-view-loading').hide();
+    }
+
+    // Switch panel to AI Engagement view (expand width, show AI content).
     function switchToAiView() {
         var $panel = $('.profile-panel');
         $panel.addClass('ai-view-active');
+        // jQuery's .show() / .fadeIn() leave an inline display:block on .profile-content
+        // which overrides the CSS display:none rule under .ai-view-active.  Clearing it
+        // here lets the stylesheet rule take full effect.
+        $('.profile-content').css('display', '');
         $('#panel-view-toggle')
             .addClass('ai-view')
             .attr('aria-label', 'Switch to CRM view')
             .attr('title', 'Switch to CRM view');
         panelCurrentView = 'ai';
-        if (!quillsInitialized) initQuillEditors();
+        if (!quillsInitialized) {
+            showAiLoadingState();
+            var cb  = window.profilePanelCallbacks;
+            var cid = getCurrentContactData() ? getCurrentContactData().id : null;
+            if (cb && typeof cb.onLoadAiView === 'function') {
+                cb.onLoadAiView(cid, function() {
+                    initQuillEditors();
+                    hideAiLoadingState();
+                });
+            } else {
+                initQuillEditors();
+                hideAiLoadingState();
+            }
+        }
     }
 
     // Switch panel back to CRM view (contract width, show CRM content)
@@ -1220,10 +1270,17 @@
 
         // ── View toggle button ───────────────────────────────────────────────
 
-        // Click the left-border circle to switch between CRM and AI Engagement views
+        // Click the left-border circle to switch between CRM and AI Engagement views.
+        // If onToggleView is registered the host must call proceed() to allow the switch.
         $(document).on('click', '#panel-view-toggle', function(e) {
             e.stopPropagation();
-            togglePanelView();
+            var cb  = window.profilePanelCallbacks;
+            var cid = getCurrentContactData() ? getCurrentContactData().id : null;
+            if (cb && typeof cb.onToggleView === 'function') {
+                cb.onToggleView(cid, function() { togglePanelView(); });
+            } else {
+                togglePanelView();
+            }
         });
 
         // ── AI section show/hide ─────────────────────────────────────────────
