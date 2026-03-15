@@ -61,14 +61,25 @@
     //     Fired when the Employer Research modal is opened and no cached data
     //     exists yet. Fetch and return the HTML string by calling done(htmlString).
     //
+    //   onActivityAction(contactId, sectionKey)
+    //     Fired when an action button in the Engagement History accordion is clicked.
+    //     sectionKey is one of: 'notes' (Add Note) | 'meetings' (Schedule) |
+    //                           'calls' (Log Call) | 'reminders' (Add Task).
+    //
+    //   onActivityEdit(contactId, sectionKey, itemIndex, item)
+    //     Fired when the edit pencil on an existing activity item is clicked.
+    //     item is the raw object from the activityData array at itemIndex.
+    //
     window.profilePanelCallbacks = {
-        onChange       : null,   // function(contactId, fieldName, newValue)
-        onSave         : null,   // function(contactId, patch, done)
-        onClose        : null,   // function(contactId)
-        onNext         : null,   // function(currentContactId, done)
-        onPrev         : null,   // function(currentContactId, done)
-        onLoadActivity : null,   // function(contactId, done)
-        onLoadResearch : null    // function(contactId, done)
+        onChange         : null,   // function(contactId, fieldName, newValue)
+        onSave           : null,   // function(contactId, patch, done)
+        onClose          : null,   // function(contactId)
+        onNext           : null,   // function(currentContactId, done)
+        onPrev           : null,   // function(currentContactId, done)
+        onLoadActivity   : null,   // function(contactId, done)
+        onLoadResearch   : null,   // function(contactId, done)
+        onActivityAction : null,   // function(contactId, sectionKey)
+        onActivityEdit   : null    // function(contactId, sectionKey, itemIndex, item)
     };
 
     // ─── Identity card ───────────────────────────────────────────────────────
@@ -391,7 +402,7 @@
         sections.forEach(function(section) {
             var count = section.items ? section.items.length : (section.count || 0);
             var actionLink = section.action
-                ? '<a class="accordion-action" data-action="' + section.key + '" href="#">' + section.action + '</a>'
+                ? '<button type="button" class="accordion-action" data-action="' + section.key + '">' + section.action + '</button>'
                 : '';
 
             html += '<div class="accordion-row" data-section="' + section.key + '">';
@@ -403,8 +414,8 @@
 
             html += '<div class="accordion-body">';
             if (section.items && section.items.length > 0) {
-                section.items.forEach(function(item) {
-                    html += buildAccordionItemHTML(section.key, item);
+                section.items.forEach(function(item, idx) {
+                    html += buildAccordionItemHTML(section.key, item, idx);
                 });
             } else if (!section.items && section.count > 0) {
                 html += '<div class="accordion-item-plain">' + section.count + ' item' + (section.count !== 1 ? 's' : '') + '</div>';
@@ -416,7 +427,7 @@
         return html;
     }
 
-    function buildAccordionItemHTML(sectionKey, item) {
+    function buildAccordionItemHTML(sectionKey, item, idx) {
         var date = '', desc = '';
         switch (sectionKey) {
             case 'notes':
@@ -438,9 +449,10 @@
             default:
                 desc = JSON.stringify(item);
         }
-        return '<div class="accordion-item">' +
+        return '<div class="accordion-item" data-section="' + escHtml(sectionKey) + '" data-index="' + idx + '">' +
             (date ? '<span class="accordion-item-date">' + escHtml(date) + '</span>' : '') +
             '<span class="accordion-item-desc">' + escHtml(desc) + '</span>' +
+            '<button type="button" class="accordion-item-edit" aria-label="Edit item">' + FIELD_PENCIL_SVG + '</button>' +
             '</div>';
     }
 
@@ -999,9 +1011,33 @@
             $row.toggleClass('open');
         });
 
-        // Accordion action links (prevent default; behaviour wired later)
-        $(document).on('click', '.accordion-action', function(e) {
-            e.preventDefault();
+        // Accordion action buttons — Add Note / Schedule / Log Call / Add Task
+        $(document).on('click', '.accordion-action', function() {
+            var sectionKey = $(this).data('action');
+            var cd = getCurrentContactData();
+            if (!cd) return;
+            var cb = window.profilePanelCallbacks;
+            if (cb && typeof cb.onActivityAction === 'function') {
+                cb.onActivityAction(cd.id, sectionKey);
+            }
+        });
+
+        // Accordion item edit pencil
+        $(document).on('click', '.accordion-item-edit', function(e) {
+            e.stopPropagation();
+            var $item = $(this).closest('.accordion-item');
+            var sectionKey = $item.data('section');
+            var idx       = $item.data('index');
+            var cd = getCurrentContactData();
+            if (!cd || !cd.activityData) return;
+            var sectionMap = { notes: 'notes', meetings: 'meetings', calls: 'calls', reminders: 'reminders' };
+            var arr  = cd.activityData[sectionMap[sectionKey]] || [];
+            var item = arr[idx];
+            if (!item) return;
+            var cb = window.profilePanelCallbacks;
+            if (cb && typeof cb.onActivityEdit === 'function') {
+                cb.onActivityEdit(cd.id, sectionKey, idx, item);
+            }
         });
 
         // ── View toggle button ───────────────────────────────────────────────
