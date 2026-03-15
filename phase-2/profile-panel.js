@@ -70,6 +70,17 @@
     //     Fired when the edit pencil on an existing activity item is clicked.
     //     item is the raw object from the activityData array at itemIndex.
     //
+    //   notesMode: 'list' | 'textarea'  (default: 'list')
+    //     Controls the Notes accordion rendering.
+    //     'list'     — ordered list of individually-dated, editable note items.
+    //     'textarea' — single freeform textarea; suited for integrations that
+    //                  store notes as a plain-text blob.
+    //
+    //   onSaveNote(contactId, content, done)
+    //     (textarea mode only) Fired when the Save button is clicked.
+    //     content is the full textarea string. Call done() on success or
+    //     done(errorMessage) to surface an inline error and re-enable the button.
+    //
     window.profilePanelCallbacks = {
         onChange         : null,   // function(contactId, fieldName, newValue)
         onSave           : null,   // function(contactId, patch, done)
@@ -79,7 +90,9 @@
         onLoadActivity   : null,   // function(contactId, done)
         onLoadResearch   : null,   // function(contactId, done)
         onActivityAction : null,   // function(contactId, sectionKey)
-        onActivityEdit   : null    // function(contactId, sectionKey, itemIndex, item)
+        onActivityEdit   : null,   // function(contactId, sectionKey, itemIndex, item)
+        notesMode        : 'list', // 'list' | 'textarea'
+        onSaveNote       : null    // function(contactId, content, done)  — textarea mode only
     };
 
     // ─── Identity card ───────────────────────────────────────────────────────
@@ -392,11 +405,30 @@
     //                                    or legacy number count }
     function buildActivityAccordionHTML(activityData) {
         var ad = activityData || {};
+        var cb = window.profilePanelCallbacks;
+        var notesMode = (cb && cb.notesMode) || 'list';
+
         // Accept both array (new) and plain number (legacy) for email sections
         function emailItems(val) { return Array.isArray(val) ? val : null; }
         function emailCount(val) { return typeof val === 'number' ? val : 0; }
+
+        // Normalize notes to a plain string for textarea mode
+        // (accepts either a raw string or an array of note objects)
+        var notesText = null;
+        if (notesMode === 'textarea') {
+            if (typeof ad.notes === 'string') {
+                notesText = ad.notes;
+            } else if (Array.isArray(ad.notes)) {
+                notesText = ad.notes.map(function(n) { return n.text || ''; }).join('\n\n');
+            } else {
+                notesText = '';
+            }
+        }
+
         var sections = [
-            { key: 'notes',        label: 'Notes',             action: 'Add Note', items: ad.notes     || [] },
+            notesMode === 'textarea'
+                ? { key: 'notes', label: 'Notes', action: null,        items: null,            noteText: notesText }
+                : { key: 'notes', label: 'Notes', action: 'Add Note',  items: ad.notes || [] },
             { key: 'meetings',     label: 'Meetings',          action: 'Schedule', items: ad.meetings  || [] },
             { key: 'calls',        label: 'Calls',             action: 'Log Call', items: ad.calls     || [] },
             { key: 'reminders',    label: 'Tasks / Reminders', action: 'Add Task', items: ad.reminders || [] },
@@ -408,20 +440,32 @@
         var html = '<div class="activity-accordion">' +
             '<div class="panel-section-label">Engagement History</div>';
         sections.forEach(function(section) {
-            var count = section.items ? section.items.length : (section.count || 0);
+            var isTextarea = section.noteText !== undefined && section.noteText !== null;
+            var count      = section.items ? section.items.length : (section.count || 0);
+            var countHtml  = isTextarea ? '' : ' <span class="accordion-count">(' + count + ')</span>';
             var actionLink = section.action
                 ? '<button type="button" class="accordion-action" data-action="' + section.key + '">' + section.action + '</button>'
                 : '';
 
             html += '<div class="accordion-row" data-section="' + section.key + '">';
             html += '<div class="accordion-header">';
-            html += '<span class="accordion-title">' + escHtml(section.label) +
-                    ' <span class="accordion-count">(' + count + ')</span></span>';
+            html += '<span class="accordion-title">' + escHtml(section.label) + countHtml + '</span>';
             html += '<div class="accordion-header-right">' + actionLink + CHEVRON_SVG + '</div>';
             html += '</div>'; // .accordion-header
 
             html += '<div class="accordion-body">';
-            if (section.items && section.items.length > 0) {
+            if (isTextarea) {
+                // ── Textarea (single-blob) mode ───────────────────────────────
+                html += '<div class="notes-textarea-wrap">' +
+                    '<textarea class="notes-textarea" placeholder="Add a note\u2026">' +
+                    escHtml(section.noteText) +
+                    '</textarea>' +
+                    '<div class="notes-textarea-footer">' +
+                    '<span class="notes-textarea-status"></span>' +
+                    '<button type="button" class="notes-save-btn">Save</button>' +
+                    '</div>' +
+                    '</div>';
+            } else if (section.items && section.items.length > 0) {
                 section.items.forEach(function(item, idx) {
                     html += buildAccordionItemHTML(section.key, item, idx);
                 });
@@ -1088,6 +1132,39 @@
             var $row = $(this).closest('.accordion-row');
             $row.find('.accordion-body').slideToggle(150);
             $row.toggleClass('open');
+        });
+
+        // Notes textarea — Save button
+        $(document).on('click', '.notes-save-btn', function() {
+            var $btn    = $(this);
+            var $wrap   = $btn.closest('.notes-textarea-wrap');
+            var $status = $wrap.find('.notes-textarea-status');
+            var content = $wrap.find('.notes-textarea').val();
+            var cd = getCurrentContactData();
+            if (!cd) return;
+
+            $btn.prop('disabled', true).text('Saving\u2026');
+            $status.text('').removeClass('notes-status--ok notes-status--err');
+
+            function onDone(err) {
+                $btn.prop('disabled', false).text('Save');
+                if (err) {
+                    $status.text(typeof err === 'string' ? err : 'Save failed.').addClass('notes-status--err');
+                } else {
+                    if (cd.activityData) cd.activityData.notes = content;
+                    $status.text('Saved').addClass('notes-status--ok');
+                    setTimeout(function() {
+                        $status.text('').removeClass('notes-status--ok');
+                    }, 2500);
+                }
+            }
+
+            var cb = window.profilePanelCallbacks;
+            if (cb && typeof cb.onSaveNote === 'function') {
+                cb.onSaveNote(cd.id, content, onDone);
+            } else {
+                onDone(); // no callback wired — update local state only
+            }
         });
 
         // Accordion action buttons — Add Note / Schedule / Log Call / Add Task
