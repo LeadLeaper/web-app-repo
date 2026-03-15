@@ -27,6 +27,11 @@
     // ─── Current contact reference ────────────────────────────────────────────
     var _currentContactData = null; // full contactData object for the displayed contact
 
+    // ─── Notes textarea dirty flag ────────────────────────────────────────────
+    // Set to true when the notes textarea receives focus (textarea mode only).
+    // Checked and flushed on close / next / prev to trigger auto-save.
+    var _notesDirty = false;
+
     // ─── Backend integration callbacks ───────────────────────────────────────
     // Assign handlers before calling openProfilePanel to wire up backend integration.
     //
@@ -460,10 +465,6 @@
                     '<textarea class="notes-textarea" placeholder="Add a note\u2026">' +
                     escHtml(section.noteText) +
                     '</textarea>' +
-                    '<div class="notes-textarea-footer">' +
-                    '<span class="notes-textarea-status"></span>' +
-                    '<button type="button" class="notes-save-btn">Save</button>' +
-                    '</div>' +
                     '</div>';
             } else if (section.items && section.items.length > 0) {
                 section.items.forEach(function(item, idx) {
@@ -550,6 +551,24 @@
         $accordion.replaceWith(buildActivityAccordionHTML(activityData));
     }
 
+    // ─── Notes textarea auto-save ────────────────────────────────────────────
+    // Called before close / navigate. If the textarea was focused since the
+    // last contact load, grabs the current value, updates the local cache,
+    // and fires onSaveNote (fire-and-forget — navigation is not blocked).
+    function flushNotesDirty(contactId) {
+        if (!_notesDirty) return;
+        _notesDirty = false;
+        var content = $('.notes-textarea').val();
+        if (content === undefined) return;          // textarea not in DOM
+        if (_currentContactData && _currentContactData.activityData) {
+            _currentContactData.activityData.notes = content;
+        }
+        var cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onSaveNote === 'function') {
+            cb.onSaveNote(contactId, content, function() {}); // fire-and-forget
+        }
+    }
+
     // ─── Email Reply viewer ───────────────────────────────────────────────────
 
     var ER_CHECKMARK_SVG =
@@ -618,6 +637,7 @@
     // ① Slide in → spinner → fade in on initial open; refresh/switch routing when already open
     function openProfilePanel(contactData) {
         var $panel = $('.profile-panel');
+        _notesDirty = false;            // fresh contact — clear any stale dirty state
         _currentContactData = contactData;
         if ($panel.hasClass('open')) {
             updatePanelContent(contactData); // behaviors 2 & 3
@@ -680,6 +700,7 @@
     // ③ Prev/next — host resolves adjacent contact via callback
     function navigateContact(direction) {
         var currentId = $('.profile-panel').data('contact-id');
+        flushNotesDirty(currentId);
         closeCurrentFieldEdit();
         var cb = window.profilePanelCallbacks;
         var handler = direction === 'prev'
@@ -700,6 +721,7 @@
 
         var closingContactId = $panel.data('contact-id');
 
+        flushNotesDirty(closingContactId);
         // Cancel any in-progress field edit silently before closing
         closeCurrentFieldEdit();
 
@@ -1134,37 +1156,9 @@
             $row.toggleClass('open');
         });
 
-        // Notes textarea — Save button
-        $(document).on('click', '.notes-save-btn', function() {
-            var $btn    = $(this);
-            var $wrap   = $btn.closest('.notes-textarea-wrap');
-            var $status = $wrap.find('.notes-textarea-status');
-            var content = $wrap.find('.notes-textarea').val();
-            var cd = getCurrentContactData();
-            if (!cd) return;
-
-            $btn.prop('disabled', true).text('Saving\u2026');
-            $status.text('').removeClass('notes-status--ok notes-status--err');
-
-            function onDone(err) {
-                $btn.prop('disabled', false).text('Save');
-                if (err) {
-                    $status.text(typeof err === 'string' ? err : 'Save failed.').addClass('notes-status--err');
-                } else {
-                    if (cd.activityData) cd.activityData.notes = content;
-                    $status.text('Saved').addClass('notes-status--ok');
-                    setTimeout(function() {
-                        $status.text('').removeClass('notes-status--ok');
-                    }, 2500);
-                }
-            }
-
-            var cb = window.profilePanelCallbacks;
-            if (cb && typeof cb.onSaveNote === 'function') {
-                cb.onSaveNote(cd.id, content, onDone);
-            } else {
-                onDone(); // no callback wired — update local state only
-            }
+        // Notes textarea — mark dirty on focus so auto-save fires on close/navigate
+        $(document).on('focus', '.notes-textarea', function() {
+            _notesDirty = true;
         });
 
         // Accordion action buttons — Add Note / Schedule / Log Call / Add Task
