@@ -895,6 +895,12 @@
 }
 .accordion-item--reply .accordion-item-desc {
     color: #0284c7;
+    /* Single-line truncation instead of the default 2-line clamp */
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: unset;
 }
 .accordion-item--reply:hover .accordion-item-desc {
     text-decoration: underline;
@@ -2083,7 +2089,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.96);
-    width: min(400px, calc(100vw - 32px));
+    width: min(600px, calc(100vw - 32px));
     max-height: min(82vh, 580px);
     z-index: 1400;
     background: #ffffff;
