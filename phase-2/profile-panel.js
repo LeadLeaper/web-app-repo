@@ -15,7 +15,8 @@
     // Change this single value to switch the visual treatment of all status badges.
     //   'b' — Pill + gradient + drop shadow
     //   'd' — Dot indicator (LIVE dot pulses)
-    const BADGE_STYLE = 'b';
+    // Preference is also readable/overridable via profilePanelCallbacks.badgeStyle.
+    const BADGE_STYLE = 'd';
 
     // ─── AI Engagement view state ─────────────────────────────────────────────
     var panelCurrentView = 'crm';   // 'crm' | 'ai'
@@ -97,7 +98,8 @@
         onActivityAction : null,   // function(contactId, sectionKey)
         onActivityEdit   : null,   // function(contactId, sectionKey, itemIndex, item)
         notesMode        : 'list', // 'list' | 'textarea'
-        onSaveNote       : null    // function(contactId, content, done)  — textarea mode only
+        onSaveNote       : null,   // function(contactId, content, done)  — textarea mode only
+        badgeStyle       : null    // 'b' | 'd' — overrides the BADGE_STYLE constant when set
     };
 
     // ─── Identity card ───────────────────────────────────────────────────────
@@ -126,7 +128,7 @@
                 .text(statusCfg.label)
                 .attr('aria-label', statusCfg.label + ' contact')
                 .removeClass(STATUS_ALL_CLASSES + ' badge-style-b badge-style-d')
-                .addClass(statusCfg.cls + ' badge-style-' + BADGE_STYLE)
+                .addClass(statusCfg.cls + ' badge-style-' + ((window.profilePanelCallbacks && window.profilePanelCallbacks.badgeStyle) || BADGE_STYLE))
                 .removeClass('hidden');
         } else {
             $badge.addClass('hidden');
@@ -446,8 +448,10 @@
             '<div class="panel-section-label">Engagement History</div>';
         sections.forEach(function(section) {
             var isTextarea = section.noteText !== undefined && section.noteText !== null;
-            var count      = section.items ? section.items.length : (section.count || 0);
-            var countHtml  = isTextarea ? '' : ' <span class="accordion-count">(' + count + ')</span>';
+            var count      = isTextarea
+                ? (section.noteText.trim() ? 1 : 0)           // textarea: (1) if content, (0) if blank
+                : (section.items ? section.items.length : (section.count || 0));
+            var countHtml  = ' <span class="accordion-count">(' + count + ')</span>';
             var actionLink = section.action
                 ? '<button type="button" class="accordion-action" data-action="' + section.key + '">' + section.action + '</button>'
                 : '';
