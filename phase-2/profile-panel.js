@@ -384,17 +384,25 @@
 
     // Activity accordion (notes, meetings, calls, reminders, email metrics).
     // activityData: { notes, meetings, calls, reminders,
-    //                 emailReplies, emailLinksViewed, emailsSent }
+    //                 emailReplies     — array of { date, from, to, subject, body }
+    //                                    or legacy number count
+    //                 emailLinksViewed — array of { date, description }
+    //                                    or legacy number count
+    //                 emailsSent       — array of { date, subject }
+    //                                    or legacy number count }
     function buildActivityAccordionHTML(activityData) {
         var ad = activityData || {};
+        // Accept both array (new) and plain number (legacy) for email sections
+        function emailItems(val) { return Array.isArray(val) ? val : null; }
+        function emailCount(val) { return typeof val === 'number' ? val : 0; }
         var sections = [
             { key: 'notes',        label: 'Notes',             action: 'Add Note', items: ad.notes     || [] },
             { key: 'meetings',     label: 'Meetings',          action: 'Schedule', items: ad.meetings  || [] },
             { key: 'calls',        label: 'Calls',             action: 'Log Call', items: ad.calls     || [] },
             { key: 'reminders',    label: 'Tasks / Reminders', action: 'Add Task', items: ad.reminders || [] },
-            { key: 'email-replies', label: 'Email Replies',      action: null, count: ad.emailReplies     || 0 },
-            { key: 'email-links',   label: 'Email Links Viewed', action: null, count: ad.emailLinksViewed || 0 },
-            { key: 'emails-sent',   label: 'Emails Sent',        action: null, count: ad.emailsSent       || 0 }
+            { key: 'email-replies', label: 'Email Replies',      action: null, items: emailItems(ad.emailReplies),     count: emailCount(ad.emailReplies)     },
+            { key: 'email-links',   label: 'Email Links Viewed', action: null, items: emailItems(ad.emailLinksViewed), count: emailCount(ad.emailLinksViewed) },
+            { key: 'emails-sent',   label: 'Emails Sent',        action: null, items: emailItems(ad.emailsSent),       count: emailCount(ad.emailsSent)       }
         ];
 
         var html = '<div class="activity-accordion">' +
@@ -446,13 +454,34 @@
                 date = item.date || '';
                 desc = item.text || '';
                 break;
+            case 'email-replies':
+                date = item.date || '';
+                desc = item.subject || '';
+                break;
+            case 'email-links':
+                date = item.date || '';
+                desc = item.description || item.link || '';
+                break;
+            case 'emails-sent':
+                date = item.date || '';
+                desc = item.subject || '';
+                break;
             default:
                 desc = JSON.stringify(item);
         }
-        return '<div class="accordion-item" data-section="' + escHtml(sectionKey) + '" data-index="' + idx + '">' +
+        // Only editable sections show the edit pencil
+        var editBtn = (sectionKey === 'notes' || sectionKey === 'meetings' ||
+                       sectionKey === 'calls' || sectionKey === 'reminders')
+            ? '<button type="button" class="accordion-item-edit" aria-label="Edit item">' + FIELD_PENCIL_SVG + '</button>'
+            : '';
+        // Email-reply rows are clickable (open the reply viewer)
+        var isReply = sectionKey === 'email-replies';
+        return '<div class="accordion-item' + (isReply ? ' accordion-item--reply' : '') + '"' +
+            ' data-section="' + escHtml(sectionKey) + '" data-index="' + idx + '"' +
+            (isReply ? ' role="button" tabindex="0"' : '') + '>' +
             (date ? '<span class="accordion-item-date">' + escHtml(date) + '</span>' : '') +
             '<span class="accordion-item-desc">' + escHtml(desc) + '</span>' +
-            '<button type="button" class="accordion-item-edit" aria-label="Edit item">' + FIELD_PENCIL_SVG + '</button>' +
+            editBtn +
             '</div>';
     }
 
@@ -475,6 +504,55 @@
             _currentContactData.activityData = activityData;
         }
         $accordion.replaceWith(buildActivityAccordionHTML(activityData));
+    }
+
+    // ─── Email Reply viewer ───────────────────────────────────────────────────
+
+    var ER_CHECKMARK_SVG =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+        '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+
+    // Injects the email reply modal DOM once — idempotent.
+    function ensureEmailReplyModal() {
+        if ($('#er-modal').length) return;
+        $('body').append(
+            '<div class="er-backdrop" id="er-backdrop" aria-hidden="true"></div>' +
+            '<div class="er-modal" id="er-modal" role="dialog" aria-modal="true" aria-hidden="true">' +
+            '<div class="er-fields">' +
+            '<div class="er-field"><span class="er-label">Date</span><span class="er-value" id="er-date"></span></div>' +
+            '<div class="er-field"><span class="er-label">From</span><span class="er-value" id="er-from"></span></div>' +
+            '<div class="er-field"><span class="er-label">To</span><span class="er-value" id="er-to"></span></div>' +
+            '<div class="er-field er-field--subject"><span class="er-label">Subject</span><span class="er-value er-value--bold" id="er-subject"></span></div>' +
+            '</div>' +
+            '<div class="er-body-wrap" id="er-body-wrap"><div class="er-body" id="er-body"></div></div>' +
+            '<div class="er-footer">' +
+            '<button type="button" class="er-confirm-btn" id="er-close-btn" aria-label="Close">' + ER_CHECKMARK_SVG + '</button>' +
+            '</div>' +
+            '</div>'
+        );
+    }
+
+    function openEmailReplyModal(item) {
+        ensureEmailReplyModal();
+        $('#er-date').text(item.date || '');
+        $('#er-from').text(item.from || '');
+        $('#er-to').text(item.to || '');
+        $('#er-subject').text(item.subject || '');
+        // Preserve paragraph breaks and line breaks in the body
+        var bodyHtml = escHtml(item.body || '').replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>');
+        $('#er-body').html('<p>' + bodyHtml + '</p>');
+        $('#er-body-wrap').scrollTop(0);
+        $('#er-modal').addClass('open').attr('aria-hidden', 'false');
+        $('#er-backdrop').addClass('open');
+        setTimeout(function() {
+            var btn = document.getElementById('er-close-btn');
+            if (btn) btn.focus();
+        }, 50);
+    }
+
+    function closeEmailReplyModal() {
+        $('#er-modal').removeClass('open').attr('aria-hidden', 'true');
+        $('#er-backdrop').removeClass('open');
     }
 
     // Patches the Employer Research modal with fetched HTML and caches it on the
@@ -821,6 +899,7 @@
         // ESC to close — modals take priority over panel
         $(document).on('keydown', function(e) {
             if (e.which === 27) {
+                if ($('#er-modal').hasClass('open')) { closeEmailReplyModal(); return; }
                 if ($('#ce-modal').hasClass('open')) { closeCeModal(); return; }
                 // LL modal: ESC in edit mode → exit edit (stay open); ESC in view mode → close
                 if ($('#rp-ll-modal').hasClass('open')) {
@@ -1021,6 +1100,30 @@
                 cb.onActivityAction(cd.id, sectionKey);
             }
         });
+
+        // ── Email Reply viewer ────────────────────────────────────────────────
+
+        // Clicking a reply row opens the email reply modal
+        $(document).on('click', '.accordion-item--reply', function() {
+            var $item = $(this);
+            var idx   = $item.data('index');
+            var cd    = getCurrentContactData();
+            if (!cd || !cd.activityData) return;
+            var arr  = cd.activityData.emailReplies;
+            var item = Array.isArray(arr) ? arr[idx] : null;
+            if (!item) return;
+            openEmailReplyModal(item);
+        });
+
+        // Enter / Space also triggers clickable reply rows (keyboard accessibility)
+        $(document).on('keydown', '.accordion-item--reply', function(e) {
+            if (e.which === 13 || e.which === 32) { e.preventDefault(); $(this).trigger('click'); }
+        });
+
+        // Close email reply modal via confirm button or backdrop
+        $(document).on('click', '#er-close-btn, #er-backdrop', closeEmailReplyModal);
+
+        // ─────────────────────────────────────────────────────────────────────
 
         // Accordion item edit pencil
         $(document).on('click', '.accordion-item-edit', function(e) {
@@ -1273,6 +1376,8 @@
     window.closeCeModal                = closeCeModal;
     window.openEmployerResearchModal   = openEmployerResearchModal;
     window.closeEmployerResearchModal  = closeEmployerResearchModal;
+    window.openEmailReplyModal         = openEmailReplyModal;
+    window.closeEmailReplyModal        = closeEmailReplyModal;
     window.openLeadLeaperResearchModal = openLeadLeaperResearchModal;
     window.closeLeadLeaperResearchModal= closeLeadLeaperResearchModal;
     window.enterLlEditMode             = enterLlEditMode;

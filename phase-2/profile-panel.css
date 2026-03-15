@@ -15,7 +15,8 @@
 .profile-panel p,
 .ce-modal p,
 #rp-employer-modal p,
-#rp-ll-modal p {
+#rp-ll-modal p,
+#er-modal p {
     margin: 0;
 }
 
@@ -883,6 +884,20 @@
 
 .accordion-item-edit:hover {
     color: #404040;
+}
+
+/* Clickable reply rows */
+.accordion-item--reply {
+    cursor: pointer;
+}
+.accordion-item--reply:hover {
+    background-color: #f8fafc;
+}
+.accordion-item--reply .accordion-item-desc {
+    color: #0284c7;
+}
+.accordion-item--reply:hover .accordion-item-desc {
+    text-decoration: underline;
 }
 
 .accordion-item-edit svg {
@@ -2040,3 +2055,130 @@
 .contact-details-card .detail-row {
     padding-right: 24px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Email Reply Viewer  (#er-modal)
+   ─────────────────────────────────────────────────────────────────────────
+   Lightweight modal for reading a single inbound email reply.
+   Opened by clicking an .accordion-item--reply row in Engagement History.
+   z-index ladder: …rp-backdrop=1290, rp-modal=1300, er-backdrop=1395, er-modal=1400
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Backdrop ── */
+.er-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 1395;
+    display: none;
+}
+.er-backdrop.open {
+    display: block;
+    animation: ce-fade-in 180ms ease both;   /* reuse CE keyframe */
+}
+
+/* ── Modal container ── */
+.er-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: min(400px, calc(100vw - 32px));
+    max-height: min(82vh, 580px);
+    z-index: 1400;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+}
+.er-modal.open {
+    display: flex;
+    animation: ce-modal-appear 200ms cubic-bezier(0.16, 1, 0.3, 1) both;   /* reuse CE keyframe */
+}
+
+/* ── Header fields (Date / From / To / Subject) ── */
+.er-fields {
+    flex-shrink: 0;
+    border-bottom: 1px solid #e8eaed;
+}
+.er-field {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 7px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.er-field:last-child {
+    border-bottom: none;
+}
+.er-field--subject {
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+.er-label {
+    flex-shrink: 0;
+    width: 50px;
+    font-size: var(--text-xs, 12px);
+    font-weight: 600;
+    color: #737373;
+    text-align: right;
+}
+.er-value {
+    font-size: var(--text-xs, 12px);
+    color: #404040;
+    line-height: 1.45;
+    word-break: break-word;
+}
+.er-value--bold {
+    font-weight: 600;
+    color: #262626;
+    font-size: var(--text-sm, 13px);
+}
+
+/* ── Scrollable body ── */
+.er-body-wrap {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 14px 16px;
+}
+.er-body-wrap::-webkit-scrollbar { width: 6px; }
+.er-body-wrap::-webkit-scrollbar-track { background: #f5f5f5; }
+.er-body-wrap::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 3px; }
+.er-body-wrap::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
+
+.er-body p {
+    font-size: var(--text-sm, 13px);
+    color: #404040;
+    line-height: 1.7;
+    margin: 0 0 10px 0 !important;
+}
+.er-body p:last-child { margin-bottom: 0 !important; }
+
+/* ── Footer with confirm/close button ── */
+.er-footer {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    padding: 12px 16px;
+    border-top: 1px solid #f0f0f0;
+}
+.er-confirm-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0891b2;
+    border: none;
+    cursor: pointer;
+    color: #ffffff;
+    transition: background-color 150ms ease, transform 100ms ease;
+}
+.er-confirm-btn:hover  { background: #0772a0; }
+.er-confirm-btn:active { transform: scale(0.93); }
+.er-confirm-btn svg    { width: 20px; height: 20px; }
