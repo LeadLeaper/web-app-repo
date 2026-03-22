@@ -19,8 +19,21 @@
     const BADGE_STYLE = 'd';
 
     // ─── AI Engagement view state ─────────────────────────────────────────────
-    var panelCurrentView = 'crm';   // 'crm' | 'ai'
-    var quillsInitialized = false;  // lazy-init Quill editors on first AI view open
+    var panelCurrentView     = 'crm';  // 'crm' | 'ai'
+    var _aiEditorsMounted    = {};     // sectionId → true for mounted tinyMCE instances
+
+    // ─── AI view data model (current contact) ─────────────────────────────────
+    var _aiCurrentPosts      = null;   // null | [] | [{id, preview, meta, text}] — from current ping
+    var _aiSavedPosts        = null;   // null | [{id, preview, meta, text}] — restored from cloud
+    var _aiCurrentPostStates = {};     // { postId: {state, replyText} }
+    var _aiCurrentSections   = [];     // [{id, type, title, subject, body}]
+    var _postCardCounter     = 0;      // fallback counter for posts missing a host-supplied id
+
+    // ─── AI view per-contact state cache (in-memory, survives contact navigation) ───
+    var _aiStateCache         = {};     // { contactId: { posts, postStates, sections, itemStates } }
+    var _aiStateLoadPending   = false;  // true while onLoadAiState cloud fetch is in-flight
+    var _aiStateCacheDisabled = true;   // disabled by default — onLoadProfile always drives restoration so TinyMCE can mount correctly
+    var _pendingActivityData  = undefined; // pre-loaded by onLoadProfile before DOM is ready; undefined = not preloaded
 
     // ─── Per-field inline edit state ─────────────────────────────────────────
     var $currentFieldEdit = null;   // the .field-editable currently being edited
@@ -58,10 +71,21 @@
     //   onPrev(currentContactId, done)
     //     Same as onNext but for the ‹ Previous button.
     //
+    //   onLoadProfile(contactId, done)
+    //     Single combined loader fired when a contact's profile opens.
+    //     Replaces both onLoadActivity and onLoadAiState with one cloud round-trip.
+    //     Fetch all profile data and call:
+    //       done({ activityData, aiState })
+    //     where activityData is the same shape as onLoadActivity's done() argument
+    //     and aiState is the same shape as onLoadAiState's done() argument (null if none).
+    //     When onLoadProfile is registered, onLoadActivity and onLoadAiState are
+    //     ignored; register only one set or the other, not both.
+    //
     //   onLoadActivity(contactId, done)
     //     Fired after the panel renders with basic contact info. Fetch and return
     //     activity data by calling done({ notes, meetings, calls, reminders,
     //     emailReplies, emailLinksViewed, emailsSent }).
+    //     Ignored when onLoadProfile is registered.
     //
     //   onLoadResearch(contactId, done)
     //     Fired when the Employer Research modal is opened and no cached data
@@ -93,11 +117,75 @@
     //     not registering this callback) leaves the toggle disabled — register
     //     it to gate AI view access per-user.
     //
-    //   onLoadAiView(contactId, done)
-    //     Fired the first time the AI view is opened for a contact (i.e. when
-    //     Quill has not yet been initialized). A "Loading…" placeholder is shown
-    //     until done() is called, at which point the AI sections are revealed.
-    //     If not registered, the AI view initialises synchronously as before.
+    //
+    //   onSaveAiState(contactId, state, done)
+    //     Fired whenever AI view state is captured (on close / next / prev).
+    //     state is the full serialisable snapshot:
+    //       { posts, postStates, sections, itemStates }
+    //     posts       — flat array of LinkedIn post objects that have a generated
+    //                   reply (state 'done' or 'sent'); null if none. New posts
+    //                   without replies are never persisted — users always re-ping.
+    //     postStates  — { [postId]: { replyId, comment, subject, body, state } }
+    //                   state is always 'done' or 'sent' for persisted entries.
+    //     sections    — [{ id, type, title, subject, body }] email draft sections.
+    //     itemStates  — { [action]: state } dropdown states; ping-linkedin is never
+    //                   included — it always resets to idle on next profile open.
+    //     Persist this object to the cloud keyed on contactId. Call done() on
+    //     completion (fire-and-forget — navigation is not blocked).
+    //
+    //   onLoadAiState(contactId, done)
+    //     Fired when a contact's profile opens and no in-memory cache exists.
+    //     Called immediately (before the user switches to AI view) so dropdown
+    //     item states are accurate while in CRM view and AI content is pre-cached.
+    //     Fetch the previously saved state from the cloud and call done(savedState)
+    //     to restore it, or done(null) if no saved state exists.
+    //     The panel shows "Loading…" only if the user switches to AI view while
+    //     the fetch is still in-flight; otherwise restoration is silent.
+    //     Ignored when onLoadProfile is registered.
+    //
+    //   onReplyClick(sourcePostId, postText, contactId)
+    //     Fired when the user clicks Reply on a LinkedIn post card.
+    //     sourcePostId is the id assigned to the post (matches the card's id
+    //     attribute and data-post-id). The host is responsible for generating a
+    //     unique replyId and calling window.createPostReply(replyId, sourcePostId)
+    //     to inject the reply scaffold, then window.setPostReply(replyId, opts)
+    //     to populate fields incrementally.
+    //
+    //   aiSectionTypes: [{type, title, action}]  (default: null)
+    //     Ordered array that defines the available Zone 2 email draft types.
+    //     type   — unique string identifier matched against addAiSection({type}).
+    //     title  — display label (used in Zone 2 section headers).
+    //     action — dropdown data-ai-action value that triggers generation.
+    //     Controls three things:
+    //       1. Display order — addAiSection inserts sections at the position
+    //          matching their type in this array; unrecognised types append last.
+    //       2. Dropdown injection — _populateEngagementDropdown() injects one
+    //          menu item per entry (plus an HR divider after ping-linkedin and
+    //          a "Generate ALL of the above" item when ≥ 2 types are registered).
+    //       3. Dynamic dropdown mapping — the panel reads this array to determine
+    //          which dropdown actions trigger onGenerateDraft, so new types are
+    //          supported without changing panel code.
+    //     Easily extended: add entries to this array; no other changes needed.
+    //
+    //   onGenerateAll(contactId, pendingTypes)
+    //     Fired when "Generate ALL of the above" is selected in the AI+
+    //     Engagement dropdown. pendingTypes is the subset of aiSectionTypes
+    //     entries whose type has not yet been generated (i.e. not present in
+    //     _aiCurrentSections). The host should trigger generation for each
+    //     pending type in parallel (calling addAiSection / updateAiSection).
+    //
+    //   onSendReply(replyId, sourcePostId, subject, comment, mountEl, contactId, done)
+    //     Fired when the user clicks Send in a post reply area. The button
+    //     automatically enters an underway (spinner) state on click.
+    //     replyId      — the reply session ID generated by the host.
+    //     sourcePostId — the id of the originating post card.
+    //     subject      — current value of the subject input (_SUB).
+    //     comment      — current value of the LinkedIn comment textarea (_COM).
+    //     mountEl      — the reply editor mount div (_MOUNT) for reading body content.
+    //     contactId    — id of the currently displayed contact.
+    //     done()       — call with no args on success → button shows checkmark.
+    //                    call with an error string on failure → button resets to idle
+    //                    and the string is shown as a panel notification.
     //
     window.profilePanelCallbacks = {
         onChange         : null,   // function(contactId, fieldName, newValue)
@@ -105,7 +193,8 @@
         onClose          : null,   // function(contactId)
         onNext           : null,   // function(currentContactId, done)
         onPrev           : null,   // function(currentContactId, done)
-        onLoadActivity   : null,   // function(contactId, done)
+        onLoadProfile    : null,   // function(contactId, done) — done({activityData, aiState}) — single combined loader
+        onLoadActivity   : null,   // function(contactId, done) — ignored when onLoadProfile is registered
         onLoadResearch   : null,   // function(contactId, done)
         onActivityAction : null,   // function(contactId, sectionKey)
         onActivityEdit   : null,   // function(contactId, sectionKey, itemIndex, item)
@@ -113,7 +202,12 @@
         onSaveNote       : null,   // function(contactId, content, done)  — textarea mode only
         badgeStyle       : null,   // 'b' | 'd' — overrides the BADGE_STYLE constant when set
         onToggleView     : null,   // function(contactId, proceed) — gate AI view access
-        onLoadAiView     : null    // function(contactId, done) — async AI content loader
+        onSaveAiState    : null,   // function(contactId, state, done) — persist AI view state to cloud
+        onLoadAiState    : null,   // function(contactId, done) — done(savedState|null) — ignored when onLoadProfile is registered
+        aiSectionTypes   : null,   // [{type, title, action}] — Zone 2 order + Generate ALL source
+        onGenerateAll    : null,   // function(contactId) — Generate ALL button clicked
+        onReplyClick     : null,   // function(sourcePostId, postText, contactId)
+        onSendReply      : null    // function(replyId, sourcePostId, subject, comment, mountEl, contactId)
     };
 
     // ─── Identity card ───────────────────────────────────────────────────────
@@ -173,6 +267,17 @@
             return;
         }
         var cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onLoadProfile === 'function') {
+            // onLoadProfile supplies both activityData and aiState in one cloud call.
+            // If the data already arrived before the DOM was ready, _pendingActivityData
+            // is set — apply it now. Otherwise _eagerLoadProfile will call
+            // loadPanelActivity directly when the cloud response comes in.
+            if (_pendingActivityData !== undefined) {
+                loadPanelActivity(_pendingActivityData);
+                _pendingActivityData = undefined;
+            }
+            return;
+        }
         if (cb && typeof cb.onLoadActivity === 'function') {
             cb.onLoadActivity(contactData.id, function(activityData) {
                 loadPanelActivity(activityData);
@@ -194,6 +299,77 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    // ─── Unicode normalizer ───────────────────────────────────────────────────
+    //
+    // LinkedIn users paste Unicode Mathematical Alphanumeric Symbol characters
+    // (e.g. 𝗯𝗼𝗹𝗱, 𝘪𝘵𝘢𝘭𝘪𝘤) to fake bold/italic formatting.  These live above
+    // U+FFFF (surrogate pairs in UTF-16) and are silently corrupted to '?' by
+    // databases configured with 3-byte utf8 instead of utf8mb4.
+    // This function maps every such character back to its plain ASCII equivalent
+    // before text is stored or rendered, keeping saves clean and restores faithful.
+    //
+    // Each RANGES entry: [firstCodepoint, lastCodepoint, asciiBaseCodepoint]
+    // The offset within the range maps 1-to-1 onto the ASCII base sequence.
+    //
+    var _UNICODE_MATH_RANGES = [
+        // ── Letters ────────────────────────────────────────────────────────────
+        [0x1D400, 0x1D419, 0x41], // Mathematical Bold Capital A-Z
+        [0x1D41A, 0x1D433, 0x61], // Mathematical Bold Small a-z
+        [0x1D434, 0x1D44D, 0x41], // Mathematical Italic Capital A-Z
+        [0x1D44E, 0x1D467, 0x61], // Mathematical Italic Small a-z
+        [0x1D468, 0x1D481, 0x41], // Mathematical Bold Italic Capital A-Z
+        [0x1D482, 0x1D49B, 0x61], // Mathematical Bold Italic Small a-z
+        [0x1D49C, 0x1D4B5, 0x41], // Mathematical Script Capital A-Z
+        [0x1D4B6, 0x1D4CF, 0x61], // Mathematical Script Small a-z
+        [0x1D4D0, 0x1D4E9, 0x41], // Mathematical Bold Script Capital A-Z
+        [0x1D4EA, 0x1D503, 0x61], // Mathematical Bold Script Small a-z
+        [0x1D504, 0x1D51D, 0x41], // Mathematical Fraktur Capital A-Z
+        [0x1D51E, 0x1D537, 0x61], // Mathematical Fraktur Small a-z
+        [0x1D538, 0x1D551, 0x41], // Mathematical Double-Struck Capital A-Z
+        [0x1D552, 0x1D56B, 0x61], // Mathematical Double-Struck Small a-z
+        [0x1D56C, 0x1D585, 0x41], // Mathematical Bold Fraktur Capital A-Z
+        [0x1D586, 0x1D59F, 0x61], // Mathematical Bold Fraktur Small a-z
+        [0x1D5A0, 0x1D5B9, 0x41], // Mathematical Sans-Serif Capital A-Z
+        [0x1D5BA, 0x1D5D3, 0x61], // Mathematical Sans-Serif Small a-z
+        [0x1D5D4, 0x1D5ED, 0x41], // Mathematical Sans-Serif Bold Capital A-Z  ← LinkedIn bold
+        [0x1D5EE, 0x1D607, 0x61], // Mathematical Sans-Serif Bold Small a-z    ← LinkedIn bold
+        [0x1D608, 0x1D621, 0x41], // Mathematical Sans-Serif Italic Capital A-Z
+        [0x1D622, 0x1D63B, 0x61], // Mathematical Sans-Serif Italic Small a-z
+        [0x1D63C, 0x1D655, 0x41], // Mathematical Sans-Serif Bold Italic Capital A-Z
+        [0x1D656, 0x1D66F, 0x61], // Mathematical Sans-Serif Bold Italic Small a-z
+        [0x1D670, 0x1D689, 0x41], // Mathematical Monospace Capital A-Z
+        [0x1D68A, 0x1D6A3, 0x61], // Mathematical Monospace Small a-z
+        // ── Digits ─────────────────────────────────────────────────────────────
+        [0x1D7CE, 0x1D7D7, 0x30], // Mathematical Bold Digit 0-9
+        [0x1D7D8, 0x1D7E1, 0x30], // Mathematical Double-Struck Digit 0-9
+        [0x1D7E2, 0x1D7EB, 0x30], // Mathematical Sans-Serif Digit 0-9
+        [0x1D7EC, 0x1D7F5, 0x30], // Mathematical Sans-Serif Bold Digit 0-9
+        [0x1D7F6, 0x1D7FF, 0x30]  // Mathematical Monospace Digit 0-9
+    ];
+
+    function _normalizeFancyUnicode(str) {
+        if (!str || typeof str.codePointAt !== 'function') return str || '';
+        var out = [];
+        var i   = 0;
+        while (i < str.length) {
+            var cp   = str.codePointAt(i);
+            var step = cp > 0xFFFF ? 2 : 1;  // surrogate pair = 2 UTF-16 code units
+            var mapped = null;
+            if (cp > 0xFFFF) {               // all math ranges are above BMP — skip BMP fast
+                for (var r = 0; r < _UNICODE_MATH_RANGES.length; r++) {
+                    var rng = _UNICODE_MATH_RANGES[r];
+                    if (cp >= rng[0] && cp <= rng[1]) {
+                        mapped = String.fromCharCode(rng[2] + (cp - rng[0]));
+                        break;
+                    }
+                }
+            }
+            out.push(mapped !== null ? mapped : str.slice(i, i + step));
+            i += step;
+        }
+        return out.join('');
     }
 
     // ─── Field data helpers ───────────────────────────────────────────────────
@@ -661,9 +837,15 @@
             updatePanelContent(contactData); // behaviors 2 & 3
             return;
         }
+        _updateCompanyLabels(contactData);   // stamp company name into dropdown + modal
         $panel.data('contact-id', contactData.id);
         $panel.addClass('open');             // slide in (behavior 1)
-        $('#panel-view-toggle').addClass('visible');
+        // Toggle starts hidden; _eagerLoadProfile shows it if saved AI state exists.
+        _hideViewToggle();
+        // Kick off the profile data load immediately so cloud data can arrive
+        // in parallel with the 400ms open animation.
+        _pendingActivityData = undefined;
+        _eagerLoadProfile(contactData.id);
         var $content = $('.profile-content');
         $content.hide().html('<div class="loading-spinner"></div>').show();
         setTimeout(function() {
@@ -675,34 +857,36 @@
 
     // ② Fade out → spinner → fade in (behaviors 2 & 3)
     function updatePanelContent(contactData) {
-        _currentContactData = contactData;
         var $panel = $('.profile-panel');
         var $content = $('.profile-content');
 
-        // If currently in AI Engagement view, reset back to CRM view before loading the new
-        // contact. updatePanelContent() renders into .profile-content (the CRM container);
-        // jQuery's fadeIn() sets display:block inline, which overrides the CSS display:none
-        // applied by .ai-view-active — causing both views to appear simultaneously.
+        // Save AI state for the contact we're leaving before clearing anything
+        _saveAiState($panel.data('contact-id'));
+
+        _currentContactData = contactData;
+        _updateCompanyLabels(contactData);   // stamp company name into dropdown + modal
+
+        // Switch back to CRM view and clean up AI zones/editors
         if (panelCurrentView === 'ai') {
             switchToCrmView();
-            if (quillsInitialized) {
-                $('.ai-editor').empty();
-                quillsInitialized = false;
-            }
-            // Reset AI section collapse states
-            $('.ai-section').removeClass('collapsed');
-            $('.ai-section-toggle').text('hide').attr('data-state', 'visible');
-            $('.ai-post-block').addClass('collapsed');
-            $('.ai-post-block-toggle').text('show more').attr('aria-label', 'Show post text');
-            $('.ai-comment-textarea').val('').each(function() { this.style.height = ''; });
-            // Close and reset all AI+ dropdown states
-            $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
-            $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
-            $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
-            $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
-            $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
-            $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
         }
+        _hideViewToggle();           // hidden until saved AI state or a generation action confirms content
+        clearAiSections();           // destroys editors, removes zones, resets tracking
+        _resetEngagementItemStates(); // clear per-item states in dropdown
+
+        // Eagerly load profile data (activity + AI state) for the incoming contact.
+        // When onLoadProfile is registered this is a single cloud call; otherwise
+        // falls back to separate onLoadActivity and onLoadAiState callbacks.
+        _pendingActivityData = undefined;
+        _eagerLoadProfile(contactData.id);
+
+        // Close and reset all AI+ dropdown states
+        $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
+        $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
+        $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
+        $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
+        $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
+        $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
 
         $content.fadeOut(200, function() {
             $content.html('<div class="loading-spinner"></div>').show();
@@ -739,12 +923,16 @@
 
         var closingContactId = $panel.data('contact-id');
 
+        // Save AI view state before clearing so it's restored on next open
+        _saveAiState(closingContactId);
+
         flushNotesDirty(closingContactId);
         // Cancel any in-progress field edit silently before closing
         closeCurrentFieldEdit();
 
         $panel.removeClass('open');
         $('#panel-view-toggle').removeClass('visible ai-view');
+        hidePanelNotification();
         // Close any open research modals
         closeEmployerResearchModal();
         closeLeadLeaperResearchModal();
@@ -764,20 +952,10 @@
             .removeClass('open')
             .attr('aria-hidden', 'true')
             .attr('data-state', 'start');
-        // Reset AI view: switch back to CRM, clear Quill editor DOM for fresh init
+        // Reset AI view: switch back to CRM, destroy all editor instances and zones
         switchToCrmView();
-        if (quillsInitialized) {
-            $('.ai-editor').empty();
-            quillsInitialized = false;
-        }
-        // Reset all AI section states
-        $('.ai-section').removeClass('collapsed');
-        $('.ai-section-toggle').text('hide').attr('data-state', 'visible');
-        // Post-block collapses back to default (article text hidden, comment textarea visible)
-        $('.ai-post-block').addClass('collapsed');
-        $('.ai-post-block-toggle').text('show more').attr('aria-label', 'Show post text');
-        // Clear and reset comment textarea height
-        $('.ai-comment-textarea').val('').each(function() { this.style.height = ''; });
+        clearAiSections();           // resets tracking
+        _resetEngagementItemStates();
 
         var cb = window.profilePanelCallbacks;
         if (cb && typeof cb.onClose === 'function') {
@@ -806,58 +984,1013 @@
         $('#ai-slack-dropdown').attr('data-state', state);
     }
 
+    // ─── Per-item engagement dropdown state ──────────────────────────────────
+    // Sets the visual state of a single item in the AI+ Engagement dropdown.
+    // state: 'idle' (arrow) | 'underway' (spinner) | 'done' (green checkmark)
+    function _setEngagementItemState(aiAction, state) {
+        var $item = $('#ai-engagement-dropdown .ai-dropdown-item[data-ai-action="' + aiAction + '"]');
+        if (!$item.length) return;
+        if (state === 'idle') {
+            $item.removeAttr('data-item-state');
+        } else {
+            $item.attr('data-item-state', state);
+        }
+    }
+
+    // Reset all actionable engagement items to idle
+    function _resetEngagementItemStates() {
+        $('#ai-engagement-dropdown .ai-dropdown-item[data-ai-action]').removeAttr('data-item-state');
+    }
+
+    // Show/hide the CRM ↔ AI toggle button.
+    // Hidden by default on every profile load; revealed only when AI content
+    // exists (saved state restored) or is being generated (dropdown action fired).
+    function _showViewToggle() {
+        $('#panel-view-toggle').addClass('visible');
+    }
+    function _hideViewToggle() {
+        $('#panel-view-toggle').removeClass('visible ai-view');
+    }
+
+    // ─── AI view tracking helpers ─────────────────────────────────────────────
+    function _resetAiTracking() {
+        _aiCurrentPosts      = null;
+        _aiSavedPosts        = null;
+        _aiCurrentPostStates = {};
+        _aiCurrentSections   = [];
+        _aiStateLoadPending  = false;
+    }
+
+    // Persist current AI view state into the per-contact cache.
+    // Call this BEFORE clearAiSections() so editor content is still accessible.
+    function _saveAiState(contactId) {
+        if (!contactId) return;
+        var _hasNewPostsWithReplies = $.grep(_aiCurrentPosts || [], function(p) {
+            var ps = _aiCurrentPostStates[p.id] || _aiCurrentPostStates[String(p.id)];
+            return ps && (ps.state === 'done' || ps.state === 'sent');
+        }).length > 0;
+        if (!_hasNewPostsWithReplies && !(_aiSavedPosts && _aiSavedPosts.length) &&
+                _aiCurrentSections.length === 0) return;
+
+        // Read up-to-date subject values from DOM (user may have edited)
+        var sections = $.map(_aiCurrentSections, function(sec) {
+            var $secEl  = $('.ai-section[data-section-id="' + sec.id + '"]');
+            var subject = $secEl.find('.ai-subject-input').val();
+            if (subject === undefined || subject === null) subject = sec.subject;
+            // Retrieve editor body via optional callback (production: tinyMCE getContent)
+            var body = sec.body;
+            var cb = window.profilePanelCallbacks;
+            if (cb && typeof cb.onEditorGetContent === 'function') {
+                var fresh = cb.onEditorGetContent(sec.id);
+                if (fresh !== null && fresh !== undefined) body = fresh;
+            }
+            return $.extend({}, sec, { subject: subject, body: body });
+        });
+
+        // Read up-to-date reply field values from DOM for any active reply sessions
+        var postStates = {};
+        $.each(_aiCurrentPostStates, function(sourcePostId, ps) {
+            var saved = $.extend({}, ps);
+            if (ps.replyId) {
+                var r   = ps.replyId;
+                var com = $('#' + r + '_COM').val();
+                var sub = $('#' + r + '_SUB').val();
+                var bdy;
+                var edId = r + '_MCE';
+                if (typeof tinymce !== 'undefined' && tinymce.get(edId)) {
+                    bdy = tinymce.get(edId).getContent();
+                } else {
+                    bdy = $('#' + edId).val();
+                }
+                if (com !== undefined) saved.comment = com;
+                if (sub !== undefined) saved.subject = sub;
+                if (bdy !== undefined) saved.body    = bdy;
+            }
+            postStates[sourcePostId] = saved;
+        });
+
+        // Capture engagement dropdown item states.
+        // ping-linkedin is always excluded — users re-ping on every profile open.
+        var itemStates = {};
+        $('#ai-engagement-dropdown .ai-dropdown-item[data-ai-action]').each(function() {
+            var action = $(this).data('ai-action');
+            if (action === 'ping-linkedin') return; // never persisted
+            var state  = $(this).attr('data-item-state') || 'idle';
+            if (state !== 'idle') itemStates[action] = state;
+        });
+
+        // Build the saved posts array: previously-saved posts (already had replies)
+        // plus any new posts from this session that now have a reply (done / sent).
+        // Posts with no reply are never persisted — the user always re-pings.
+        var savedPosts = (_aiSavedPosts || []).slice(); // start with restored posts
+        $.each(_aiCurrentPosts || [], function(i, post) {
+            var ps = postStates[post.id] || postStates[String(post.id)];
+            if (ps && (ps.state === 'done' || ps.state === 'sent')) {
+                savedPosts.push(post);
+            }
+        });
+
+        var stateSnapshot = {
+            posts:      savedPosts.length ? savedPosts : null,
+            postStates: postStates,
+            sections:   sections,
+            itemStates: itemStates
+        };
+
+        // Update in-memory cache (skipped when caching is disabled)
+        if (!_aiStateCacheDisabled) {
+            _aiStateCache[contactId] = stateSnapshot;
+        }
+
+        // Persist to cloud — always fires regardless of cache disable flag
+        // (fire-and-forget — navigation is not blocked)
+        var cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onSaveAiState === 'function') {
+            cb.onSaveAiState(contactId, stateSnapshot, function() {});
+        }
+    }
+
+    // Single entry-point called from updatePanelContent on every profile open.
+    // When onLoadProfile is registered it fires that callback once and dispatches
+    // both activityData and aiState from the single response, avoiding two separate
+    // cloud round-trips. Falls back to the independent onLoadAiState callback
+    // (onLoadActivity is then handled separately by renderMainContent as before).
+    function _eagerLoadProfile(contactId) {
+        if (!contactId) return;
+        var cb = window.profilePanelCallbacks;
+
+        if (cb && typeof cb.onLoadProfile === 'function') {
+            _aiStateLoadPending = true;
+            cb.onLoadProfile(contactId, function(result) {
+                _aiStateLoadPending = false;
+                // Guard: user may have navigated away before this fired
+                var currentId = _currentContactData && _currentContactData.id;
+                if (contactId !== currentId) return;
+
+                result = result || {};
+
+                // ── Dispatch activity data ──────────────────────────────────
+                var activityData = result.activityData || null;
+                if ($('.activity-accordion').length) {
+                    // DOM already rendered — populate immediately
+                    loadPanelActivity(activityData);
+                } else {
+                    // DOM not yet ready — store for renderMainContent to pick up
+                    _pendingActivityData = activityData;
+                }
+
+                // ── Dispatch AI state ───────────────────────────────────────
+                var aiState = result.aiState || null;
+                if (aiState) {
+                    _aiStateCache[contactId] = aiState;
+                    _restoreAiState(contactId);
+                    if (_aiStateCacheDisabled) { delete _aiStateCache[contactId]; }
+                    // Saved content exists — reveal the toggle even while in CRM view
+                    // so the user can see AI content is available.
+                    _showViewToggle();
+                    if (panelCurrentView === 'ai') { hideAiLoadingState(); }
+                } else {
+                    // No saved state — toggle stays hidden until the user generates content.
+                    if (panelCurrentView === 'ai') { hideAiLoadingState(); }
+                }
+            });
+            return;
+        }
+
+        // Fallback: onLoadActivity is handled by renderMainContent; handle AI state here.
+        _eagerLoadAiState(contactId);
+    }
+
+    // Eagerly load saved AI state for a contact as soon as its profile opens.
+    // Called from _eagerLoadProfile (fallback path) so dropdown item states are
+    // accurate in CRM view and content is pre-cached before the user may switch.
+    function _eagerLoadAiState(contactId) {
+        if (!contactId) return;
+        var cb = window.profilePanelCallbacks;
+
+        // In-memory cache hit — restore immediately (same-session re-visit)
+        // Skipped when caching is disabled so we always go to cloud.
+        if (!_aiStateCacheDisabled && _aiStateCache[contactId]) {
+            _restoreAiState(contactId);
+            _showViewToggle();
+            return;
+        }
+
+        // Fetch from cloud
+        if (cb && typeof cb.onLoadAiState === 'function') {
+            _aiStateLoadPending = true;
+            cb.onLoadAiState(contactId, function(savedState) {
+                _aiStateLoadPending = false;
+                // Guard: user may have navigated to a different contact before this fired
+                var currentId = _currentContactData && _currentContactData.id;
+                if (contactId !== currentId) return;
+
+                if (savedState) {
+                    // Write to cache, restore, then clean up the entry if caching is disabled
+                    _aiStateCache[contactId] = savedState;
+                    _restoreAiState(contactId);
+                    if (_aiStateCacheDisabled) { delete _aiStateCache[contactId]; }
+                    _showViewToggle();
+                    if (panelCurrentView === 'ai') { hideAiLoadingState(); }
+                } else {
+                    // No saved state — toggle stays hidden until content is generated.
+                    if (panelCurrentView === 'ai') { hideAiLoadingState(); }
+                }
+            });
+        }
+    }
+
+    // Restore saved AI view state for a contact (returns true if cache was found).
+    function _restoreAiState(contactId) {
+        var cached = _aiStateCache[contactId];
+        if (!cached) return false;
+
+        // Restore LinkedIn posts zone.
+        // posts is a flat array of posts that had replies — always shown as saved.
+        var cachedPosts = cached.posts;
+        if (cachedPosts && cachedPosts.length) {
+            // Legacy guard: handle old { new, saved } shape from pre-migration saves
+            if (!Array.isArray(cachedPosts) && cachedPosts.saved) {
+                _showSavedPosts(cachedPosts.saved);  // legacy {new,saved} shape
+            } else {
+                _showSavedPosts(cachedPosts);         // current flat-array shape
+            }
+            // Rebuild any reply areas that were active when the contact was last visited
+            $.each(cached.postStates || {}, function(sourcePostId, ps) {
+                if (!ps.replyId) return;
+                createPostReply(ps.replyId, sourcePostId);
+                setPostReply(ps.replyId, {
+                    comment: ps.comment || '',
+                    subject: ps.subject || '',
+                    body:    ps.body    || '',
+                    visible: !!(ps.state === 'done' || ps.body),
+                    state:   ps.state
+                });
+            });
+        }
+
+        // Restore email draft sections
+        $.each(cached.sections || [], function(i, sec) {
+            addAiSection({
+                id:      sec.id,
+                type:    sec.type,
+                title:   sec.title,
+                subject: sec.subject,
+                body:    sec.body,
+                loading: false
+            });
+        });
+
+        // Restore engagement dropdown item states
+        $.each(cached.itemStates || {}, function(action, state) {
+            _setEngagementItemState(action, state);
+        });
+
+        return true;
+    }
+
+    // ─── Snapshot export / import (cross-session persistence) ────────────────
+    //
+    // getAiSnapshot(contactId)
+    //   Returns a serialisable snapshot of the full AI view state for contactId.
+    //   Flushes the current DOM state into the cache first if contactId is the
+    //   active contact. Returns null if no state exists for this contact.
+    //   The host should call this on close / next / prev and persist the result.
+    //
+    // restoreAiState(contactId, snapshot)
+    //   Feeds a previously-saved snapshot back into the cache. If contactId is
+    //   the active contact and the AI view is currently visible the state is
+    //   applied immediately; otherwise it is applied the next time the AI view
+    //   is opened for that contact.
+    //
+    function getAiSnapshot(contactId) {
+        if (!contactId) return null;
+        // Flush live DOM values — _saveAiState fires onSaveAiState regardless of cache flag
+        if (_currentContactData && _currentContactData.id === contactId) {
+            _saveAiState(contactId);
+        }
+        if (_aiStateCacheDisabled) return null;  // no in-memory copy is maintained
+        var cached = _aiStateCache[contactId];
+        return cached ? JSON.parse(JSON.stringify(cached)) : null;
+    }
+
+    function restoreAiState(contactId, snapshot) {
+        if (!contactId || !snapshot) return;
+        _aiStateCache[contactId] = snapshot;
+        // Apply immediately if this contact is already displayed in the AI view
+        if (_currentContactData && _currentContactData.id === contactId &&
+                panelCurrentView === 'ai') {
+            _restoreAiState(contactId);
+        }
+        if (_aiStateCacheDisabled) { delete _aiStateCache[contactId]; }
+    }
+
+    // ─── Session cache management ─────────────────────────────────────────────
+    //
+    // clearAiStateCache([opts])
+    //
+    //   Clears the in-memory AI state cache and optionally disables future caching.
+    //   Cloud persistence (onSaveAiState / onLoadAiState) is never affected.
+    //
+    //   opts.contactId  {string}   — clear only this contact's entry; omit to clear all.
+    //   opts.disable    {boolean}  — true:  suppress all future in-memory reads/writes
+    //                                false: re-enable in-memory caching (default enabled)
+    //
+    //   When caching is disabled the panel still fully restores from onLoadAiState
+    //   (via a transient entry that is immediately deleted) and still fires
+    //   onSaveAiState on every save — only the persistent in-memory copy is omitted.
+    //   Use disable:true for long-lived sessions navigating many contacts to avoid
+    //   unbounded memory growth.
+    //
+    function clearAiStateCache(opts) {
+        opts = opts || {};
+        if (opts.contactId) {
+            delete _aiStateCache[opts.contactId];
+        } else {
+            _aiStateCache = {};
+        }
+        if (opts.disable === true)  { _aiStateCacheDisabled = true;  }
+        if (opts.disable === false) { _aiStateCacheDisabled = false; }
+    }
+
+    // ─── Pre-action authorization + access checks ────────────────────────────
+    //
+    // Called before any AI+ Engagement or AI+ Research action.
+    // 1. Fires onCheckAuthorization(contactId, aiAction, done) if registered.
+    // 2. For 'ping-linkedin' only, additionally fires onCheckLinkedInAccess(contactId, done).
+    // On any failure: resets the item to idle; shows an info notification only if a
+    // message is provided (plain text or HTML both supported).
+    // If a callback is not registered its check defaults to blocked (false).
+    function _runAuthChecks(contactId, aiAction, onSuccess) {
+        var cb = window.profilePanelCallbacks || {};
+
+        function _fail(message) {
+            _setEngagementItemState(aiAction, 'idle');
+            if (message) {
+                showPanelNotification(message, { type: 'info', html: true });
+            }
+        }
+
+        function _afterAuthOk() {
+            if (aiAction === 'ping-linkedin') {
+                if (typeof cb.onCheckLinkedInAccess === 'function') {
+                    cb.onCheckLinkedInAccess(contactId, function(accessible, message) {
+                        if (!accessible) { _fail(message); return; }
+                        onSuccess();
+                    });
+                } else {
+                    _fail();    // onCheckLinkedInAccess not registered — block
+                }
+            } else {
+                onSuccess();
+            }
+        }
+
+        if (typeof cb.onCheckAuthorization === 'function') {
+            cb.onCheckAuthorization(contactId, aiAction, function(allowed, message) {
+                if (!allowed) { _fail(message); return; }
+                _afterAuthOk();
+            });
+        } else {
+            _fail();            // onCheckAuthorization not registered — block
+        }
+    }
+
+    // ─── AI Engagement view — zone API ───────────────────────────────────────
+    //
+    // Zone 1 (LinkedIn Posts) — showLinkedInPosts(posts)
+    //   posts: null = loading spinner
+    //         []   = empty state message
+    //         [{id, preview, text, date}] = post cards
+    //   Fires: profilePanelCallbacks.onGenerateReply(postId, postText, contactId)
+    //   Host calls updateLinkedInPost(postId, {state, replyText}) to update button/reply state
+    //   When state='done' + replyText provided: fires onEditorMount then onEditorSetContent
+    //     using sectionId='reply-{postId}' — host initialises TinyMCE inside the mount el
+    //
+    // Zone 2 (Email Drafts) — addAiSection / updateAiSection / removeAiSection
+    //   section: { id, type, title, subject, body, loading }
+    //   Fires on mount:   profilePanelCallbacks.onEditorMount(sectionId, mountEl)
+    //   Fires on content: profilePanelCallbacks.onEditorSetContent(sectionId, html, mountEl)
+    //   Fires on destroy: profilePanelCallbacks.onEditorDestroy(sectionId, mountEl)
+    //   Fires on send:    profilePanelCallbacks.onSend(sectionId, subject, mountEl, contactId)
+    //
+    // Both zones and all cards/sections within them are independently collapsible.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    var AI_ZONE_CHEVRON = '<svg class="ai-zone-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>';
+    var AI_ITEM_CHEVRON = '<svg class="ai-post-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>';
+    var AI_SEC_CHEVRON  = '<svg class="ai-section-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>';
+
+    // ── Zone 1: LinkedIn Posts ────────────────────────────────────────────────
+    //
+    // Zone 1 has two sub-zones:
+    //   #ai-zone-posts-new   — posts from the current "Ping LinkedIn" call
+    //   #ai-zone-posts-saved — posts restored from cloud (previously had replies)
+
+    function _buildPostsZoneHtml() {
+        return '<div class="ai-zone" id="ai-zone-posts">' +
+            '<div class="ai-zone-header" role="button" tabindex="0" aria-expanded="true">' +
+                AI_ZONE_CHEVRON +
+                '<span class="ai-zone-title">LinkedIn Posts</span>' +
+                '<span class="ai-zone-badge"></span>' +
+            '</div>' +
+            '<div class="ai-zone-body">' +
+                '<div id="ai-zone-posts-new"></div>' +
+                '<div id="ai-zone-posts-saved"></div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function _updatePostsZoneBadge() {
+        var n = $('#ai-zone-posts-new .ai-post-card').length +
+                $('#ai-zone-posts-saved .ai-post-card').length;
+        _updateZoneBadge('posts', n > 0 ? n : null);
+    }
+
+    function _ensurePostsZone() {
+        if (!$('#ai-zone-posts').length) {
+            $('#panel-ai-view').prepend(_buildPostsZoneHtml());
+        }
+    }
+
+    function _autoExpandPostsZone() {
+        var $zone = $('#ai-zone-posts');
+        if ($zone.hasClass('collapsed')) {
+            $zone.removeClass('collapsed');
+            $zone.find('> .ai-zone-header').attr('aria-expanded', 'true');
+            $zone.find('> .ai-zone-body').show();
+        }
+    }
+
+    function showLinkedInPosts(posts) {
+        // Normalise fancy-Unicode formatting characters (LinkedIn bold/italic) to
+        // plain ASCII before storing or rendering, so saved state round-trips cleanly
+        // through databases that don't support 4-byte UTF-8 (utf8mb4).
+        if (posts && posts.length) {
+            posts = $.map(posts, function(post) {
+                return $.extend({}, post, {
+                    preview: _normalizeFancyUnicode(post.preview),
+                    text:    _normalizeFancyUnicode(post.text)
+                });
+            });
+        }
+        // Exclude posts already in the saved sub-zone (restored from cloud) to
+        // avoid duplicates. Match by preview string — the most stable identifier.
+        if (posts && posts.length && _aiSavedPosts && _aiSavedPosts.length) {
+            var _savedPreviews = {};
+            $.each(_aiSavedPosts, function(i, sp) {
+                if (sp.preview) _savedPreviews[sp.preview] = true;
+            });
+            posts = $.grep(posts, function(post) {
+                return !_savedPreviews[post.preview];
+            });
+        }
+        _aiCurrentPosts = posts;
+        _ensurePostsZone();
+        var $new = $('#ai-zone-posts-new');
+        // Destroy any active reply editors in new sub-zone before clearing
+        var _cb = window.profilePanelCallbacks;
+        $new.find('.ai-post-reply-btn[data-reply-id]').each(function() {
+            var replyId = $(this).attr('data-reply-id');
+            if (typeof tinymce !== 'undefined' && tinymce.get(replyId + '_MCE')) {
+                tinymce.get(replyId + '_MCE').remove();
+            }
+            if (_cb && typeof _cb.onEditorDestroy === 'function') {
+                var mountEl = document.getElementById(replyId + '_MOUNT');
+                if (mountEl) _cb.onEditorDestroy(replyId, mountEl);
+            }
+        });
+        $new.empty();
+        if (posts === null) {
+            $new.html('<div class="ai-zone-loading"><span class="ai-btn-spinner"></span>Fetching LinkedIn posts\u2026</div>');
+            _updateZoneBadge('posts', null);
+            return;
+        }
+        // Posts loaded (empty or populated) — mark item done
+        _setEngagementItemState('ping-linkedin', 'done');
+        if (!posts || !posts.length) {
+            $new.html('<div class="ai-zone-empty">No recent LinkedIn posts found for this contact.</div>');
+        } else {
+            $.each(posts, function(i, post) { $new.append(_buildPostCardHtml(post)); });
+        }
+        _updatePostsZoneBadge();
+        _autoExpandPostsZone();
+    }
+
+    // Populate the saved-posts sub-zone (posts with prior replies, restored from cloud).
+    function _showSavedPosts(posts) {
+        if (!posts || !posts.length) return;
+        _aiSavedPosts = posts;
+        _ensurePostsZone();
+        var $saved = $('#ai-zone-posts-saved');
+        $saved.empty();
+        $.each(posts, function(i, post) { $saved.append(_buildPostCardHtml(post)); });
+        _updatePostsZoneBadge();
+        _autoExpandPostsZone();
+    }
+
+    function setAbout(aboutText) {
+        if (typeof aboutText !== 'string') return;
+        $('#panel-about-text').text(aboutText);
+        $('#panel-about-popover-text').text(aboutText);
+    }
+
+    // ── Build reply area inner HTML (injected on Reply click) ─────────────────
+    function _buildReplyAreaContent(replyId, sourcePostId) {
+        var p  = escHtml(replyId);
+        var sp = escHtml(sourcePostId || '');
+        return '<div class="ai-post-reply-label">Generated Reply</div>' +
+            // Comment wrap hidden by default — only revealed when setPostReply supplies a comment
+            '<div class="ai-reply-comment-wrap" style="display:none">' +
+                '<div class="ai-reply-field-label">LinkedIn Comment</div>' +
+                '<textarea id="' + p + '_COM" class="ai-post-reply-comment" placeholder="AI-generated LinkedIn comment\u2026" rows="1"></textarea>' +
+            '</div>' +
+            '<div class="ai-reply-field-label">Subject</div>' +
+            '<div class="ai-subject-row">' +
+                '<input type="text" id="' + p + '_SUB" class="ai-post-reply-subject ai-subject-input" placeholder="Email subject\u2026">' +
+                '<button type="button" class="ai-send-btn" data-reply-id="' + p + '" data-source-post-id="' + sp + '" data-btn-state="idle">' +
+                    '<span class="snd-label">Send</span>' +
+                    '<span class="snd-spinner"><span class="ai-btn-spinner"></span></span>' +
+                    '<span class="snd-check">&#10003;</span>' +
+                '</button>' +
+            '</div>' +
+            '<div class="ai-reply-mount" id="' + p + '_MOUNT">' +
+                '<textarea id="' + p + '_MCE" class="' + p + '_MCE"></textarea>' +
+            '</div>';
+    }
+
+    // ── createPostReply(replyId, sourcePostId) ───────────────────────────────
+    //   Called by the host after receiving onReplyClick to inject the reply
+    //   scaffold into the post card identified by sourcePostId and mark the
+    //   Reply button as underway. The host supplies the replyId it generated.
+    //
+    function createPostReply(replyId, sourcePostId) {
+        if (!replyId || !sourcePostId) return;
+        var $card = $('#' + sourcePostId);
+        if (!$card.length) return;
+        var $btn = $card.find('.ai-post-reply-btn');
+        // Inject reply area DOM
+        $card.find('.ai-post-reply-area').html(_buildReplyAreaContent(replyId, sourcePostId));
+        // Transition button to underway
+        $btn.attr({ 'data-reply-id': replyId, 'data-btn-state': 'underway' });
+        // Track replyId against the source post for state persistence
+        if (!_aiCurrentPostStates[sourcePostId]) _aiCurrentPostStates[sourcePostId] = {};
+        _aiCurrentPostStates[sourcePostId].replyId = replyId;
+    }
+
+    // ── setPostReply(postId, opts) ─────────────────────────────────────────────
+    //   Populate the reply area fields for a given reply session postId.
+    //   Each field in opts is optional and can be called multiple times.
+    //
+    //   opts.comment  {string}  — sets the LinkedIn comment textarea (_COM)
+    //   opts.subject  {string}  — sets the email subject input (_SUB)
+    //   opts.body     {string}  — sets the TinyMCE / textarea editor (_MCE)
+    //   opts.visible  {boolean} — slides the reply area into view
+    //   opts.state    {string}  — 'done' transitions the Reply button to done state
+    //
+    function setPostReply(postId, opts) {
+        if (!postId || !opts) return;
+        var p = postId;
+
+        if (opts.comment !== undefined) {
+            var $com  = $('#' + p + '_COM');
+            var $wrap = $com.closest('.ai-reply-comment-wrap');
+            $com.val(opts.comment);
+            // Reveal the comment section if hidden
+            if ($wrap.is(':hidden')) { $wrap.slideDown(200); }
+            // Resize after animations settle (250 ms > the 200 ms slideDown duration).
+            // Using a closure over the element reference avoids re-querying in the timer.
+            var _comEl = $com[0];
+            setTimeout(function() {
+                if (_comEl && _comEl.scrollHeight > 0) {
+                    _comEl.style.height = 'auto';
+                    _comEl.style.height = _comEl.scrollHeight + 'px';
+                }
+            }, 250);
+        }
+
+        if (opts.subject !== undefined) {
+            $('#' + p + '_SUB').val(opts.subject);
+        }
+
+        if (opts.body !== undefined) {
+            var edId = p + '_MCE';
+            if (typeof tinymce !== 'undefined' && tinymce.get(edId)) {
+                tinymce.get(edId).setContent(opts.body);
+            } else {
+                $('#' + edId).val(opts.body);
+            }
+        }
+
+        if (opts.visible) {
+            var $visBtn = $('[data-reply-id="' + p + '"]');
+            if ($visBtn.length) {
+                $visBtn.closest('.ai-post-card').find('.ai-post-reply-area').slideDown(200, function() {
+                    // Now that the reply area and all its ancestors are visible,
+                    // scrollHeight is accurate — resize any comment textarea within it.
+                    $(this).find('.ai-post-reply-comment').each(function() {
+                        this.style.height = 'auto';
+                        this.style.height = this.scrollHeight + 'px';
+                    });
+                });
+            }
+        }
+
+        if (opts.state === 'done') {
+            var $doneBtn = $('[data-reply-id="' + p + '"]');
+            $doneBtn.attr('data-btn-state', 'done');
+            // Track in post states for persistence
+            var srcPostId = String($doneBtn.data('post-id') || '');
+            if (srcPostId) {
+                if (!_aiCurrentPostStates[srcPostId]) _aiCurrentPostStates[srcPostId] = {};
+                _aiCurrentPostStates[srcPostId].state = 'done';
+                _aiCurrentPostStates[srcPostId].replyId = p;
+            }
+        }
+    }
+
+    function updateLinkedInPost(postId, updates) {
+        // Track post state for persistence
+        if (!_aiCurrentPostStates[postId]) _aiCurrentPostStates[postId] = {};
+        $.extend(_aiCurrentPostStates[postId], updates);
+        var $btn = $('.ai-post-reply-btn[data-post-id="' + postId + '"]');
+        if (!$btn.length) return;
+        var $card       = $btn.closest('.ai-post-card');
+        var $replyArea  = $card.find('.ai-post-reply-area');
+        var $mount      = $replyArea.find('.ai-reply-mount');
+        var sectionId   = 'reply-' + postId;
+        var cb          = window.profilePanelCallbacks;
+        var state       = updates.state || 'idle';
+        $btn.prop('disabled', false);
+        if (state === 'generating') {
+            $btn.attr('data-btn-state', 'underway').prop('disabled', false);
+        } else if (state === 'done') {
+            $btn.attr('data-btn-state', 'done');
+            $replyArea.slideDown(200);
+            if (cb && typeof cb.onEditorMount === 'function') {
+                cb.onEditorMount(sectionId, $mount[0]);
+            }
+            if (updates.replyText && cb && typeof cb.onEditorSetContent === 'function') {
+                cb.onEditorSetContent(sectionId, updates.replyText, $mount[0]);
+            }
+        } else {
+            // idle / reset — tear down reply editor if it was shown
+            if ($replyArea.is(':visible')) {
+                if (cb && typeof cb.onEditorDestroy === 'function') {
+                    cb.onEditorDestroy(sectionId, $mount[0]);
+                }
+                $replyArea.slideUp(150);
+            }
+            $btn.attr('data-btn-state', 'idle');
+        }
+    }
+
+    function _buildPostCardHtml(post) {
+        // Guard against missing or digit-leading IDs — both break jQuery's #id selector.
+        // Missing id   → auto-generate a unique 'pp-N' value.
+        // Digit-leading → prefix with 'pp-' so the CSS selector remains valid.
+        var rawId = (post.id != null && post.id !== '') ? String(post.id) : '';
+        var safeId = rawId === ''          ? ('pp-' + (++_postCardCounter))
+                   : /^\d/.test(rawId)    ? ('pp-' + rawId)
+                   :                        rawId;
+        var id = escHtml(safeId);
+        return '<div class="ai-post-card ' + id + '" id="' + id + '" data-post-id="' + id + '">' +
+            '<div class="ai-post-header">' +
+                AI_ITEM_CHEVRON +
+                '<div class="ai-post-preview-wrap">' +
+                    '<span class="ai-post-preview">' + escHtml(post.preview || '') + '</span>' +
+                    (post.meta ? '<span class="ai-post-meta">' + escHtml(post.meta) + '</span>' : '') +
+                '</div>' +
+                '<button type="button" class="ai-post-reply-btn" data-post-id="' + id + '" data-btn-state="idle">' +
+                    '<span class="rpl-label">Reply \u203a</span>' +
+                    '<span class="rpl-spinner"><span class="ai-btn-spinner"></span></span>' +
+                    '<span class="rpl-check">&#10003;</span>' +
+                '</button>' +
+            '</div>' +
+            '<div class="ai-post-body">' +
+                '<p class="ai-post-text">' + escHtml(post.text || post.preview || '') + '</p>' +
+            '</div>' +
+            '<div class="ai-post-reply-area" style="display:none"></div>' +
+        '</div>';
+    }
+
+    // ── Zone 2: Email Drafts ──────────────────────────────────────────────────
+
+    function addAiSection(section) {
+        if ($('[data-section-id="' + section.id + '"].ai-section').length) return; // no duplicates
+        // Track section for persistence
+        var alreadyTracked = $.grep(_aiCurrentSections, function(s) { return s.id === section.id; }).length > 0;
+        if (!alreadyTracked) {
+            _aiCurrentSections.push({
+                id:      section.id,
+                type:    section.type  || section.id,
+                title:   section.title || '',
+                subject: section.subject || '',
+                body:    section.body    || null
+            });
+        }
+        var $view = $('#panel-ai-view');
+        if (!$('#ai-zone-drafts').length) {
+            $view.append(_buildDraftsZoneHtml());
+        }
+        var $body = $('#ai-zone-drafts .ai-zone-body');
+        // Insert at the position determined by aiSectionTypes order
+        var _cb2   = window.profilePanelCallbacks;
+        var _types = _cb2 && _cb2.aiSectionTypes;
+        var _sHtml = _buildSectionHtml(section);
+        if (_types && _types.length) {
+            var _typeIdx = -1;
+            $.each(_types, function(i, t) { if (t.type === section.type) { _typeIdx = i; return false; } });
+            if (_typeIdx >= 0) {
+                // Find the last existing section whose type has a lower index
+                var $insertAfter = null;
+                $body.find('.ai-section').each(function() {
+                    var existingType = $(this).data('section-type');
+                    var existingIdx  = -1;
+                    $.each(_types, function(i, t) { if (t.type === existingType) { existingIdx = i; return false; } });
+                    if (existingIdx >= 0 && existingIdx < _typeIdx) { $insertAfter = $(this); }
+                });
+                if ($insertAfter) { $insertAfter.after(_sHtml); }
+                else              { $body.prepend(_sHtml); }
+            } else {
+                $body.append(_sHtml);
+            }
+        } else {
+            $body.append(_sHtml);
+        }
+        _updateZoneBadge('drafts', $body.find('.ai-section').length);
+        // Auto-expand zone if collapsed
+        var $zone = $('#ai-zone-drafts');
+        if ($zone.hasClass('collapsed')) {
+            $zone.removeClass('collapsed');
+            $zone.find('.ai-zone-header').attr('aria-expanded', 'true');
+            $body.show();
+        }
+        // Fire mount callback if already ready
+        if (!section.loading && section.body !== null) {
+            _fireMountCallback(section.id);
+            if (section.body) {
+                var cb = window.profilePanelCallbacks;
+                var mountEl = document.getElementById('ai-editor-mount-' + section.id);
+                if (mountEl && cb && typeof cb.onEditorSetContent === 'function') {
+                    cb.onEditorSetContent(section.id, section.body, mountEl);
+                }
+            }
+        }
+    }
+
+    function updateAiSection(id, updates) {
+        var $section = $('.ai-section[data-section-id="' + id + '"]');
+        if (!$section.length) return;
+        // Track updates in internal model
+        var tracked = $.grep(_aiCurrentSections, function(s) { return s.id === id; })[0];
+        if (tracked) {
+            if (updates.subject !== undefined) tracked.subject = updates.subject;
+            if (updates.body    !== undefined) tracked.body    = updates.body;
+        }
+        if (updates.title !== undefined) {
+            $section.find('.ai-section-title').text(updates.title);
+        }
+        // Transition loading → ready
+        if (updates.loading === false) {
+            $section.find('.ai-section-status')
+                .removeClass('ai-section-status--loading')
+                .addClass('ai-section-status--ready')
+                .html('Ready');
+            $section.find('.ai-section-body').html(_buildSectionContentHtml(id, updates.subject || ''));
+            _fireMountCallback(id);
+            // Mark the corresponding engagement dropdown item as done
+            // (works when section id matches the dropdown data-ai-action value)
+            _setEngagementItemState(id, 'done');
+        } else if (updates.subject !== undefined) {
+            $section.find('.ai-subject-input').val(updates.subject);
+        }
+        if (updates.body !== undefined && updates.body !== null) {
+            var cb = window.profilePanelCallbacks;
+            var mountEl = document.getElementById('ai-editor-mount-' + id);
+            if (mountEl && cb && typeof cb.onEditorSetContent === 'function') {
+                cb.onEditorSetContent(id, updates.body, mountEl);
+            }
+        }
+    }
+
+    function removeAiSection(id) {
+        _destroyEditor(id);
+        var $section = $('.ai-section[data-section-id="' + id + '"]');
+        $section.remove();
+        var $body = $('#ai-zone-drafts .ai-zone-body');
+        var remaining = $body.find('.ai-section').length;
+        _updateZoneBadge('drafts', remaining);
+        if (!remaining) { $('#ai-zone-drafts').remove(); }
+    }
+
+    function clearAiSections() {
+        // Destroy all mounted editors
+        Object.keys(_aiEditorsMounted).forEach(function(id) { _destroyEditor(id); });
+        _aiEditorsMounted = {};
+        $('#ai-zone-posts, #ai-zone-drafts').remove();
+        _resetAiTracking();   // clear internal data model
+    }
+
+    function _fireMountCallback(sectionId) {
+        var mountEl = document.getElementById('ai-editor-mount-' + sectionId);
+        if (!mountEl) return;
+        var cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onEditorMount === 'function') {
+            _aiEditorsMounted[sectionId] = mountEl;
+            cb.onEditorMount(sectionId, mountEl);
+        }
+    }
+
+    function _destroyEditor(id) {
+        var mountEl = _aiEditorsMounted[id];
+        if (!mountEl) return;
+        var cb = window.profilePanelCallbacks;
+        if (cb && typeof cb.onEditorDestroy === 'function') {
+            cb.onEditorDestroy(id, mountEl);
+        }
+        delete _aiEditorsMounted[id];
+    }
+
+    // ── Zone helpers ──────────────────────────────────────────────────────────
+
+    function _buildZoneHtml(zoneId, title) {
+        return '<div class="ai-zone" id="ai-zone-' + zoneId + '">' +
+            '<div class="ai-zone-header" role="button" tabindex="0" aria-expanded="true">' +
+                AI_ZONE_CHEVRON +
+                '<span class="ai-zone-title">' + escHtml(title) + '</span>' +
+                '<span class="ai-zone-badge"></span>' +
+            '</div>' +
+            '<div class="ai-zone-body"></div>' +
+        '</div>';
+    }
+
+    function _buildDraftsZoneHtml() {
+        return _buildZoneHtml('drafts', 'Email Drafts');
+    }
+
+    function _updateZoneBadge(zoneId, count) {
+        var $badge = $('#ai-zone-' + zoneId + ' > .ai-zone-header .ai-zone-badge');
+        if (count === null || count === undefined) { $badge.text('').hide(); }
+        else { $badge.text(count).show(); }
+    }
+
+    function _buildSectionHtml(section) {
+        var isLoading = !!(section.loading || section.body === null);
+        var statusHtml = isLoading
+            ? '<span class="ai-section-status ai-section-status--loading"><span class="ai-btn-spinner"></span>Generating\u2026</span>'
+            : '<span class="ai-section-status ai-section-status--ready">Ready</span>';
+        var bodyHtml = isLoading
+            ? '<div class="ai-section-skeleton"></div>'
+            : _buildSectionContentHtml(section.id, section.subject || '');
+        return '<div class="ai-section" data-section-id="' + escHtml(section.id) +
+            '" data-section-type="' + escHtml(section.type || '') + '">' +
+            '<div class="ai-section-header">' +
+                AI_SEC_CHEVRON +
+                '<span class="ai-section-title">' + escHtml(section.title) + '</span>' +
+                statusHtml +
+            '</div>' +
+            '<div class="ai-section-body">' + bodyHtml + '</div>' +
+        '</div>';
+    }
+
+    function _buildSectionContentHtml(sectionId, subject) {
+        var id = escHtml(sectionId);
+        return '<div class="ai-section-content">' +
+            '<div class="ai-subject-row">' +
+                '<input type="text" class="ai-subject-input" value="' + escHtml(subject) + '" placeholder="Email subject\u2026">' +
+                '<button type="button" class="ai-send-btn" data-section-id="' + id + '">SEND</button>' +
+            '</div>' +
+            '<div class="ai-editor-mount" id="ai-editor-mount-' + id + '" data-section-id="' + id + '"></div>' +
+        '</div>';
+    }
+
     // ─── AI Engagement view switching ────────────────────────────────────────
 
-    // Show a "Loading…" placeholder over the AI sections (used before first init).
-    function showAiLoadingState() {
-        $('#panel-ai-view').addClass('ai-view--loading');
-        if (!$('#ai-view-loading').length) {
-            $('#panel-ai-view').prepend(
-                '<div class="ai-view-loading" id="ai-view-loading">' +
-                '<span class="detail-muted">Loading\u2026</span>' +
-                '</div>'
-            );
-        }
-        $('#ai-view-loading').show();
+    // Switch panel to AI Engagement view (expand width, show AI content).
+    // ─── Panel notification modal ──────────────────────────────────────────────
+    // showPanelNotification(message, options)
+    //   message  — string (plain text or HTML)
+    //   options  — { type:     'info'|'success'|'warning'|'error'  (default 'info')
+    //                title:    string — optional title bar text
+    //                duration: ms until auto-dismiss; 0 = persistent (default 0)
+    //                html:     true to render message as HTML       (default false) }
+    // hidePanelNotification() — dismiss immediately
+
+    var _pnTimer = null;
+    var PN_CHECKMARK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    function ensurePnModal() {
+        if ($('#pn-modal').length) return;
+        $('body').append(
+            '<div id="pn-backdrop" aria-hidden="true"></div>' +
+            '<div id="pn-modal" role="alertdialog" aria-modal="true" aria-hidden="true" data-type="info">' +
+                '<div class="pn-title-bar hidden"><span class="pn-title" id="pn-title"></span></div>' +
+                '<div class="pn-body-wrap"><div class="pn-body" id="pn-body"></div></div>' +
+                '<div class="pn-footer">' +
+                    '<button type="button" class="pn-close-btn" id="pn-close-btn" aria-label="Dismiss">' +
+                        PN_CHECKMARK_SVG +
+                    '</button>' +
+                '</div>' +
+            '</div>'
+        );
     }
 
-    // Remove the loading placeholder and reveal AI sections.
+    function showPanelNotification(message, options) {
+        options = $.extend({ type: 'info', title: '', duration: 0, html: false }, options);
+        ensurePnModal();
+        clearTimeout(_pnTimer);
+        var $modal = $('#pn-modal');
+        $modal.attr('data-type', options.type);
+        // Title bar
+        if (options.title) {
+            $('#pn-title').text(options.title);
+            $modal.find('.pn-title-bar').removeClass('hidden');
+        } else {
+            $modal.find('.pn-title-bar').addClass('hidden');
+        }
+        // Body
+        if (options.html) {
+            $('#pn-body').html(message);
+        } else {
+            $('#pn-body').text(message);
+        }
+        $modal.addClass('open').attr('aria-hidden', 'false');
+        $('#pn-backdrop').addClass('open');
+        setTimeout(function() {
+            var btn = document.getElementById('pn-close-btn');
+            if (btn) btn.focus();
+        }, 50);
+        if (options.duration > 0) {
+            _pnTimer = setTimeout(hidePanelNotification, options.duration);
+        }
+    }
+
+    function hidePanelNotification() {
+        clearTimeout(_pnTimer);
+        _pnTimer = null;
+        $('#pn-modal').removeClass('open').attr('aria-hidden', 'true');
+        $('#pn-backdrop').removeClass('open');
+    }
+
+    function closeAllDropdowns() {
+        $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+        $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
+        $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
+    }
+
+    function showAiLoadingState() {
+        var $view = $('#panel-ai-view');
+        $view.addClass('ai-view--loading');
+        if (!$view.find('#ai-view-loading').length) {
+            $view.prepend('<div id="ai-view-loading">Loading\u2026</div>');
+        }
+    }
+
     function hideAiLoadingState() {
         $('#panel-ai-view').removeClass('ai-view--loading');
-        $('#ai-view-loading').hide();
+        $('#ai-view-loading').remove();
     }
 
-    // Switch panel to AI Engagement view (expand width, show AI content).
     function switchToAiView() {
+        closeAllDropdowns();
         var $panel = $('.profile-panel');
         $panel.addClass('ai-view-active');
         // jQuery's .show() / .fadeIn() leave an inline display:block on .profile-content
         // which overrides the CSS display:none rule under .ai-view-active.  Clearing it
         // here lets the stylesheet rule take full effect.
         $('.profile-content').css('display', '');
+        // Ensure toggle is visible and marked as being in AI view.
+        // Calling _showViewToggle() here covers the case where a dropdown action
+        // triggers the switch before saved-state restoration has run.
+        _showViewToggle();
         $('#panel-view-toggle')
             .addClass('ai-view')
             .attr('aria-label', 'Switch to CRM view')
             .attr('title', 'Switch to CRM view');
         panelCurrentView = 'ai';
-        if (!quillsInitialized) {
+
+        // Content already in the DOM — eager load finished before the user switched.
+        if (_aiCurrentPosts !== null || _aiCurrentSections.length > 0) return;
+
+        var contactId = _currentContactData ? _currentContactData.id : null;
+
+        // Cloud fetch is in-flight (started by _eagerLoadProfile on profile open).
+        // Show the loading placeholder; the fetch callback will hide it once
+        // content is populated.
+        if (_aiStateLoadPending) {
             showAiLoadingState();
-            var cb  = window.profilePanelCallbacks;
-            var cid = getCurrentContactData() ? getCurrentContactData().id : null;
-            if (cb && typeof cb.onLoadAiView === 'function') {
-                cb.onLoadAiView(cid, function() {
-                    initQuillEditors();
-                    hideAiLoadingState();
-                });
-            } else {
-                initQuillEditors();
-                hideAiLoadingState();
-            }
+            return;
         }
+
+        // No saved state and no load in-flight — nothing to restore.
+        // The host drives generation through the AI+ Engagement dropdown.
+        hideAiLoadingState();
     }
 
     // Switch panel back to CRM view (contract width, show CRM content)
     function switchToCrmView() {
+        closeAllDropdowns();
         var $panel = $('.profile-panel');
         $panel.removeClass('ai-view-active');
         $('#panel-view-toggle')
@@ -943,7 +2076,18 @@
         $('#rp-employer-backdrop').removeClass('open');
     }
 
-    // ─── LeadLeaper Research modal ───────────────────────────────────────────
+    // ─── Company label stamping ───────────────────────────────────────────────
+    // Updates the dynamic company-name slots in the Research dropdown and modal
+    // title whenever a new contact is loaded.  Falls back to 'My Company' if
+    // contactData.company is absent.
+
+    function _updateCompanyLabels(contactData) {
+        var name = (contactData && contactData.company) ? contactData.company : 'My Company';
+        $('.ai-company-label').text(name);
+        $('#rp-ll-title').text(name + ' Research');
+    }
+
+    // ─── User-Company Research modal ─────────────────────────────────────────
 
     function openLeadLeaperResearchModal() {
         // Ensure we open in view mode (reset any lingering edit state)
@@ -1014,11 +2158,87 @@
         $('#ce-backdrop').removeClass('open').attr('aria-hidden', 'true');
     }
 
+    // ─── Engagement dropdown — dynamic item injection ─────────────────────────
+    //
+    // Called once from setupPanelHandlers(). Reads profilePanelCallbacks.aiSectionTypes
+    // and injects:
+    //   • A horizontal rule after "Ping LinkedIn for posts"
+    //   • One menu item per aiSectionType entry (in array order)
+    //   • A "Generate ALL of the above" item (when ≥ 2 types are registered)
+    //
+    // Items are stamped with the standard arrow / spinner / check icon structure
+    // so they participate in the existing dropdown-item state machine.
+    //
+    function _buildDropdownItemHtml(action, label) {
+        var ARROW = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ai-item-arrow" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+        var CHECK = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="ai-item-check" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#22c55e"/><polyline points="7,13 10,16 17,8" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        return '<li class="ai-dropdown-item" role="menuitem" data-ai-action="' + escHtml(action) + '">' +
+            ARROW +
+            '<span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>' +
+            CHECK +
+            escHtml(label) +
+        '</li>';
+    }
+
+    function _populateEngagementDropdown() {
+        var cb    = window.profilePanelCallbacks;
+        // Use host-supplied types when provided; fall back to hardcoded defaults so the
+        // panel is functional out-of-the-box without host configuration.
+        // Entries with type === 'divider' render as HR separators and are skipped in all
+        // non-visual contexts (Generate ALL, draft type map, section ordering).
+        var types = (cb && cb.aiSectionTypes && cb.aiSectionTypes.length)
+            ? cb.aiSectionTypes
+            : [
+                { type: 'employer-challenges',   title: 'Employer Challenges',   action: 'employer-challenges'   },
+                { type: 'employer-competitors',  title: 'Employer Competitors',  action: 'employer-competitors'  },
+                { type: 'employer-announcement', title: 'Employer Announcement', action: 'employer-announcement' }
+            ];
+
+        var $pingItem = $('#ai-engagement-dropdown [data-ai-action="ping-linkedin"]');
+        if (!$pingItem.length) return;
+        // Guard: the panel-managed HR immediately after ping-linkedin is the sentinel —
+        // if it already exists this function has already run.
+        if ($pingItem.next('.ai-dropdown-divider').length) return;
+
+        // Count real (non-divider) types to decide whether "Generate ALL" is warranted.
+        var realTypeCount = 0;
+        $.each(types, function(i, t) { if (t.type !== 'divider') realTypeCount++; });
+
+        // ① Always inject HR immediately after ping-linkedin.
+        var $ref = $('<li class="ai-dropdown-divider" role="separator"></li>').insertAfter($pingItem);
+
+        // ② Inject type items and any host-controlled dividers in declared order.
+        $.each(types, function(i, t) {
+            if (t.type === 'divider') {
+                $ref = $('<li class="ai-dropdown-divider" role="separator"></li>').insertAfter($ref);
+            } else {
+                $ref = $(_buildDropdownItemHtml(t.action || t.type, t.title)).insertAfter($ref);
+            }
+        });
+
+        // ③ "Generate ALL of the above" when ≥ 2 real types are registered.
+        if (realTypeCount >= 2) {
+            $ref = $(_buildDropdownItemHtml('generate-all', 'Generate ALL of the above')).insertAfter($ref);
+        }
+
+        // ④ Always inject HR before configure-engagement.
+        $('<li class="ai-dropdown-divider" role="separator"></li>').insertAfter($ref);
+    }
+
     // ⑤ All panel event handlers
     function setupPanelHandlers() {
+        // Inject dynamic dropdown items from aiSectionTypes (must run before any click handlers)
+        _populateEngagementDropdown();
+
+        // Notification modal — close button and backdrop click
+        $(document).on('click', '#pn-close-btn, #pn-backdrop', function() {
+            hidePanelNotification();
+        });
+
         // ESC to close — modals take priority over panel
         $(document).on('keydown', function(e) {
             if (e.which === 27) {
+                if ($('#pn-modal').hasClass('open')) { hidePanelNotification(); return; }
                 if ($('#er-modal').hasClass('open')) { closeEmailReplyModal(); return; }
                 if ($('#ce-modal').hasClass('open')) { closeCeModal(); return; }
                 // LL modal: ESC in edit mode → exit edit (stay open); ESC in view mode → close
@@ -1283,30 +2503,111 @@
             }
         });
 
-        // ── AI section show/hide ─────────────────────────────────────────────
+        // ── AI zone / post card / draft section collapse ─────────────────────
 
-        // Section-level toggle (all 4 AI engagement sections)
-        $(document).on('click', '.ai-section-toggle', function() {
+        // Zone header click — collapse/expand entire zone
+        $(document).on('click keydown', '.ai-zone-header', function(e) {
+            if (e.type === 'keydown' && e.which !== 13 && e.which !== 32) return;
+            if (e.type === 'keydown') e.preventDefault();
+            var $zone = $(this).closest('.ai-zone');
+            var closing = !$zone.hasClass('collapsed');
+            $zone.toggleClass('collapsed', closing);
+            $(this).attr('aria-expanded', String(!closing));
+            $zone.find('> .ai-zone-body').slideToggle(150);
+        });
+
+        // Post card header click — collapse/expand individual post card
+        // (guard: don't fire when clicking the Reply button inside the header)
+        $(document).on('click', '.ai-post-header', function(e) {
+            if ($(e.target).closest('.ai-post-reply-btn').length) return;
+            var $card   = $(this).closest('.ai-post-card');
+            var closing = !$card.hasClass('collapsed');
+            $card.toggleClass('collapsed', closing);
+            var $body  = $card.find('.ai-post-body');
+            var $reply = $card.find('.ai-post-reply-area');
+            if (closing) {
+                $body.slideUp(150);
+                if ($reply.is(':visible')) { $reply.slideUp(150); }
+            } else {
+                $body.slideDown(150);
+                var postId    = String($card.data('post-id'));
+                var postState = _aiCurrentPostStates[postId];
+                if (postState && postState.state === 'done') { $reply.slideDown(150); }
+            }
+        });
+
+        // Draft section header click — collapse/expand individual section
+        $(document).on('click', '.ai-section-header', function() {
             var $section = $(this).closest('.ai-section');
-            var isCollapsed = $section.hasClass('collapsed');
-            $section.toggleClass('collapsed', !isCollapsed);
-            $(this).text(isCollapsed ? 'hide' : 'show')
-                   .attr('data-state', isCollapsed ? 'visible' : 'hidden');
+            $section.toggleClass('collapsed');
+            $section.find('> .ai-section-body').slideToggle(150);
         });
 
-        // LinkedIn post content sub-section toggle (show/hide post text independently)
-        $(document).on('click', '.ai-post-block-toggle', function() {
-            var $block = $(this).closest('.ai-post-block');
-            var isCollapsed = $block.hasClass('collapsed');
-            $block.toggleClass('collapsed', !isCollapsed);
-            $(this).text(isCollapsed ? 'show less' : 'show more')
-                   .attr('aria-label', isCollapsed ? 'Hide post text' : 'Show post text');
+        // ── AI Reply button ───────────────────────────────────────────────────
+
+        $(document).on('click', '.ai-post-reply-btn', function(e) {
+            e.stopPropagation();
+            var $btn = $(this);
+            // Prevent re-triggering while generation is in progress
+            if ($btn.attr('data-btn-state') === 'underway') return;
+            var $card        = $btn.closest('.ai-post-card');
+            var postText     = $card.find('.ai-post-text').text();
+            var sourcePostId = String($btn.attr('data-post-id') || '');
+            var cid          = _currentContactData ? _currentContactData.id : null;
+            // Notify host — host generates replyId and calls createPostReply() + setPostReply()
+            var cb = window.profilePanelCallbacks;
+            if (cb && typeof cb.onReplyClick === 'function') {
+                cb.onReplyClick(sourcePostId, postText, cid);
+            }
         });
 
-        // Auto-resize LinkedIn comment textarea (vertical only) on user input
-        $(document).on('input', '.ai-comment-textarea', function() {
+        // ── Post reply comment — auto-resize textarea ─────────────────────────
+
+        $(document).on('input', '.ai-post-reply-comment', function() {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
+        });
+
+        // ── AI Send button (email draft sections + post reply areas) ─────────
+
+        $(document).on('click', '.ai-send-btn', function() {
+            var $btn    = $(this);
+            // Ignore clicks while already underway or done
+            if ($btn.attr('data-btn-state') === 'underway' ||
+                $btn.attr('data-btn-state') === 'done') return;
+            var replyId = String($btn.data('reply-id') || '');
+            var cid     = _currentContactData ? _currentContactData.id : null;
+            var cb      = window.profilePanelCallbacks;
+
+            if (replyId) {
+                // Post reply Send — transition to underway, pass done() to host
+                $btn.attr('data-btn-state', 'underway');
+                var srcPostId = String($btn.data('source-post-id') || '');
+                var subject   = $('#' + replyId + '_SUB').val();
+                var comment   = $('#' + replyId + '_COM').val();
+                var mountEl   = document.getElementById(replyId + '_MOUNT');
+                var done = function(err) {
+                    if (err) {
+                        $btn.attr('data-btn-state', 'idle');
+                        if (typeof err === 'string') {
+                            showPanelNotification(err, { type: 'error', html: true });
+                        }
+                    } else {
+                        $btn.attr('data-btn-state', 'done');
+                    }
+                };
+                if (cb && typeof cb.onSendReply === 'function') {
+                    cb.onSendReply(replyId, srcPostId, subject, comment, mountEl, cid, done);
+                }
+            } else {
+                // Email draft section Send
+                var sectionId = String($btn.data('section-id'));
+                var subject2  = $btn.closest('.ai-section-content').find('.ai-subject-input').val();
+                var mountEl2  = document.getElementById('ai-editor-mount-' + sectionId);
+                if (cb && typeof cb.onSend === 'function') {
+                    cb.onSend(sectionId, subject2, mountEl2, cid);
+                }
+            }
         });
 
         // ── LinkedIn About snippet popover ───────────────────────────────────
@@ -1448,9 +2749,10 @@
 
         $(document).on('click', '.ai-dropdown-item', function(e) {
             e.stopPropagation();
-            var $item        = $(this);
-            var aiAction     = $item.data('ai-action');
-            var dropdownId   = $item.closest('.ai-engagement-dropdown').attr('id');
+            var $item      = $(this);
+            var aiAction   = $item.data('ai-action');
+            var dropdownId = $item.closest('.ai-engagement-dropdown').attr('id');
+            var _cid       = _currentContactData ? _currentContactData.id : null;
 
             // Close all dropdowns and their buttons
             $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
@@ -1460,48 +2762,128 @@
             $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
             $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
 
-            // Configure Engagement — open modal, skip all other logic
+            // Configure Engagement — open modal, no auth check needed
             if (aiAction === 'configure-engagement') { openCeModal(); return; }
 
-            // Demo state toggles
+            // ── AI+ Engagement: Generate ALL of the above ─────────────────────
+            if (dropdownId === 'ai-engagement-dropdown' && aiAction === 'generate-all') {
+                _setEngagementItemState('generate-all', 'underway');
+                _runAuthChecks(_cid, aiAction, function() {
+                    if (panelCurrentView === 'crm') switchToAiView();
+                    var cb = window.profilePanelCallbacks;
+                    if (cb && typeof cb.onGenerateAll === 'function') {
+                        // Auto-detect which types have already been generated so the host
+                        // can skip them and avoid duplicating content.
+                        var pendingTypes = [];
+                        $.each((cb.aiSectionTypes || []), function(i, t) {
+                            if (t.type === 'divider') return; // structural — not a generatable type
+                            var alreadyDone = $.grep(_aiCurrentSections, function(s) {
+                                return s.type === t.type;
+                            }).length > 0;
+                            if (!alreadyDone) pendingTypes.push(t);
+                        });
+                        cb.onGenerateAll(_cid, pendingTypes);
+                    }
+                });
+                return;
+            }
+
+            // ── AI+ Engagement: Ping LinkedIn ──────────────────────────────────
             if (dropdownId === 'ai-engagement-dropdown' && aiAction === 'ping-linkedin') {
-                var currentState = $('#ai-engagement-dropdown').attr('data-state');
-                if (currentState === 'start') setAiEngagementState('active');
+                _setEngagementItemState('ping-linkedin', 'underway');
+                _runAuthChecks(_cid, aiAction, function() {
+                    if (panelCurrentView === 'crm') switchToAiView();
+                    var cb = window.profilePanelCallbacks;
+                    if (cb && typeof cb.onPingLinkedIn === 'function') cb.onPingLinkedIn(_cid);
+                });
+                return;
             }
+
+            // ── AI+ Engagement: email draft types ─────────────────────────────
+            // Build draft type map from aiSectionTypes if provided; fall back to
+            // hardcoded defaults so the panel works without configuration.
+            var _draftCb = window.profilePanelCallbacks;
+            var _engDraftTypes;
+            if (_draftCb && _draftCb.aiSectionTypes && _draftCb.aiSectionTypes.length) {
+                _engDraftTypes = {};
+                $.each(_draftCb.aiSectionTypes, function(i, t) {
+                    if (t.type === 'divider') return; // structural — not an actionable draft type
+                    _engDraftTypes[t.action || t.type] = { type: t.type, title: t.title };
+                });
+            } else {
+                _engDraftTypes = {
+                    'employer-challenges':   { type: 'employer-challenges',   title: 'Employer Challenges' },
+                    'employer-competitors':  { type: 'employer-competitors',  title: 'Employer Competitors' },
+                    'employer-announcement': { type: 'employer-announcement', title: 'Employer Announcement' }
+                };
+            }
+            if (dropdownId === 'ai-engagement-dropdown' && _engDraftTypes[aiAction]) {
+                var _meta = _engDraftTypes[aiAction];
+                _setEngagementItemState(aiAction, 'underway');
+                _runAuthChecks(_cid, aiAction, function() {
+                    if (panelCurrentView === 'crm') switchToAiView();
+                    var cb = window.profilePanelCallbacks;
+                    if (cb && typeof cb.onGenerateDraft === 'function') {
+                        cb.onGenerateDraft(aiAction, _meta.type, _meta.title, _cid);
+                    }
+                });
+                return;
+            }
+
+            // ── AI+ Research: Employer Research ───────────────────────────────
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'employer-research') {
-                var currentState = $('#ai-research-dropdown').attr('data-state');
-                if (currentState === 'start') setAiResearchState('active');
-                // Open modal immediately (may already have cached employerResearch HTML)
-                openEmployerResearchModal(_currentContactData || {});
-                // Fire async load only if not already fetched (undefined = never loaded;
-                // null/'' = loaded with no data — both are valid cached states)
-                var cbR = window.profilePanelCallbacks;
-                if (_currentContactData &&
-                    _currentContactData.employerResearch === undefined &&
-                    cbR && typeof cbR.onLoadResearch === 'function') {
-                    cbR.onLoadResearch(_currentContactData.id, function(html) {
-                        loadPanelResearch(html);
-                    });
-                }
+                _runAuthChecks(_cid, aiAction, function() {
+                    if ($('#ai-research-dropdown').attr('data-state') === 'start') {
+                        setAiResearchState('active');
+                    }
+                    // Open modal immediately (may already have cached employerResearch HTML)
+                    openEmployerResearchModal(_currentContactData || {});
+                    // Fire async load only if not already fetched (undefined = never loaded;
+                    // null/'' = loaded with no data — both are valid cached states)
+                    var cb = window.profilePanelCallbacks;
+                    if (_currentContactData &&
+                        _currentContactData.employerResearch === undefined &&
+                        cb && typeof cb.onLoadResearch === 'function') {
+                        cb.onLoadResearch(_currentContactData.id, function(html) {
+                            loadPanelResearch(html);
+                        });
+                    }
+                });
+                return;
             }
-            if (dropdownId === 'ai-research-dropdown' && aiAction === 'leadleaper-research') {
-                openLeadLeaperResearchModal();
+
+            // ── AI+ Research: User-Company Research ──────────────────────────
+            if (dropdownId === 'ai-research-dropdown' && aiAction === 'user-company-research') {
+                _runAuthChecks(_cid, aiAction, function() {
+                    openLeadLeaperResearchModal();
+                });
+                return;
             }
+
+            // ── Slack VSR (no auth check) ──────────────────────────────────────
             if (dropdownId === 'ai-slack-dropdown' && aiAction === 'post-vsr-channel') {
-                var currentState = $('#ai-slack-dropdown').attr('data-state');
-                if (currentState === 'start') setAiSlackState('active');
+                if ($('#ai-slack-dropdown').attr('data-state') === 'start') setAiSlackState('active');
             }
 
-            // Auto-switch to AI Engagement view when an AI+ Engagement action is triggered
-            if (dropdownId === 'ai-engagement-dropdown' && aiAction !== 'configure-engagement') {
-                if (panelCurrentView === 'crm') switchToAiView();
-            }
-
-            // TODO: dispatch aiAction to appropriate handler
             console.log('[AI+] dropdown:', dropdownId, '| action:', aiAction);
         });
     }
 
+    window.showLinkedInPosts           = showLinkedInPosts;
+    window.showSavedPosts              = _showSavedPosts;
+    window.setAbout                    = setAbout;
+    window.createPostReply             = createPostReply;
+    window.setPostReply                = setPostReply;
+    window.getAiSnapshot               = getAiSnapshot;
+    window.restoreAiState              = restoreAiState;
+    window.clearAiStateCache           = clearAiStateCache;
+    window.updateLinkedInPost          = updateLinkedInPost;  // legacy — prefer setPostReply
+    window.addAiSection                = addAiSection;
+    window.updateAiSection             = updateAiSection;
+    window.removeAiSection             = removeAiSection;
+    window.clearAiSections             = clearAiSections;
+    window.showPanelNotification       = showPanelNotification;
+    window.hidePanelNotification       = hidePanelNotification;
     window.openProfilePanel            = openProfilePanel;
     window.closeProfilePanel           = closeProfilePanel;
     window.openCeModal                 = openCeModal;
@@ -1519,9 +2901,11 @@
     window.loadPanelResearch           = loadPanelResearch;
     window.navigateContact             = navigateContact;
     window.setupPanelHandlers          = setupPanelHandlers;
+    window.populateEngagementDropdown  = _populateEngagementDropdown;
     window.setAiEngagementState        = setAiEngagementState;
     window.setAiResearchState          = setAiResearchState;
     window.setAiSlackState             = setAiSlackState;
+    window.setAiItemState              = _setEngagementItemState;  // manual per-item control
     window.switchToAiView              = switchToAiView;
     window.switchToCrmView             = switchToCrmView;
     window.togglePanelView             = togglePanelView;

@@ -10,11 +10,8 @@
     <link rel="stylesheet" href="../phase-1/typography.css?v=3">
     <link rel="stylesheet" href="../phase-1/nav-left.css?v=7">
 
-    <!-- Quill.js rich text editor (for AI Engagement view) -->
-    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=31">
+    <link rel="stylesheet" href="profile-panel.css?v=44">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1063,129 +1060,8 @@
         <div class="profile-content"></div>
 
         <!-- ══ AI Engagement View ═══════════════════════════════════════════ -->
-        <!-- Shown when .profile-panel has .ai-view-active class             -->
-        <div class="panel-ai-view" id="panel-ai-view">
-
-            <!-- ── Section 1: LinkedIn Posts ──────────────────────────────── -->
-            <!-- Mapped from: AI+ Engagement › Ping LinkedIn for posts         -->
-            <div class="ai-section" id="ai-section-linkedin" data-ai-section="ping-linkedin">
-                <div class="ai-section-header">
-                    <span class="ai-section-title">LinkedIn Posts</span>
-                    <div class="ai-section-header-right">
-                        <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                        <button type="button" class="ai-section-toggle" data-state="visible"
-                                aria-label="Hide LinkedIn Posts section">hide</button>
-                    </div>
-                </div>
-                <div class="ai-section-body">
-                    <!-- Post text sub-section (independently collapsible; collapsed by default) -->
-                    <div class="ai-post-block collapsed" id="ai-post-block-linkedin">
-                        <div class="ai-post-block-header">
-                            <span class="ai-post-block-label">LinkedIn Article Post</span>
-                            <button type="button" class="ai-post-block-toggle"
-                                    aria-label="Show post text">show more</button>
-                        </div>
-                        <div class="ai-post-block-body">
-                            <p class="ai-post-text">When the action peaks, so does the pressure
-                            behind the scenes. In iGaming &amp; Betting, high-demand moments can
-                            make or break the player experience. Volumes surge, enquiries shift,
-                            and the margin for error narrows fast. So who comes out on top? The
-                            operators whose support teams are truly peak-ready.</p>
-                        </div>
-                    </div>
-                    <!-- AI-generated LinkedIn comment (auto-resizing textarea) -->
-                    <div class="ai-comment-row">
-                        <textarea class="ai-comment-textarea" id="ai-comment-linkedin"
-                                  placeholder="Your Comment" rows="2"
-                                  aria-label="AI-generated LinkedIn comment"></textarea>
-                    </div>
-                    <!-- Subject / comment headline + SEND -->
-                    <div class="ai-subject-row">
-                        <input type="text" class="ai-subject-input"
-                               value="I like your post on mastering iGaming peak seasons"
-                               placeholder="Your comment headline…">
-                        <button type="button" class="ai-send-btn">SEND</button>
-                    </div>
-                    <!-- Quill rich text editor -->
-                    <div class="ai-editor-wrap">
-                        <div class="ai-editor" id="ai-editor-linkedin"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Section 2: Challenges Email ────────────────────────────── -->
-            <!-- Mapped from: AI+ Engagement › Challenges Email               -->
-            <div class="ai-section" id="ai-section-challenges" data-ai-section="challenges-email">
-                <div class="ai-section-header">
-                    <span class="ai-section-title">Employer Challenges</span>
-                    <div class="ai-section-header-right">
-                        <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                        <button type="button" class="ai-section-toggle" data-state="visible"
-                                aria-label="Hide Employer Challenges section">hide</button>
-                    </div>
-                </div>
-                <div class="ai-section-body">
-                    <div class="ai-subject-row">
-                        <input type="text" class="ai-subject-input"
-                               value="Helping overcome challenges with evolving competition"
-                               placeholder="Email subject…">
-                        <button type="button" class="ai-send-btn">SEND</button>
-                    </div>
-                    <div class="ai-editor-wrap">
-                        <div class="ai-editor" id="ai-editor-challenges"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Section 3: Competitors Email ───────────────────────────── -->
-            <!-- Mapped from: AI+ Engagement › Competitors Email              -->
-            <div class="ai-section" id="ai-section-competitors" data-ai-section="competitors-email">
-                <div class="ai-section-header">
-                    <span class="ai-section-title">Competitors Email</span>
-                    <div class="ai-section-header-right">
-                        <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                        <button type="button" class="ai-section-toggle" data-state="visible"
-                                aria-label="Hide Competitors Email section">hide</button>
-                    </div>
-                </div>
-                <div class="ai-section-body">
-                    <div class="ai-subject-row">
-                        <input type="text" class="ai-subject-input"
-                               value="How we compare to your current solution"
-                               placeholder="Email subject…">
-                        <button type="button" class="ai-send-btn">SEND</button>
-                    </div>
-                    <div class="ai-editor-wrap">
-                        <div class="ai-editor" id="ai-editor-competitors"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Section 4: Announcement Email ──────────────────────────── -->
-            <!-- Mapped from: AI+ Engagement › Announcement Email             -->
-            <div class="ai-section" id="ai-section-announcement" data-ai-section="announcement-email">
-                <div class="ai-section-header">
-                    <span class="ai-section-title">Announcement Email</span>
-                    <div class="ai-section-header-right">
-                        <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                        <button type="button" class="ai-section-toggle" data-state="visible"
-                                aria-label="Hide Announcement Email section">hide</button>
-                    </div>
-                </div>
-                <div class="ai-section-body">
-                    <div class="ai-subject-row">
-                        <input type="text" class="ai-subject-input"
-                               value="Exciting news that could help your team"
-                               placeholder="Email subject…">
-                        <button type="button" class="ai-send-btn">SEND</button>
-                    </div>
-                    <div class="ai-editor-wrap">
-                        <div class="ai-editor" id="ai-editor-announcement"></div>
-                    </div>
-                </div>
-            </div>
-
-        </div><!-- /.panel-ai-view -->
+        <!-- Zones injected dynamically by showLinkedInPosts() / addAiSection() -->
+        <div class="panel-ai-view" id="panel-ai-view"></div>
 
     </aside>
 
@@ -1199,40 +1075,28 @@
     </button>
 
     <!-- AI+ Engagement dropdown — rendered outside <aside> to escape overflow:hidden -->
-    <!-- data-state drives visibility: "start" shows State 1, "active" shows State 2     -->
+    <!-- Per-item state: data-item-state="idle|underway|done" on each <li>            -->
     <div class="ai-engagement-dropdown" id="ai-engagement-dropdown"
-         data-state="start" role="menu" aria-hidden="true">
+         role="menu" aria-hidden="true">
 
-        <!-- ── State 1: Starting state (pre-engagement) ─────────────────────────── -->
-        <ul class="ai-dropdown-list ai-state-panel" data-for-state="start">
+        <ul class="ai-dropdown-list">
             <li class="ai-dropdown-item" role="menuitem" data-ai-action="ping-linkedin">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                      class="ai-item-arrow" aria-hidden="true">
                     <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                 </svg>
+                <span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     class="ai-item-check" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 Ping LinkedIn for posts
             </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="challenges-email">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                     class="ai-item-arrow" aria-hidden="true">
-                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
-                Challenges Email
-            </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="competitors-email">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                     class="ai-item-arrow" aria-hidden="true">
-                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
-                Competitors Email
-            </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="announcement-email">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                     class="ai-item-arrow" aria-hidden="true">
-                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
-                Announcement Email
-            </li>
+            <!-- Email draft type items and "Generate ALL of the above" are injected
+                 dynamically from profilePanelCallbacks.aiSectionTypes by
+                 _populateEngagementDropdown() in profile-panel.js -->
             <li class="ai-dropdown-divider" role="separator"></li>
             <li class="ai-dropdown-item ai-dropdown-config" role="menuitem" data-ai-action="configure-engagement">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
@@ -1240,58 +1104,6 @@
                     <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.07.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
                 </svg>
                 Configure Engagement
-            </li>
-        </ul>
-
-        <!-- ── State 2: Active state (LinkedIn pinged, AI drafts ready) ──────────── -->
-        <ul class="ai-dropdown-list ai-state-panel" data-for-state="active">
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="ping-linkedin">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     class="ai-item-check" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Ping LinkedIn for posts
-            </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="challenges-email">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     class="ai-item-check" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Challenges Email
-            </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="competitors-email">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     class="ai-item-check" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Competitors Email
-            </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="announcement-email">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     class="ai-item-check" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Announcement Email
-            </li>
-            <li class="ai-dropdown-divider" role="separator"></li>
-            <li class="ai-dropdown-item ai-dropdown-config ai-dropdown-config-row"
-                role="menuitem" data-ai-action="configure-engagement">
-                <span class="ai-config-left">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                         class="ai-item-icon" aria-hidden="true">
-                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.07.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-                    </svg>
-                    Configure Engagement
-                </span>
-                <span class="ai-dropdown-live" aria-label="Campaign is live">LIVE</span>
             </li>
         </ul>
 
@@ -1311,12 +1123,12 @@
                 </svg>
                 Employer Research
             </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="leadleaper-research">
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="user-company-research">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                      class="ai-item-arrow" aria-hidden="true">
                     <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                 </svg>
-                LeadLeaper Research
+                <span class="ai-company-label">My Company</span> Research
             </li>
         </ul>
 
@@ -1331,14 +1143,14 @@
                 </svg>
                 Employer Research
             </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="leadleaper-research">
+            <li class="ai-dropdown-item" role="menuitem" data-ai-action="user-company-research">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                      class="ai-item-check" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" fill="#22c55e"/>
                     <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
                               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                LeadLeaper Description
+                <span class="ai-company-label">My Company</span> Description
             </li>
         </ul>
 
@@ -1659,9 +1471,9 @@
 </div><!-- /.rp-modal#rp-employer-modal -->
 
 <!-- ════════════════════════════════════════════════════════════════════════
-     LeadLeaper (User Company) Research Modal
-     Opened by: AI+ Research → "LeadLeaper Research" dropdown item.
-     Content is pre-defined HTML (user's own company — not per-contact).
+     User-Company Research Modal
+     Opened by: AI+ Research → "[Company] Research" dropdown item.
+     Content is per-contact; title stamped with contactData.company on open.
      Edit mode: .rp-editable fields become contenteditable; amber border.
      ════════════════════════════════════════════════════════════════════════ -->
 <div class="rp-backdrop" id="rp-ll-backdrop" aria-hidden="true"></div>
@@ -1670,7 +1482,7 @@
 
     <div class="rp-header">
         <div class="rp-header-left">
-            <h2 class="rp-title" id="rp-ll-title">LeadLeaper Research</h2>
+            <h2 class="rp-title" id="rp-ll-title">My Company Research</h2>
         </div>
         <button type="button" class="rp-close-btn" id="rp-ll-close-btn-x" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1723,9 +1535,7 @@
     <!-- jQuery and Navigation Script -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="../phase-1/nav-left.js?v=2"></script>
-    <!-- Quill.js (must load before profile-panel.js) -->
-    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="profile-panel.js?v=28"></script>
+	<script src="profile-panel.js?v=48"></script>
 
     <!-- Section Switching Script -->
     <script>
@@ -2047,6 +1857,192 @@
                 setTimeout(function() {
                     done(cd && cd.employerResearch ? cd.employerResearch : null);
                 }, 300);
+            };
+
+            // ── AI view callbacks ─────────────────────────────────────────
+
+            // Called when a draft section's editor mount div is added to the DOM
+            window.profilePanelCallbacks.onEditorMount = function(sectionId, mountEl) {
+                console.log('[demo] onEditorMount:', sectionId, mountEl);
+                // In production: initialise tinyMCE inside mountEl here
+                // Demo: show a plain textarea as stand-in
+                var $ta = $('<textarea style="width:100%;height:140px;padding:8px;box-sizing:border-box;border:1px solid #ddd;font-size:13px;resize:vertical;" placeholder="(demo editor — tinyMCE would mount here)"></textarea>');
+                $(mountEl).append($ta);
+            };
+
+            // Called to push generated content into the editor
+            window.profilePanelCallbacks.onEditorSetContent = function(sectionId, html) {
+                console.log('[demo] onEditorSetContent:', sectionId, html.substring(0, 60) + '…');
+                // In production: tinyMCE.get(editorId).setContent(html)
+                // Demo: update the stand-in textarea
+                var $mount = $('#ai-editor-mount-' + sectionId);
+                $mount.find('textarea').val($('<div>').html(html).text());
+            };
+
+            // Called when a section is removed (panel close or contact switch)
+            window.profilePanelCallbacks.onEditorDestroy = function(sectionId) {
+                console.log('[demo] onEditorDestroy:', sectionId);
+                // In production: tinyMCE.get(editorId).remove()
+            };
+
+            // Called when the user clicks SEND on a draft section
+            window.profilePanelCallbacks.onSend = function(sectionId, subject, html, contactId) {
+                console.log('[demo] onSend:', { sectionId: sectionId, subject: subject, contactId: contactId });
+                window.showPanelNotification('Demo send: <strong>' + subject + '</strong>', { type: 'success' });
+            };
+
+            // Called when the user clicks Send in a post reply area.
+            // replyId      — reply session ID generated by the host.
+            // sourcePostId — id of the originating post card.
+            // subject      — current value of the subject input.
+            // comment      — current value of the LinkedIn comment textarea.
+            // mountEl      — the reply editor mount div for reading body content.
+            // contactId    — id of the currently displayed contact.
+            window.profilePanelCallbacks.onSendReply = function(replyId, sourcePostId, subject, comment, mountEl, contactId, done) {
+                console.log('[demo] onSendReply:', { replyId: replyId, sourcePostId: sourcePostId, subject: subject, contactId: contactId });
+                // Simulate async send — call done() on success to transition button to checkmark
+                setTimeout(function() {
+                    window.showPanelNotification('Demo reply sent: <strong>' + subject + '</strong>', { type: 'success' });
+                    done();
+                }, 1200);
+            };
+
+            // Called when the user clicks "Reply" on a LinkedIn post card.
+            // sourcePostId is the id of the source post card (matches its id / data-post-id).
+            // The host generates a unique replyId, calls window.createPostReply(replyId, sourcePostId)
+            // to inject the reply scaffold, then uses window.setPostReply(replyId, opts) to
+            // populate fields incrementally:
+            //   opts.comment  — LinkedIn comment textarea
+            //   opts.subject  — email subject input
+            //   opts.body     — TinyMCE / textarea email body
+            //   opts.visible  — true to slide the reply area into view
+            //   opts.state    — 'done' to transition the Reply button to done
+            var _demoReplyCntr = 0;
+            window.profilePanelCallbacks.onReplyClick = function(sourcePostId, postText, contactId) {
+                // Host generates the replyId using its own counter and format
+                var replyId = 'AI_' + contactId + '_' + Date.now() + '_' + (++_demoReplyCntr) + '_LLP';
+                console.log('[demo] onReplyClick:', { sourcePostId: sourcePostId, replyId: replyId, contactId: contactId });
+                // Inject the reply scaffold into the panel
+                window.createPostReply(replyId, sourcePostId);
+                // Step 1 — LinkedIn comment arrives first
+                setTimeout(function() {
+                    window.setPostReply(replyId, {
+                        comment: 'Really insightful take — the operators who invest in peak-readiness now will define the next wave of player trust. Would love to compare notes on how you\'re thinking about this.'
+                    });
+                }, 800);
+                // Step 2 — subject line
+                setTimeout(function() {
+                    window.setPostReply(replyId, {
+                        subject: 'Following up on your recent LinkedIn post'
+                    });
+                }, 1400);
+                // Step 3 — email body, reveal area, mark done
+                setTimeout(function() {
+                    window.setPostReply(replyId, {
+                        body: '<p>Hi [First Name],</p><p>I came across your recent post and it really resonated — the operators who invest in peak-readiness now will absolutely define the next wave of player trust.</p><p>I\'d love to share how we\'re helping similar teams build that readiness faster. Would you be open to a brief 20-minute call this week?</p><p>Best,<br>[Your Name]</p>',
+                        visible: true,
+                        state: 'done'
+                    });
+                }, 2200);
+            };
+
+            // Called before any AI+ Engagement or AI+ Research action is executed.
+            // done(true) = authorized; done(false, message?) = blocked.
+            // message supports plain text or HTML (e.g. links). Omit to block silently.
+            window.profilePanelCallbacks.onCheckAuthorization = function(contactId, aiAction, done) {
+                console.log('[demo] onCheckAuthorization:', { contactId: contactId, aiAction: aiAction });
+                // Simulate async authorization check (always passes in demo)
+                setTimeout(function() {
+					done(true);
+                    // To simulate a blocked state, replace the line above with:
+					// done(false, 'Your account does not have permission to use AI+ features. Please <a href="/settings/billing">upgrade your plan</a> or contact your administrator.');
+                }, 250);
+            };
+
+            // Called after authorization passes, only for "Ping LinkedIn for posts".
+            // done(true) = account accessible; done(false, message?) = blocked.
+            // message supports plain text or HTML (e.g. links). Omit to block silently.
+            window.profilePanelCallbacks.onCheckLinkedInAccess = function(contactId, done) {
+                console.log('[demo] onCheckLinkedInAccess:', contactId);
+                // Simulate async LinkedIn access check (always passes in demo)
+                setTimeout(function() {
+					done(true);
+					// To simulate an inaccessible account, replace the line above with:
+					// done(false, 'Your LinkedIn account is not connected. Please reconnect via <a href="/settings/integrations">Settings &rsaquo; Integrations</a>.');
+                }, 200);
+            };
+
+            // Called when the user clicks "Ping LinkedIn for posts" in the dropdown.
+            // Call window.setAbout(text) at any point during the async fetch to update
+            // the About snippet and popover with text scraped from the member's LinkedIn profile.
+            window.profilePanelCallbacks.onPingLinkedIn = function(contactId) {
+                console.log('[demo] onPingLinkedIn:', contactId);
+                // Show loading state
+                window.showLinkedInPosts(null);
+                // Simulate async fetch
+                setTimeout(function() {
+                    // Update About text with scraped LinkedIn profile data
+                    window.setAbout('Helping B2B sales teams turn cold outreach into warm pipeline through strategic LinkedIn engagement and AI-powered personalisation. Passionate about product-led growth and building teams that scale.');
+                    window.showLinkedInPosts([
+                        {
+                            id: 'post-1',
+                            preview: 'When the action peaks, so does the pressure behind the scenes…',
+                            meta: '3 days ago · 142 reactions',
+                            text: 'When the action peaks, so does the pressure behind the scenes. In iGaming & Betting, high-demand moments can make or break the player experience. Volumes surge, enquiries shift, and the margin for error narrows fast. So who comes out on top? The operators whose support teams are truly peak-ready.'
+                        },
+                        {
+                            id: 'post-2',
+                            preview: 'Excited to announce our new partnership with Zendesk to bring AI-powered…',
+                            meta: '1 week ago · 87 reactions',
+                            text: 'Excited to announce our new partnership with Zendesk to bring AI-powered support workflows to the iGaming sector. This integration will dramatically reduce first-response times and give support teams the context they need at the moment it matters most.'
+                        }
+                    ]);
+                }, 1800);
+            };
+
+            // Define the ordered set of email draft types — drives dropdown order,
+            // Zone 2 section ordering, and "Generate ALL of the above" visibility.
+            window.profilePanelCallbacks.aiSectionTypes = [
+                { type: 'employer-challenges',   title: 'Employer Challenges',   action: 'employer-challenges'   },
+                { type: 'employer-competitors',  title: 'Employer Competitors',  action: 'employer-competitors'  },
+                { type: 'employer-announcement', title: 'Employer Announcement', action: 'employer-announcement' }
+            ];
+
+            // Inject dynamic dropdown items now that aiSectionTypes is registered
+            window.populateEngagementDropdown();
+
+            // Called when "Generate ALL of the above" is clicked.
+            // pendingTypes = aiSectionTypes entries that haven't been generated yet.
+            window.profilePanelCallbacks.onGenerateAll = function(contactId, pendingTypes) {
+                console.log('[demo] onGenerateAll:', { contactId: contactId, pending: pendingTypes.map(function(t) { return t.type; }) });
+                // Generate each pending type in parallel via onGenerateDraft
+                $.each(pendingTypes, function(i, t) {
+                    window.profilePanelCallbacks.onGenerateDraft(t.action || t.type, t.type, t.title, contactId);
+                });
+            };
+
+            // Called when the user clicks an email type in the dropdown
+            window.profilePanelCallbacks.onGenerateDraft = function(aiAction, type, title, contactId) {
+                console.log('[demo] onGenerateDraft:', { aiAction: aiAction, type: type, title: title, contactId: contactId });
+                // Add the section in loading state, then resolve after a simulated delay
+                window.addAiSection({ id: aiAction, type: type, title: title, loading: true });
+                setTimeout(function() {
+                    var subjects = {
+                        'employer-challenges':   'Helping overcome challenges with evolving competition',
+                        'employer-competitors':  'How we compare to your current solution',
+                        'employer-announcement': 'Exciting news that could help your team'
+                    };
+                    window.updateAiSection(aiAction, {
+                        loading: false,
+                        subject: subjects[aiAction] || title,
+                        body: '<p>Hi there,</p><p>I came across your recent LinkedIn post about peak-season operations in iGaming and wanted to reach out. At LeadLeaper we help sales teams like yours identify and engage the right contacts at exactly the right moment.</p><p>Would you be open to a quick 15-minute call this week?</p><p>Best,<br>Kyle</p>'
+                    });
+                }, 2500);
+            };
+
+            // Called when the panel needs to read editor content for state persistence
+            window.profilePanelCallbacks.onEditorGetContent = function(sectionId) {
+                return $('#ai-editor-mount-' + sectionId + ' textarea').val() || '';
             };
 
             // Handle contact row clicks

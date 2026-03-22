@@ -105,123 +105,8 @@
     <div class="profile-content"></div>
 
     <!-- ══ AI Engagement View ═══════════════════════════════════════════ -->
-    <!-- Shown when .profile-panel has .ai-view-active class             -->
-    <div class="panel-ai-view" id="panel-ai-view">
-
-        <!-- ── Section 1: LinkedIn Posts ──────────────────────────────── -->
-        <!-- Mapped from: AI+ Engagement › Ping LinkedIn for posts         -->
-        <div class="ai-section" id="ai-section-linkedin" data-ai-section="ping-linkedin">
-            <div class="ai-section-header">
-                <span class="ai-section-title">LinkedIn Posts</span>
-                <div class="ai-section-header-right">
-                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                    <button type="button" class="ai-section-toggle" data-state="visible"
-                            aria-label="Hide LinkedIn Posts section">hide</button>
-                </div>
-            </div>
-            <div class="ai-section-body">
-                <div class="ai-post-block collapsed" id="ai-post-block-linkedin">
-                    <div class="ai-post-block-header">
-                        <span class="ai-post-block-label">LinkedIn Article Post</span>
-                        <button type="button" class="ai-post-block-toggle"
-                                aria-label="Show post text">show more</button>
-                    </div>
-                    <div class="ai-post-block-body">
-                        <p class="ai-post-text">When the action peaks, so does the pressure
-                        behind the scenes. In iGaming &amp; Betting, high-demand moments can
-                        make or break the player experience. Volumes surge, enquiries shift,
-                        and the margin for error narrows fast. So who comes out on top? The
-                        operators whose support teams are truly peak-ready.</p>
-                    </div>
-                </div>
-                <!-- AI-generated LinkedIn comment (auto-resizing textarea) -->
-                <div class="ai-comment-row">
-                    <textarea class="ai-comment-textarea" id="ai-comment-linkedin"
-                              placeholder="Your Comment" rows="2"
-                              aria-label="AI-generated LinkedIn comment"></textarea>
-                </div>
-                <div class="ai-subject-row">
-                    <input type="text" class="ai-subject-input"
-                           value="I like your post on mastering iGaming peak seasons"
-                           placeholder="Your comment headline…">
-                    <button type="button" class="ai-send-btn">SEND</button>
-                </div>
-                <div class="ai-editor-wrap">
-                    <div class="ai-editor" id="ai-editor-linkedin"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Section 2: Challenges Email ────────────────────────────── -->
-        <div class="ai-section" id="ai-section-challenges" data-ai-section="challenges-email">
-            <div class="ai-section-header">
-                <span class="ai-section-title">Employer Challenges</span>
-                <div class="ai-section-header-right">
-                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                    <button type="button" class="ai-section-toggle" data-state="visible"
-                            aria-label="Hide Employer Challenges section">hide</button>
-                </div>
-            </div>
-            <div class="ai-section-body">
-                <div class="ai-subject-row">
-                    <input type="text" class="ai-subject-input"
-                           value="Helping overcome challenges with evolving competition"
-                           placeholder="Email subject…">
-                    <button type="button" class="ai-send-btn">SEND</button>
-                </div>
-                <div class="ai-editor-wrap">
-                    <div class="ai-editor" id="ai-editor-challenges"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Section 3: Competitors Email ───────────────────────────── -->
-        <div class="ai-section" id="ai-section-competitors" data-ai-section="competitors-email">
-            <div class="ai-section-header">
-                <span class="ai-section-title">Competitors Email</span>
-                <div class="ai-section-header-right">
-                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                    <button type="button" class="ai-section-toggle" data-state="visible"
-                            aria-label="Hide Competitors Email section">hide</button>
-                </div>
-            </div>
-            <div class="ai-section-body">
-                <div class="ai-subject-row">
-                    <input type="text" class="ai-subject-input"
-                           value="How we compare to your current solution"
-                           placeholder="Email subject…">
-                    <button type="button" class="ai-send-btn">SEND</button>
-                </div>
-                <div class="ai-editor-wrap">
-                    <div class="ai-editor" id="ai-editor-competitors"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Section 4: Announcement Email ──────────────────────────── -->
-        <div class="ai-section" id="ai-section-announcement" data-ai-section="announcement-email">
-            <div class="ai-section-header">
-                <span class="ai-section-title">Announcement Email</span>
-                <div class="ai-section-header-right">
-                    <span class="ai-section-spinner hidden" aria-hidden="true"></span>
-                    <button type="button" class="ai-section-toggle" data-state="visible"
-                            aria-label="Hide Announcement Email section">hide</button>
-                </div>
-            </div>
-            <div class="ai-section-body">
-                <div class="ai-subject-row">
-                    <input type="text" class="ai-subject-input"
-                           value="Exciting news that could help your team"
-                           placeholder="Email subject…">
-                    <button type="button" class="ai-send-btn">SEND</button>
-                </div>
-                <div class="ai-editor-wrap">
-                    <div class="ai-editor" id="ai-editor-announcement"></div>
-                </div>
-            </div>
-        </div>
-
-    </div><!-- /.panel-ai-view -->
+    <!-- Zones injected dynamically by showLinkedInPosts() / addAiSection() -->
+    <div class="panel-ai-view" id="panel-ai-view"></div>
 
 </aside>
 
@@ -235,99 +120,33 @@
 </button>
 
 <!-- AI+ Engagement dropdown — rendered outside <aside> to escape overflow:hidden -->
-<!-- data-state drives visibility: "start" shows State 1, "active" shows State 2     -->
+<!-- Per-item state: data-item-state="idle|underway|done" on each <li>            -->
 <div class="ai-engagement-dropdown" id="ai-engagement-dropdown"
-     data-state="start" role="menu" aria-hidden="true">
+     role="menu" aria-hidden="true">
 
-    <!-- ── State 1: Starting state (pre-engagement) ─────────────────────────── -->
-    <ul class="ai-dropdown-list ai-state-panel" data-for-state="start">
+    <ul class="ai-dropdown-list">
         <li class="ai-dropdown-item" role="menuitem" data-ai-action="ping-linkedin">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                  class="ai-item-arrow" aria-hidden="true">
                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
             </svg>
+            <span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-check" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             Ping LinkedIn for posts
         </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="challenges-email">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                 class="ai-item-arrow" aria-hidden="true">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-            </svg>
-            Challenges Email
-        </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="competitors-email">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                 class="ai-item-arrow" aria-hidden="true">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-            </svg>
-            Competitors Email
-        </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="announcement-email">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                 class="ai-item-arrow" aria-hidden="true">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-            </svg>
-            Announcement Email
-        </li>
-        <li class="ai-dropdown-divider" role="separator"></li>
+        <!-- Dividers and type items are injected dynamically by
+             _populateEngagementDropdown() in profile-panel.js -->
         <li class="ai-dropdown-item ai-dropdown-config" role="menuitem" data-ai-action="configure-engagement">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                  class="ai-item-icon" aria-hidden="true">
                 <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.07.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
             </svg>
             Configure Engagement
-        </li>
-    </ul>
-
-    <!-- ── State 2: Active state (LinkedIn pinged, AI drafts ready) ──────────── -->
-    <ul class="ai-dropdown-list ai-state-panel" data-for-state="active">
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="ping-linkedin">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                 class="ai-item-check" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Ping LinkedIn for posts
-        </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="challenges-email">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                 class="ai-item-check" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Challenges Email
-        </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="competitors-email">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                 class="ai-item-check" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Competitors Email
-        </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="announcement-email">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                 class="ai-item-check" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Announcement Email
-        </li>
-        <li class="ai-dropdown-divider" role="separator"></li>
-        <li class="ai-dropdown-item ai-dropdown-config ai-dropdown-config-row"
-            role="menuitem" data-ai-action="configure-engagement">
-            <span class="ai-config-left">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                     class="ai-item-icon" aria-hidden="true">
-                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.07.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-                </svg>
-                Configure Engagement
-            </span>
-            <span class="ai-dropdown-live" aria-label="Campaign is live">LIVE</span>
         </li>
     </ul>
 
@@ -347,12 +166,12 @@
             </svg>
             Employer Research
         </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="leadleaper-research">
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="user-company-research">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                  class="ai-item-arrow" aria-hidden="true">
                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
             </svg>
-            LeadLeaper Research
+            <span class="ai-company-label">My Company</span> Research
         </li>
     </ul>
 
@@ -367,14 +186,14 @@
             </svg>
             Employer Research
         </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="leadleaper-research">
+        <li class="ai-dropdown-item" role="menuitem" data-ai-action="user-company-research">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                  class="ai-item-check" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" fill="#22c55e"/>
                 <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
                           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            LeadLeaper Description
+            <span class="ai-company-label">My Company</span> Description
         </li>
     </ul>
 

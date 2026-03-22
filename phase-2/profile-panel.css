@@ -3,12 +3,25 @@
    ======================================== */
 
 /* ============================================================
-   BOOTSTRAP v3 BLEED OVERRIDES (v29)
+   BOOTSTRAP v3 / BROWSER DEFAULT BLEED OVERRIDES (v29)
    Scoped to new-UI components only. Counters Bootstrap v3
-   global rules that would otherwise leak into the panel and
-   modals. Load order: this file loads after grav8ai.css, so
-   these scoped rules win without needing !important.
+   global rules and browser defaults that would otherwise leak
+   into the panel and modals. Load order: this file loads after
+   grav8ai.css, so these scoped rules win without !important.
    ============================================================ */
+
+/* Chromium/browser default: orange/blue focus outline on :focus.
+   Suppressed across the panel and all portal elements (dropdowns,
+   modals) which live as siblings of <aside> outside the panel DOM. */
+.profile-panel :focus,
+.ai-engagement-dropdown :focus,
+#pn-modal :focus,
+#ce-modal :focus,
+#er-modal :focus,
+#rp-employer-modal :focus,
+#rp-ll-modal :focus {
+    outline: none;
+}
 
 /* Bootstrap v3: p { margin: 0 0 10px; } — adds unwanted bottom
    margin to paragraphs inside all new-UI components */
@@ -16,7 +29,8 @@
 .ce-modal p,
 #rp-employer-modal p,
 #rp-ll-modal p,
-#er-modal p {
+#er-modal p,
+#pn-modal p {
     margin: 0;
 }
 
@@ -598,12 +612,38 @@
 .ai-engagement-dropdown[data-state="active"]
     .ai-state-panel[data-for-state="active"] { display: block; }
 
-/* Circled checkmark (active state leading icon) — sized to match arrow icon */
+/* Circled checkmark — sized to match arrow; hidden by default, shown in done state */
 .ai-item-check {
     width: 16px;
     height: 16px;
     flex-shrink: 0;
+    display: none;
     /* colors handled inline on SVG child elements */
+}
+
+/* ── Per-item state control in AI+ Engagement dropdown ──────── */
+/* Three states: idle (default) | underway (spinner) | done (checkmark) */
+/* Controlled by data-item-state attribute on each <li>                  */
+.ai-item-spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+.ai-dropdown-item[data-item-state="underway"] .ai-item-arrow   { display: none; }
+.ai-dropdown-item[data-item-state="underway"] .ai-item-spinner { display: inline-flex; }
+.ai-dropdown-item[data-item-state="done"]     .ai-item-arrow   { display: none; }
+.ai-dropdown-item[data-item-state="done"]     .ai-item-check   { display: block; }
+/* Item spinners need pure rotation — no translate offset in a flex row */
+.ai-item-spinner .ai-btn-spinner {
+    animation: ai-item-spin 0.7s linear infinite;
+    vertical-align: middle;
+}
+@keyframes ai-item-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }
 
 /* Configure Engagement row in active state — badge pushed to right */
@@ -1112,16 +1152,40 @@
 .panel-ai-view::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
 .panel-ai-view::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
 
-/* ── AI view loading state ────────────────────────────────── */
-/* While onLoadAiView callback is in flight, hide section cards */
+/* Loading state — hide zones while cloud state is being fetched */
+.panel-ai-view.ai-view--loading .ai-zone { display: none; }
 .panel-ai-view.ai-view--loading .ai-section { display: none; }
-.ai-view-loading {
-    padding: 20px 0 8px;
-    font-size: var(--text-sm, 13px);
+
+#ai-view-loading {
+    padding: 24px 20px;
+    font-size: 14px;
+    color: #737373;
 }
 
-/* ── AI section card ────────────────────────────────────────── */
-.ai-section {
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Engagement View — Zone-based layout
+   ─────────────────────────────────────────────────────────────────────────
+   Two zones rendered dynamically by JS:
+     Zone 1 (#ai-zone-posts)   — LinkedIn post cards (showLinkedInPosts)
+     Zone 2 (#ai-zone-drafts)  — Email draft sections (addAiSection)
+   Both zones and all cards/sections within them are independently collapsible.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Small inline spinner (reply btn, section status) ──────── */
+.ai-btn-spinner {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border: 2px solid rgba(0,0,0,0.12);
+    border-top-color: #7c3aed;
+    border-radius: 50%;
+    animation: spinner-rotate 0.7s linear infinite;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* ── Zone wrapper ───────────────────────────────────────────── */
+.ai-zone {
     background-color: #ffffff;
     border: 1px solid #e4e5e7;
     border-radius: 6px;
@@ -1129,148 +1193,336 @@
     flex-shrink: 0;
 }
 
-.ai-section-header {
+.ai-zone-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
     padding: 9px 14px;
     background-color: #f0f1f3;
     border-bottom: 1px solid #e4e5e7;
+    cursor: pointer;
     user-select: none;
 }
+.ai-zone.collapsed .ai-zone-header { border-bottom: none; }
+.ai-zone-header:hover { background-color: #eaebee; }
 
-.ai-section-title {
+.ai-zone-chevron {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: #737373;
+    transition: transform 200ms ease;
+}
+.ai-zone.collapsed .ai-zone-chevron { transform: rotate(-90deg); }
+
+.ai-zone-title {
+    flex: 1;
     font-size: var(--text-sm, 13px);
     font-weight: 600;
     color: #262626;
 }
 
-.ai-section-header-right {
-    display: flex;
+.ai-zone-badge {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background-color: #e4e5e7;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #737373;
     flex-shrink: 0;
 }
 
-/* Inline per-section spinner (shown while AI generates) */
-.ai-section-spinner {
-    display: inline-block;
-    width: 13px;
-    height: 13px;
-    border: 2px solid #e0e0e0;
-    border-top-color: #7c3aed;      /* violet — signals AI activity */
-    border-radius: 50%;
-    animation: spinner-rotate 0.7s linear infinite;
-    flex-shrink: 0;
-    vertical-align: middle;
-}
-.ai-section-spinner.hidden { display: none; }
-
-.ai-section-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: var(--text-xs, 12px);
-    font-weight: 500;
-    color: #08c;
-    padding: 0;
-    line-height: 1;
-    white-space: nowrap;
-}
-.ai-section-toggle:hover { color: #0077b3; text-decoration: underline; }
-
-.ai-section-body {
+.ai-zone-body {
     display: flex;
     flex-direction: column;
 }
 
-/* Collapsed section hides its body */
-.ai-section.collapsed .ai-section-body { display: none; }
-
-/* ── LinkedIn post content sub-section ─────────────────────── */
-.ai-post-block {
-    border-bottom: 1px solid #f0f0f0;
-    padding: 10px 14px;
-    background-color: #fafafa;
-}
-
-.ai-post-block-header {
+/* Zone loading / empty states */
+.ai-zone-loading,
+.ai-zone-empty {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-}
-
-/* Label now styled as a blue heading (matches the reference image) */
-.ai-post-block-label {
+    gap: 8px;
+    padding: 14px 16px;
     font-size: var(--text-sm, 13px);
+    color: #737373;
+}
+.ai-zone-loading .ai-btn-spinner {
+    border-top-color: #08c;
+    animation: ai-item-spin 0.7s linear infinite; /* pure rotation — no translate offset in flex row */
+}
+
+/* ── Zone 1 sub-zones (new posts / saved posts) ──────────────── */
+.ai-posts-divider {
+    padding: 5px 14px;
+    font-size: 11px;
     font-weight: 600;
-    color: #08c;
+    color: #a3a3a3;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: #f7f8fa;
+    border-top: 1px solid #eaeaec;
+    border-bottom: 1px solid #eaeaec;
 }
 
-.ai-post-block-toggle {
-    background: none;
-    border: none;
+
+/* ── LinkedIn post cards (Zone 1) ───────────────────────────── */
+.ai-post-card + .ai-post-card {
+    border-top: 1px solid #f0f0f0;
+}
+
+.ai-post-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px 9px 14px;
     cursor: pointer;
-    font-size: var(--text-xs, 12px);
-    font-weight: 500;
-    color: #08c;
-    padding: 0;
-    white-space: nowrap;
+    user-select: none;
+    transition: background-color 120ms ease;
 }
-.ai-post-block-toggle:hover { color: #0077b3; text-decoration: underline; }
+.ai-post-header:hover { background-color: #fafafa; }
 
-/* Collapsed post block hides body; only add margin when body is visible */
-.ai-post-block:not(.collapsed) .ai-post-block-header { margin-bottom: 6px; }
-.ai-post-block.collapsed .ai-post-block-body { display: none; }
+.ai-post-chevron {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: #a3a3a3;
+    transition: transform 200ms ease;
+}
+.ai-post-card.collapsed .ai-post-chevron { transform: rotate(-90deg); }
+
+.ai-post-preview-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ai-post-preview {
+    font-size: var(--text-sm, 13px);
+    color: #404040;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.ai-post-meta {
+    font-size: 11px;
+    color: #a3a3a3;
+}
+
+.ai-post-body {
+    padding: 0 14px 12px 36px;
+    background-color: #fafafa;
+    border-top: 1px solid #f5f5f5;
+}
+/* .ai-post-card.collapsed .ai-post-body visibility is controlled by jQuery slideUp/Down */
 
 .ai-post-text {
     font-size: var(--text-sm, 13px);
     color: #404040;
-    line-height: 1.5;
-    margin: 0;
+    line-height: 1.6;
+    margin: 10px 0 0;
 }
 
-/* ── LinkedIn comment textarea ──────────────────────────────── */
-/* Auto-resizes vertically via JS; only on LinkedIn Post card.  */
-.ai-comment-row {
-    padding: 8px 14px;
-    border-bottom: 1px solid #f0f0f0;
-    background-color: #ffffff;
+/* Reply button — three states: idle / underway / done */
+.ai-post-reply-btn {
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    font-size: var(--text-xs, 12px);
+    font-weight: 600;
+    color: #08c;
+    background: #ffffff;
+    border: 1px solid #08c;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.ai-post-reply-btn:hover:not([data-btn-state="underway"]):not([data-btn-state="done"]) {
+    background-color: #08c;
+    color: #ffffff;
+}
+/* Hide spinner and check by default */
+.ai-post-reply-btn .rpl-spinner,
+.ai-post-reply-btn .rpl-check { display: none; }
+/* Spinner wrapper — scoped keyframe prevents translate conflict */
+.ai-post-reply-btn .rpl-spinner { display: none; align-items: center; }
+@keyframes ai-reply-spin { to { transform: rotate(360deg); } }
+.rpl-spinner .ai-btn-spinner { animation-name: ai-reply-spin; }
+/* underway state — label becomes invisible (preserves button width), spinner centres absolutely */
+.ai-post-reply-btn[data-btn-state="underway"] .rpl-label { visibility: hidden; }
+.ai-post-reply-btn[data-btn-state="underway"] .rpl-spinner {
+    display: flex;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+}
+.ai-post-reply-btn[data-btn-state="underway"] {
+    color: #a3a3a3;
+    border-color: #e0e0e0;
+    cursor: default;
+}
+/* done state */
+.ai-post-reply-btn[data-btn-state="done"] .rpl-label { display: none; }
+.ai-post-reply-btn[data-btn-state="done"] .rpl-check { display: inline; }
+.ai-post-reply-btn[data-btn-state="done"] {
+    color: #22c55e;
+    border-color: #86efac;
+    background-color: #f0fdf4;
+    cursor: default;
 }
 
-.ai-comment-textarea {
+/* Reply editor area — shown below post body when a reply is generated */
+.ai-post-reply-area {
+    border-top: 1px solid #e8e8e8;
+    background-color: #f8faff;
+    padding: 10px 14px 14px 14px;
+}
+/* .ai-post-card.collapsed .ai-post-reply-area visibility is controlled by jQuery slideUp/Down */
+.ai-post-reply-label {
+    font-size: var(--text-xs, 12px);
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+}
+.ai-reply-mount {
+    min-height: 80px;
+}
+
+/* Reply area field labels (LinkedIn Comment / Subject) */
+.ai-reply-field-label {
+    font-size: var(--text-xs, 12px);
+    font-weight: 600;
+    color: #6b7280;
+    margin: 10px 0 4px;
+}
+.ai-reply-field-label:first-of-type {
+    margin-top: 0;
+}
+
+/* LinkedIn Comment textarea — auto-resizes vertically */
+.ai-post-reply-comment {
     display: block;
     width: 100%;
-    min-height: 56px;
-    padding: 7px 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
+    min-height: 54px;
+    padding: 7px 9px;
     font-size: var(--text-sm, 13px);
-    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+    font-family: inherit;
     color: #262626;
-    background-color: #ffffff;
     line-height: 1.5;
-    resize: none;          /* vertical resize handled by JS */
-    overflow: hidden;      /* prevents scrollbar flash during auto-resize */
+    background: #ffffff;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
     box-sizing: border-box;
-    transition: border-color 150ms ease, background-color 150ms ease;
+    resize: none;
+    overflow: hidden;
 }
-
-.ai-comment-textarea::placeholder {
-    color: #b0b0b0;
-    text-align: right;     /* placeholder anchors to the right */
-}
-
-.ai-comment-textarea:focus {
+.ai-post-reply-comment:focus {
+    border-color: #08c;
     outline: none;
-    border-color: #0099cc;
-    background-color: #f8faff;
 }
+
+/* Editable subject line */
+.ai-post-reply-subject {
+    display: block;
+    width: 100%;
+    padding: 6px 9px;
+    font-size: var(--text-sm, 13px);
+    font-family: inherit;
+    color: #262626;
+    background: #ffffff;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.ai-post-reply-subject:focus {
+    border-color: #08c;
+    outline: none;
+}
+
+/* ── Email draft sections (Zone 2) ──────────────────────────── */
+.ai-section + .ai-section {
+    border-top: 1px solid #f0f0f0;
+}
+
+.ai-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px 9px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 120ms ease;
+}
+.ai-section-header:hover { background-color: #fafafa; }
+
+.ai-section-chevron {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: #a3a3a3;
+    transition: transform 200ms ease;
+}
+.ai-section.collapsed .ai-section-chevron { transform: rotate(-90deg); }
+
+.ai-section-title {
+    flex: 1;
+    font-size: var(--text-sm, 13px);
+    font-weight: 600;
+    color: #262626;
+}
+
+.ai-section-status {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+}
+.ai-section-status--loading { color: #a3a3a3; }
+.ai-section-status--ready   { color: #22c55e; }
+.ai-section-status--sent    { color: #08c; }
+
+.ai-section-body { display: flex; flex-direction: column; }
+.ai-section.collapsed .ai-section-body { display: none; }
+
+/* Loading skeleton — shimmer animation */
+.ai-section-skeleton {
+    margin: 12px 14px;
+    height: 160px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: ai-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes ai-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.ai-section-content { display: flex; flex-direction: column; }
 
 /* ── Subject input row + SEND button ───────────────────────── */
 .ai-subject-row {
     display: flex;
     align-items: stretch;
+    gap: 8px;
     border-bottom: 1px solid #f0f0f0;
 }
 
@@ -1288,49 +1540,73 @@
 .ai-subject-input::placeholder { color: #a3a3a3; }
 .ai-subject-input:focus { background-color: #f8f9ff; }
 
+/* Base Send button — email draft sections */
 .ai-send-btn {
+    position: relative;
     padding: 8px 14px;
     background-color: #08c;
     color: #ffffff;
     border: none;
+    border-radius: 5px;
     cursor: pointer;
     font-size: var(--text-sm, 13px);
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.3px;
-    transition: background-color 150ms ease;
+    transition: background-color 150ms ease, opacity 150ms ease;
     flex-shrink: 0;
     white-space: nowrap;
 }
 .ai-send-btn:hover { background-color: #0077b3; }
 
-/* ── Quill editor container overrides ──────────────────────── */
-/* Override Quill Snow theme to match panel's design aesthetic  */
-.ai-editor-wrap .ql-toolbar.ql-snow {
-    border: none;
-    border-bottom: 1px solid #f0f0f0;
-    padding: 6px 10px;
+/* Reply-area Send button — same outlined style as the Reply button */
+.ai-post-reply-area .ai-send-btn {
+    background-color: #ffffff;
+    color: #08c;
+    border: 1px solid #08c;
+    padding: 4px 10px;
+    font-size: var(--text-xs, 12px);
+}
+.ai-post-reply-area .ai-send-btn:hover:not([data-btn-state="underway"]):not([data-btn-state="done"]) {
+    background-color: #08c;
+    color: #ffffff;
+}
+
+/* Send button state machine (reply area only) */
+.ai-send-btn .snd-spinner,
+.ai-send-btn .snd-check { display: none; }
+.ai-send-btn .snd-spinner { align-items: center; }
+@keyframes ai-send-spin { to { transform: rotate(360deg); } }
+.snd-spinner .ai-btn-spinner { animation-name: ai-send-spin; }
+
+.ai-send-btn[data-btn-state="underway"] .snd-label   { visibility: hidden; }
+.ai-send-btn[data-btn-state="underway"] .snd-spinner {
+    display: flex;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+}
+.ai-post-reply-area .ai-send-btn[data-btn-state="underway"] {
+    color: #a3a3a3;
+    border-color: #e0e0e0;
+    cursor: default;
+}
+
+.ai-send-btn[data-btn-state="done"] .snd-label  { display: none; }
+.ai-send-btn[data-btn-state="done"] .snd-check  { display: inline; }
+.ai-post-reply-area .ai-send-btn[data-btn-state="done"] {
+    background-color: #f0fdf4;
+    color: #22c55e;
+    border-color: #86efac;
+    cursor: default;
+}
+
+/* ── tinyMCE editor mount container ────────────────────────── */
+/* Host initializes tinyMCE inside this div via onEditorMount. */
+/* Min-height reserves space before tinyMCE loads.             */
+.ai-editor-mount {
+    min-height: 160px;
     background-color: #fafafa;
-    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
-}
-
-.ai-editor-wrap .ql-container.ql-snow {
-    border: none;
-    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
-    font-size: var(--text-sm, 13px);
-}
-
-.ai-editor-wrap .ql-editor {
-    min-height: 130px;
-    padding: 10px 14px;
-    color: #262626;
-    line-height: 1.55;
-}
-
-.ai-editor-wrap .ql-editor p {
-    margin-bottom: 8px;
-}
-.ai-editor-wrap .ql-editor p:last-child {
-    margin-bottom: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2231,3 +2507,121 @@
 .er-confirm-btn:hover  { background: #0772a0; }
 .er-confirm-btn:active { transform: scale(0.93); }
 .er-confirm-btn svg    { width: 20px; height: 20px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Panel Notification Modal  (#pn-backdrop / #pn-modal)
+   ─────────────────────────────────────────────────────────────────────────
+   Generic centered modal notification. Injected into <body> on first use
+   (same portal pattern as er-modal). Matches the email reply viewer style.
+   API: showPanelNotification(msg, opts) / hidePanelNotification()
+   opts: { type, title, duration, html }
+   Types (data-type): info (default) · success · warning · error
+   z-index: above er-modal (er=1400) → pn-backdrop=1490, pn-modal=1500
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Backdrop ── */
+#pn-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 1490;
+    display: none;
+}
+#pn-backdrop.open {
+    display: block;
+    animation: ce-fade-in 180ms ease both;
+}
+
+/* ── Modal ── */
+#pn-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: min(460px, calc(100vw - 32px));
+    max-height: min(80vh, 480px);
+    z-index: 1500;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+}
+#pn-modal.open {
+    display: flex;
+    animation: ce-modal-appear 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Title bar (optional — hidden when empty) ── */
+.pn-title-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    border-left: 4px solid #08c;
+}
+.pn-title-bar.hidden { display: none; }
+
+/* Type accent — title bar left border */
+#pn-modal[data-type="info"]    .pn-title-bar { border-left-color: #08c; }
+#pn-modal[data-type="success"] .pn-title-bar { border-left-color: #22c55e; }
+#pn-modal[data-type="warning"] .pn-title-bar { border-left-color: #f59e0b; }
+#pn-modal[data-type="error"]   .pn-title-bar { border-left-color: #be123c; }
+
+.pn-title {
+    flex: 1;
+    font-size: var(--text-sm, 13px);
+    font-weight: 600;
+    color: #262626;
+    line-height: 1.4;
+}
+
+/* ── Scrollable body ── */
+.pn-body-wrap {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 16px;
+}
+.pn-body-wrap::-webkit-scrollbar { width: 6px; }
+.pn-body-wrap::-webkit-scrollbar-track { background: #f5f5f5; }
+.pn-body-wrap::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 3px; }
+.pn-body-wrap::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
+
+.pn-body {
+    font-size: var(--text-sm, 13px);
+    color: #404040;
+    line-height: 1.65;
+}
+.pn-body p { margin: 0 0 10px 0; }
+.pn-body p:last-child { margin-bottom: 0; }
+.pn-body a { color: #08c; text-decoration: underline; }
+
+/* ── Footer ── */
+.pn-footer {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    padding: 12px 16px;
+    border-top: 1px solid #f0f0f0;
+}
+.pn-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0891b2;
+    border: none;
+    cursor: pointer;
+    color: #ffffff;
+    transition: background-color 150ms ease, transform 100ms ease;
+}
+.pn-close-btn:hover  { background: #0772a0; }
+.pn-close-btn:active { transform: scale(0.93); }
+.pn-close-btn svg    { width: 20px; height: 20px; }
