@@ -573,8 +573,8 @@
 }
 
 .ai-item-arrow {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
     color: #b0b0b0;
 }
@@ -636,6 +636,64 @@
 .ai-dropdown-item[data-item-state="underway"] .ai-item-spinner { display: inline-flex; }
 .ai-dropdown-item[data-item-state="done"]     .ai-item-arrow   { display: none; }
 .ai-dropdown-item[data-item-state="done"]     .ai-item-check   { display: block; }
+/* Prohibition icon — hidden by default, shown in unavailable state */
+.ai-item-unavail {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: none;
+}
+
+/* ── AI+ Research per-item state — driven by body classes ─────────────────
+   Default (no class): arrow visible, spinner + check hidden.
+   Body class matrix:
+     research-employer-loading     → spinner for Employer Research
+     research-employer-done        → checkmark for Employer Research
+     research-employer-unavailable → prohibition icon + muted text for Employer Research
+     research-company-loading      → spinner for Your Company Description
+     research-company-done         → checkmark for Your Company Description
+   ─────────────────────────────────────────────────────────────────────── */
+#ai-research-dropdown .ai-item-spinner { display: none; }
+#ai-research-dropdown .ai-item-check   { display: none; }
+#ai-research-dropdown .ai-item-unavail { display: none; }
+
+/* Employer Research: loading */
+body.research-employer-loading
+    #ai-research-dropdown [data-ai-action="employer-research"] .ai-item-arrow   { display: none; }
+body.research-employer-loading
+    #ai-research-dropdown [data-ai-action="employer-research"] .ai-item-spinner { display: inline-flex; }
+
+/* Employer Research: done */
+body.research-employer-done
+    #ai-research-dropdown [data-ai-action="employer-research"] .ai-item-arrow   { display: none; }
+body.research-employer-done
+    #ai-research-dropdown [data-ai-action="employer-research"] .ai-item-check   { display: block; }
+
+/* Employer Research: unavailable */
+body.research-employer-unavailable
+    #ai-research-dropdown [data-ai-action="employer-research"] .ai-item-arrow   { display: none; }
+body.research-employer-unavailable
+    #ai-research-dropdown [data-ai-action="employer-research"] .ai-item-unavail { display: block; }
+body.research-employer-unavailable
+    #ai-research-dropdown [data-ai-action="employer-research"] {
+        color: #b0b0b0;
+        cursor: default;
+    }
+body.research-employer-unavailable
+    #ai-research-dropdown [data-ai-action="employer-research"]:hover { background-color: transparent; }
+
+/* Your Company Description: loading */
+body.research-company-loading
+    #ai-research-dropdown [data-ai-action="user-company-research"] .ai-item-arrow   { display: none; }
+body.research-company-loading
+    #ai-research-dropdown [data-ai-action="user-company-research"] .ai-item-spinner { display: inline-flex; }
+
+/* Your Company Description: done */
+body.research-company-done
+    #ai-research-dropdown [data-ai-action="user-company-research"] .ai-item-arrow   { display: none; }
+body.research-company-done
+    #ai-research-dropdown [data-ai-action="user-company-research"] .ai-item-check   { display: block; }
+
 /* Item spinners need pure rotation — no translate offset in a flex row */
 .ai-item-spinner .ai-btn-spinner {
     animation: ai-item-spin 0.7s linear infinite;
@@ -2170,6 +2228,37 @@
     box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
 }
 
+/* Loading shimmer for User-Company Research modal body */
+.rp-ll-skeleton {
+    height: 260px;
+    margin: 16px 20px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: ai-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Info / empty-state message block */
+.rp-ll-message {
+    padding: 28px 24px;
+    font-size: var(--text-sm, 13px);
+    color: #404040;
+    line-height: 1.65;
+}
+.rp-ll-message p {
+    margin: 10px 0 0 0;
+    color: #737373;
+}
+.rp-ll-message strong { color: #262626; }
+
+/* Generate button (blue, matches AI+ Research) */
+.rp-btn-generate {
+    background-color: #08c;
+    border-color: #08c;
+    color: #ffffff;
+}
+.rp-btn-generate:hover { background-color: #0077b3; border-color: #0077b3; }
+
 /* Save button shown in edit mode (green) */
 .rp-btn-save-green {
     background-color: #22c55e;
@@ -2177,6 +2266,13 @@
     color: #ffffff;
 }
 .rp-btn-save-green:hover { background-color: #16a34a; border-color: #16a34a; }
+@keyframes rp-save-spin { to { transform: rotate(360deg); } }
+.rp-btn-save-green .ai-btn-spinner {
+    border-color: rgba(255,255,255,0.3);
+    border-top-color: rgba(255,255,255,0.9);
+    animation-name: rp-save-spin;
+    vertical-align: middle;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Inline Field Edit  (CSS v31)

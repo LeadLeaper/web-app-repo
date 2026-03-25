@@ -153,16 +153,28 @@
 </div>
 
 <!-- AI+ Research dropdown — rendered outside <aside> to escape overflow:hidden -->
-<!-- data-state drives visibility: "start" shows State 1, "active" shows State 2    -->
+<!-- Per-item state driven by body classes: research-employer-loading/done,      -->
+<!-- research-company-loading/done.  Default (no class) shows caret arrow.       -->
 <div class="ai-engagement-dropdown" id="ai-research-dropdown"
-     data-state="start" role="menu" aria-hidden="true">
+     role="menu" aria-hidden="true">
 
-    <!-- ── State 1: Starting state (pre-research) ───────────────────────────── -->
-    <ul class="ai-dropdown-list ai-state-panel" data-for-state="start">
+    <ul class="ai-dropdown-list">
         <li class="ai-dropdown-item" role="menuitem" data-ai-action="employer-research">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                  class="ai-item-arrow" aria-hidden="true">
                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+            <span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-check" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="ai-item-unavail" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="#d1d5db" stroke-width="2"/>
+                <line x1="7.5" y1="16.5" x2="16.5" y2="7.5" stroke="#d1d5db" stroke-width="2" stroke-linecap="round"/>
             </svg>
             Employer Research
         </li>
@@ -171,29 +183,14 @@
                  class="ai-item-arrow" aria-hidden="true">
                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
             </svg>
-            <span class="ai-company-label">My Company</span> Research
-        </li>
-    </ul>
-
-    <!-- ── State 2: Active state (research complete, descriptions ready) ──────── -->
-    <ul class="ai-dropdown-list ai-state-panel" data-for-state="active">
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="employer-research">
+            <span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                  class="ai-item-check" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" fill="#22c55e"/>
                 <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
                           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Employer Research
-        </li>
-        <li class="ai-dropdown-item" role="menuitem" data-ai-action="user-company-research">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                 class="ai-item-check" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="ai-company-label">My Company</span> Description
+            Your Company Description
         </li>
     </ul>
 
@@ -478,3 +475,67 @@
     </div>
 
 </div><!-- /.ce-modal -->
+
+<!-- ── Employer Research Modal ─────────────────────────────────────────────
+     Opened by: AI+ Research → "Employer Research" dropdown item.
+     Content is per-contact; populated dynamically via loadPanelResearch().
+     ──────────────────────────────────────────────────────────────────────── -->
+<div class="rp-backdrop" id="rp-employer-backdrop" aria-hidden="true"></div>
+<div class="rp-modal" id="rp-employer-modal"
+     role="dialog" aria-modal="true" aria-labelledby="rp-employer-title" aria-hidden="true">
+
+    <div class="rp-header">
+        <div class="rp-header-left">
+            <h2 class="rp-title" id="rp-employer-title">Employer Research</h2>
+            <span class="rp-subtitle" id="rp-employer-subtitle"></span>
+        </div>
+        <button type="button" class="rp-close-btn" id="rp-employer-close-btn" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="rp-body">
+        <div id="rp-employer-content">
+            <!-- Populated dynamically from contact's employerResearch data -->
+        </div>
+    </div>
+
+    <div class="rp-footer">
+        <button type="button" class="ce-btn ce-btn-cancel" id="rp-employer-close-btn2">Close</button>
+    </div>
+
+</div><!-- /.rp-modal#rp-employer-modal -->
+
+<!-- ── Your Company Description Modal ─────────────────────────────────────
+     Opened by: AI+ Research → "Your Company Description" dropdown item,
+     or programmatically via openUserCompanyResearchModal() /
+     loadUserCompanyResearchContent(html, message, canEdit).
+     Body content is always rendered dynamically — never hardcoded here.
+     ──────────────────────────────────────────────────────────────────────── -->
+<div class="rp-backdrop" id="rp-ll-backdrop" aria-hidden="true"></div>
+<div class="rp-modal" id="rp-ll-modal"
+     role="dialog" aria-modal="true" aria-labelledby="rp-ll-title" aria-hidden="true">
+
+    <div class="rp-header">
+        <div class="rp-header-left">
+            <h2 class="rp-title" id="rp-ll-title">Your Company Description</h2>
+        </div>
+        <button type="button" class="rp-close-btn" id="rp-ll-close-btn-x" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="rp-body">
+        <div id="rp-ll-body-content"></div>
+    </div>
+
+    <div class="rp-footer">
+        <button type="button" class="ce-btn ce-btn-cancel" id="rp-ll-close-btn">Close</button>
+        <button type="button" class="ce-btn ce-btn-save"   id="rp-ll-action-btn">Edit</button>
+    </div>
+
+</div><!-- /.rp-modal#rp-ll-modal -->

@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../phase-1/nav-left.css?v=7">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=44">
+    <link rel="stylesheet" href="profile-panel.css?v=47">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1094,10 +1094,8 @@
                 </svg>
                 Ping LinkedIn for posts
             </li>
-            <!-- Email draft type items and "Generate ALL of the above" are injected
-                 dynamically from profilePanelCallbacks.aiSectionTypes by
+            <!-- Dividers and type items are injected dynamically by
                  _populateEngagementDropdown() in profile-panel.js -->
-            <li class="ai-dropdown-divider" role="separator"></li>
             <li class="ai-dropdown-item ai-dropdown-config" role="menuitem" data-ai-action="configure-engagement">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                      class="ai-item-icon" aria-hidden="true">
@@ -1110,16 +1108,28 @@
     </div>
 
     <!-- AI+ Research dropdown — rendered outside <aside> to escape overflow:hidden -->
-    <!-- data-state drives visibility: "start" shows State 1, "active" shows State 2    -->
+    <!-- Per-item state driven by body classes: research-employer-loading/done,      -->
+    <!-- research-company-loading/done.  Default (no class) shows caret arrow.       -->
     <div class="ai-engagement-dropdown" id="ai-research-dropdown"
-         data-state="start" role="menu" aria-hidden="true">
+         role="menu" aria-hidden="true">
 
-        <!-- ── State 1: Starting state (pre-research) ───────────────────────────── -->
-        <ul class="ai-dropdown-list ai-state-panel" data-for-state="start">
+        <ul class="ai-dropdown-list">
             <li class="ai-dropdown-item" role="menuitem" data-ai-action="employer-research">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                      class="ai-item-arrow" aria-hidden="true">
                     <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+                <span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     class="ai-item-check" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     class="ai-item-unavail" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" fill="none" stroke="#d1d5db" stroke-width="2"/>
+                    <line x1="7.5" y1="16.5" x2="16.5" y2="7.5" stroke="#d1d5db" stroke-width="2" stroke-linecap="round"/>
                 </svg>
                 Employer Research
             </li>
@@ -1128,29 +1138,14 @@
                      class="ai-item-arrow" aria-hidden="true">
                     <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                 </svg>
-                <span class="ai-company-label">My Company</span> Research
-            </li>
-        </ul>
-
-        <!-- ── State 2: Active state (research complete, descriptions ready) ──────── -->
-        <ul class="ai-dropdown-list ai-state-panel" data-for-state="active">
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="employer-research">
+                <span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                      class="ai-item-check" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" fill="#22c55e"/>
                     <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
                               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Employer Research
-            </li>
-            <li class="ai-dropdown-item" role="menuitem" data-ai-action="user-company-research">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     class="ai-item-check" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" fill="#22c55e"/>
-                    <polyline points="7,13 10,16 17,8" fill="none" stroke="white"
-                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span class="ai-company-label">My Company</span> Description
+                Your Company Description
             </li>
         </ul>
 
@@ -1471,10 +1466,11 @@
 </div><!-- /.rp-modal#rp-employer-modal -->
 
 <!-- ════════════════════════════════════════════════════════════════════════
-     User-Company Research Modal
-     Opened by: AI+ Research → "[Company] Research" dropdown item.
-     Content is per-contact; title stamped with contactData.company on open.
-     Edit mode: .rp-editable fields become contenteditable; amber border.
+     Your Company Description Modal
+     Opened by: AI+ Research → "Your Company Description" dropdown item.
+     Title is always the static "Your Company Description".
+     Edit mode: host HTML marks editable sections with class="rp-editable".
+     enterLlEditMode() adds contenteditable="true"; exitLlEditMode() removes it.
      ════════════════════════════════════════════════════════════════════════ -->
 <div class="rp-backdrop" id="rp-ll-backdrop" aria-hidden="true"></div>
 <div class="rp-modal" id="rp-ll-modal"
@@ -1482,7 +1478,7 @@
 
     <div class="rp-header">
         <div class="rp-header-left">
-            <h2 class="rp-title" id="rp-ll-title">My Company Research</h2>
+            <h2 class="rp-title" id="rp-ll-title">Your Company Description</h2>
         </div>
         <button type="button" class="rp-close-btn" id="rp-ll-close-btn-x" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1492,37 +1488,7 @@
     </div>
 
     <div class="rp-body">
-
-        <div class="rp-section">
-            <h3 class="rp-section-heading">Company Name</h3>
-            <div class="rp-editable rp-company-val" contenteditable="false">LeadLeaper</div>
-        </div>
-
-        <div class="rp-section">
-            <h3 class="rp-section-heading">Company Overview</h3>
-            <div class="rp-editable" contenteditable="false"><p>LeadLeaper is a sales automation platform designed to streamline lead generation and outreach processes for sales professionals. The platform provides tools to capture leads directly from social professional networks and automate personalized email campaigns. It serves as a bridge between lead discovery and active sales engagement, aiming to increase the efficiency of cold outreach efforts.</p></div>
-        </div>
-
-        <div class="rp-section">
-            <h3 class="rp-section-heading">Mission and Objectives</h3>
-            <div class="rp-editable" contenteditable="false"><p>The mission of the organization is to simplify the sales prospecting process by providing accurate lead data and automated communication tools. Their objectives include helping sales teams save time on manual data entry, improving email deliverability, and increasing the overall volume of qualified leads in the sales pipeline.</p></div>
-        </div>
-
-        <div class="rp-section">
-            <h3 class="rp-section-heading">Value Proposition</h3>
-            <div class="rp-editable" contenteditable="false"><p>LeadLeaper offers a cost-effective and user-friendly solution for sales professionals to find verified contact information and execute outreach at scale. By integrating directly with browsers and email clients, it minimizes friction in the lead generation workflow.</p></div>
-        </div>
-
-        <div class="rp-section">
-            <h3 class="rp-section-heading">Products and Services</h3>
-            <div class="rp-editable" contenteditable="false"><p>LeadLeaper provides a suite of tools focused on sales engagement and lead management.</p><ul><li><strong>LeadLeaper Browser Extension</strong> — captures lead information and email addresses directly from LinkedIn profiles.</li><li><strong>Email Campaign Automation</strong> — sets up and schedules automated, personalized email sequences for outreach.</li><li><strong>Lead Management Dashboard</strong> — centralizes lead organization, engagement tracking, and follow-up management.</li><li><strong>Email Tracking</strong> — notifies users when prospects open their emails, providing real-time engagement data.</li><li><strong>Email Verification</strong> — validates found email addresses to ensure high deliverability and low bounce rates.</li></ul></div>
-        </div>
-
-        <div class="rp-section">
-            <h3 class="rp-section-heading">Customer Pain Points</h3>
-            <div class="rp-editable" contenteditable="false"><p>The company addresses several key challenges faced by modern sales and recruitment teams.</p><ul><li><strong>Manual Data Entry</strong> — sales teams waste hours manually copying lead information from social media into internal systems.</li><li><strong>Inaccurate Contact Data</strong> — sending emails to incorrect addresses leads to high bounce rates and damaged sender reputation.</li><li><strong>Low Prospecting Efficiency</strong> — finding and contacting leads individually is time-consuming and difficult to scale without automation.</li><li><strong>Lack of Engagement Tracking</strong> — sales reps often don't know if their outreach is being read, making it hard to prioritize follow-ups.</li></ul></div>
-        </div>
-
+        <div id="rp-ll-body-content"></div>
     </div><!-- /.rp-body -->
 
     <div class="rp-footer">
@@ -1535,7 +1501,9 @@
     <!-- jQuery and Navigation Script -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="../phase-1/nav-left.js?v=2"></script>
-	<script src="profile-panel.js?v=48"></script>
+    <!-- Host config — must load BEFORE profile-panel.js so $.extend preserves these values -->
+    <script src="profilePanelCallbacks.js"></script>
+	<script src="profile-panel.js?v=50"></script>
 
     <!-- Section Switching Script -->
     <script>
@@ -1859,6 +1827,52 @@
                 }, 300);
             };
 
+            // Demo user-company data.
+            // done(html, message, canEdit) — supply exactly ONE of html or message:
+            //   html=string, message=null, canEdit=true  → view with Edit button
+            //   html=string, message=null, canEdit=false → view-only (no button)
+            //   html=null, message=string, canEdit=true  → message + Generate button
+            //   html=null, message=string, canEdit=false → message only (no button)
+            //   html=null, message=null,   any           → cancel / close silently
+            var _demoUcHtml = '<div class="rp-section">' +
+                '<h3 class="rp-section-heading">Company Overview</h3>' +
+                '<div class="rp-editable"><p>LeadLeaper is a sales engagement platform that helps sales teams find, contact, and close prospects faster through intelligent lead generation and automated outreach.</p></div>' +
+                '</div>' +
+                '<div class="rp-section">' +
+                '<h3 class="rp-section-heading">Value Proposition</h3>' +
+                '<div class="rp-editable"><p>We reduce the time from lead discovery to first contact by automating the most repetitive parts of the prospecting workflow, so your team can focus on selling.</p></div>' +
+                '</div>';
+            // To test message states, replace _demoUcHtml with null and set a _demoUcMessage:
+            var _demoUcMessage = null;  // e.g. 'No description yet for <strong>LeadLeaper</strong>.<p>Select <strong>Generate</strong> to create one.</p>'
+            var _demoUcCanEdit = true;  // set false to hide action button
+
+            window.profilePanelCallbacks.onLoadUserCompanyResearch = function(contactId, done) {
+                setTimeout(function() {
+                    done(_demoUcHtml, _demoUcMessage, _demoUcCanEdit);
+                }, 500);
+            };
+
+            window.profilePanelCallbacks.onSaveUserCompanyResearch = function(contactId, html, done) {
+                console.log('[demo] onSaveUserCompanyResearch:', contactId, html.substring(0, 60) + '…');
+                // Persist back to demo variable so re-opens show saved content
+                _demoUcHtml = html;
+                setTimeout(function() { done(); }, 300);
+            };
+
+            window.profilePanelCallbacks.onGenerateUserCompanyResearch = function(contactId, done) {
+                console.log('[demo] onGenerateUserCompanyResearch:', contactId);
+                // Simulate generation delay, then return done(html, message, canEdit)
+                setTimeout(function() {
+                    var generated = '<div class="rp-section">' +
+                        '<h3 class="rp-section-heading">Company Overview</h3>' +
+                        '<div class="rp-editable"><p>(AI-generated) LeadLeaper is a leading provider of sales engagement software.</p></div>' +
+                        '</div>';
+                    _demoUcHtml    = generated;
+                    _demoUcMessage = null;
+                    done(generated, null, true);
+                }, 1200);
+            };
+
             // ── AI view callbacks ─────────────────────────────────────────
 
             // Called when a draft section's editor mount div is added to the DOM
@@ -2000,16 +2014,8 @@
                 }, 1800);
             };
 
-            // Define the ordered set of email draft types — drives dropdown order,
-            // Zone 2 section ordering, and "Generate ALL of the above" visibility.
-            window.profilePanelCallbacks.aiSectionTypes = [
-                { type: 'employer-challenges',   title: 'Employer Challenges',   action: 'employer-challenges'   },
-                { type: 'employer-competitors',  title: 'Employer Competitors',  action: 'employer-competitors'  },
-                { type: 'employer-announcement', title: 'Employer Announcement', action: 'employer-announcement' }
-            ];
-
-            // Inject dynamic dropdown items now that aiSectionTypes is registered
-            window.populateEngagementDropdown();
+            // aiSectionTypes is pre-loaded from profilePanelCallbacks.js before
+            // profile-panel.js, so no re-injection call is needed here.
 
             // Called when "Generate ALL of the above" is clicked.
             // pendingTypes = aiSectionTypes entries that haven't been generated yet.

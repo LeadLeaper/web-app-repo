@@ -46,6 +46,11 @@
     // Checked and flushed on close / next / prev to trigger auto-save.
     var _notesDirty = false;
 
+    // ─── User-Company Research load generation counter ────────────────────────
+    // Incremented each time openUserCompanyResearchModal fires a load request.
+    // The callback checks this before rendering so stale responses are discarded.
+    var _llLoadGen = 0;
+
     // ─── Backend integration callbacks ───────────────────────────────────────
     // Assign handlers before calling openProfilePanel to wire up backend integration.
     //
@@ -128,8 +133,10 @@
     //     postStates  — { [postId]: { replyId, comment, subject, body, state } }
     //                   state is always 'done' or 'sent' for persisted entries.
     //     sections    — [{ id, type, title, subject, body }] email draft sections.
-    //     itemStates  — { [action]: state } dropdown states; ping-linkedin is never
-    //                   included — it always resets to idle on next profile open.
+    //     itemStates  — { [action]: state } dropdown states; ping-linkedin and
+    //                   underway states are never included — ping-linkedin always
+    //                   resets on next open, and underway entries are discarded
+    //                   when the panel closes before the action completes.
     //     Persist this object to the cloud keyed on contactId. Call done() on
     //     completion (fire-and-forget — navigation is not blocked).
     //
@@ -160,8 +167,12 @@
     //       1. Display order — addAiSection inserts sections at the position
     //          matching their type in this array; unrecognised types append last.
     //       2. Dropdown injection — _populateEngagementDropdown() injects one
-    //          menu item per entry (plus an HR divider after ping-linkedin and
-    //          a "Generate ALL of the above" item when ≥ 2 types are registered).
+    //          menu item per entry, bracketed by two structural dividers (one
+    //          after ping-linkedin, one before configure-engagement). To include
+    //          a "Generate ALL of the above" option, add a generate-all entry as
+    //          the last element: { type:'generate-all', title:'Generate ALL of
+    //          the above', action:'generate-all' }. Divider objects within this
+    //          array are not supported and will render as broken items.
     //       3. Dynamic dropdown mapping — the panel reads this array to determine
     //          which dropdown actions trigger onGenerateDraft, so new types are
     //          supported without changing panel code.
@@ -187,7 +198,10 @@
     //                    call with an error string on failure → button resets to idle
     //                    and the string is shown as a panel notification.
     //
-    window.profilePanelCallbacks = {
+    // $.extend preserves any properties already set by a host config file
+    // (e.g. profilePanelCallbacks.js) loaded before this script. Panel
+    // null-defaults fill in anything the host did not set.
+    window.profilePanelCallbacks = $.extend({
         onChange         : null,   // function(contactId, fieldName, newValue)
         onSave           : null,   // function(contactId, patch, done)
         onClose          : null,   // function(contactId)
@@ -204,11 +218,11 @@
         onToggleView     : null,   // function(contactId, proceed) — gate AI view access
         onSaveAiState    : null,   // function(contactId, state, done) — persist AI view state to cloud
         onLoadAiState    : null,   // function(contactId, done) — done(savedState|null) — ignored when onLoadProfile is registered
-        aiSectionTypes   : null,   // [{type, title, action}] — Zone 2 order + Generate ALL source
+        aiSectionTypes   : null,   // [{type, title, action}] — Zone 2 order; include generate-all as last entry if desired
         onGenerateAll    : null,   // function(contactId) — Generate ALL button clicked
         onReplyClick     : null,   // function(sourcePostId, postText, contactId)
         onSendReply      : null    // function(replyId, sourcePostId, subject, comment, mountEl, contactId)
-    };
+    }, window.profilePanelCallbacks || {});
 
     // ─── Identity card ───────────────────────────────────────────────────────
 
@@ -830,6 +844,12 @@
 
     // ① Slide in → spinner → fade in on initial open; refresh/switch routing when already open
     function openProfilePanel(contactData) {
+        // Lazy-populate the engagement dropdown if the DOM-ready call was a no-op.
+        // This happens when panel HTML is injected into the DOM dynamically (e.g.
+        // AJAX / server-side partial) after $(document).ready() has already fired.
+        if (!$('#ai-engagement-dropdown .ai-dropdown-injected').length) {
+            _populateEngagementDropdown();
+        }
         var $panel = $('.profile-panel');
         _notesDirty = false;            // fresh contact — clear any stale dirty state
         _currentContactData = contactData;
@@ -884,7 +904,7 @@
         $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
         $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
-        $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
+        $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
         $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true').attr('data-state', 'start');
 
@@ -943,10 +963,7 @@
             .attr('aria-hidden', 'true')
             .attr('data-state', 'start');
         $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
-        $('#ai-research-dropdown')
-            .removeClass('open')
-            .attr('aria-hidden', 'true')
-            .attr('data-state', 'start');
+        $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
         $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-slack-dropdown')
             .removeClass('open')
@@ -974,9 +991,25 @@
         $('#ai-engagement-dropdown').attr('data-state', state);
     }
 
-    // Switch AI+ Research dropdown between 'start' and 'active' states
-    function setAiResearchState(state) {
-        $('#ai-research-dropdown').attr('data-state', state);
+    // ─── Per-item research dropdown state ────────────────────────────────────
+    // Sets the visual state of a single item in the AI+ Research dropdown.
+    // state: 'idle' (arrow) | 'loading' (spinner) | 'done' (green checkmark)
+    // aiAction: 'employer-research' | 'user-company-research'
+    function setResearchItemState(aiAction, state) {
+        var loadClass, doneClass;
+        if (aiAction === 'employer-research') {
+            loadClass = 'research-employer-loading';
+            doneClass = 'research-employer-done';
+        } else if (aiAction === 'user-company-research') {
+            loadClass = 'research-company-loading';
+            doneClass = 'research-company-done';
+        } else {
+            return;
+        }
+        $('body').removeClass(loadClass + ' ' + doneClass);
+        if (state === 'loading') { $('body').addClass(loadClass); }
+        else if (state === 'done')    { $('body').addClass(doneClass); }
+        // 'idle' — classes already removed above
     }
 
     // Switch Slack VSR dropdown between 'start' and 'active' states
@@ -1071,12 +1104,14 @@
 
         // Capture engagement dropdown item states.
         // ping-linkedin is always excluded — users re-ping on every profile open.
+        // underway is excluded — if the panel closes before an action completes
+        // the response is discarded, so the item must reset to idle on next open.
         var itemStates = {};
         $('#ai-engagement-dropdown .ai-dropdown-item[data-ai-action]').each(function() {
             var action = $(this).data('ai-action');
             if (action === 'ping-linkedin') return; // never persisted
             var state  = $(this).attr('data-item-state') || 'idle';
-            if (state !== 'idle') itemStates[action] = state;
+            if (state !== 'idle' && state !== 'underway') itemStates[action] = state;
         });
 
         // Build the saved posts array: previously-saved posts (already had replies)
@@ -1934,8 +1969,11 @@
     }
 
     function closeAllDropdowns() {
+        $('#ai-engagement-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-engagement-dropdown').removeClass('open').attr('aria-hidden', 'true');
+        $('#ai-research-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-research-dropdown').removeClass('open').attr('aria-hidden', 'true');
+        $('#ai-slack-btn').removeClass('open').attr('aria-expanded', 'false');
         $('#ai-slack-dropdown').removeClass('open').attr('aria-hidden', 'true');
     }
 
@@ -2077,68 +2115,192 @@
     }
 
     // ─── Company label stamping ───────────────────────────────────────────────
-    // Updates the dynamic company-name slots in the Research dropdown and modal
-    // title whenever a new contact is loaded.  Falls back to 'My Company' if
-    // contactData.company is absent.
-
+    // Updates any remaining dynamic company-name slots whenever a new contact
+    // is loaded.  The .ai-company-label span has been removed from the dropdown
+    // (label is now static "Your Company Description") so this is a no-op in
+    // the current markup; retained for forward-compatibility.
     function _updateCompanyLabels(contactData) {
         var name = (contactData && contactData.company) ? contactData.company : 'My Company';
         $('.ai-company-label').text(name);
-        $('#rp-ll-title').text(name + ' Research');
+        // Note: #rp-ll-title is intentionally NOT updated here — the modal title
+        // is always the static "Your Company Description".
     }
 
     // ─── User-Company Research modal ─────────────────────────────────────────
 
-    function openLeadLeaperResearchModal() {
-        // Ensure we open in view mode (reset any lingering edit state)
+    function openUserCompanyResearchModal() {
+        var cb  = window.profilePanelCallbacks;
+        var cid = _currentContactData ? _currentContactData.id : null;
+
+        // Bump generation counter so any in-flight response from a previous open
+        // is discarded when it eventually fires.
+        var myGen = ++_llLoadGen;
+
+        // Reset to loading state
         exitLlEditMode(false);
-        $('#rp-ll-modal .rp-body').scrollTop(0);
+        $('#rp-ll-body-content').html('<div class="rp-ll-skeleton"></div>');
+        $('#rp-ll-action-btn').hide();
         $('#rp-ll-modal').addClass('open').attr('aria-hidden', 'false');
         $('#rp-ll-backdrop').addClass('open');
         setTimeout(function() {
             var btn = document.getElementById('rp-ll-close-btn-x');
             if (btn) btn.focus();
         }, 50);
+
+        if (cb && typeof cb.onLoadUserCompanyResearch === 'function') {
+            cb.onLoadUserCompanyResearch(cid, function(html, message, canEdit) {
+                // Discard if a newer request has been issued since this one started
+                if (_llLoadGen !== myGen) return;
+                _renderUserCompanyResearch(html, message, canEdit);
+            });
+        }
     }
 
-    function closeLeadLeaperResearchModal() {
+    // Renders content into the User-Company Research modal.
+    // Signature: (html, message, canEdit)
+    //   html     — host-provided HTML to display (string | null)
+    //   message  — host-provided info/prompt text or HTML (string | null)
+    //   canEdit  — true = show Edit (when html present) or Generate (when message present) button
+    //
+    // Exactly one of html / message must be non-null.
+    // If both are null or both are non-null the call is treated as a cancel:
+    // the modal closes silently and no content is rendered.
+    //
+    // If the modal is not yet open (direct-call path via loadUserCompanyResearchContent)
+    // it is opened automatically — no skeleton is shown since content is ready.
+    function _renderUserCompanyResearch(html, message, canEdit) {
+        var hasHtml = (html  != null);
+        var hasMsg  = (message != null);
+
+        // Cancel / error: both supplied or neither supplied
+        if (hasHtml === hasMsg) {
+            if ($('#rp-ll-modal').hasClass('open')) closeUserCompanyResearchModal();
+            if (hasHtml) console.warn('[ProfilePanel] _renderUserCompanyResearch: supply either html or message, not both.');
+            return;
+        }
+
+        // Auto-open when called directly (no prior openUserCompanyResearchModal call)
+        if (!$('#rp-ll-modal').hasClass('open')) {
+            exitLlEditMode(false);
+            $('#rp-ll-body-content').empty();
+            $('#rp-ll-action-btn').hide();
+            $('#rp-ll-modal').addClass('open').attr('aria-hidden', 'false');
+            $('#rp-ll-backdrop').addClass('open');
+            setTimeout(function() {
+                var btn = document.getElementById('rp-ll-close-btn-x');
+                if (btn) btn.focus();
+            }, 50);
+        }
+
+        var $body = $('#rp-ll-body-content');
+        var $btn  = $('#rp-ll-action-btn');
+
+        if (hasHtml) {
+            $body.html(html);
+            if (canEdit) {
+                $btn.text('Edit')
+                    .removeClass('rp-btn-save-green rp-btn-generate')
+                    .addClass('ce-btn-save')
+                    .show();
+            } else {
+                $btn.hide();
+            }
+        } else {
+            // hasMsg
+            $body.html('<div class="rp-ll-message">' + message + '</div>');
+            if (canEdit) {
+                $btn.text('Generate')
+                    .removeClass('ce-btn-save rp-btn-save-green')
+                    .addClass('rp-btn-generate')
+                    .show();
+            } else {
+                $btn.hide();
+            }
+        }
+        $('#rp-ll-modal .rp-body').scrollTop(0);
+    }
+
+    function closeUserCompanyResearchModal() {
         exitLlEditMode(false);   // discard any unsaved edits
         $('#rp-ll-modal').removeClass('open').attr('aria-hidden', 'true');
         $('#rp-ll-backdrop').removeClass('open');
     }
 
     function enterLlEditMode() {
-        // Store original HTML of each editable field so we can revert on cancel
-        $('#rp-ll-modal .rp-editable').each(function() {
-            $(this).data('ll-original', $(this).html());
-        });
+        // Store original HTML of the body content so we can revert on cancel
+        $('#rp-ll-body-content').data('ll-original', $('#rp-ll-body-content').html());
         $('#rp-ll-modal').addClass('edit-mode');
-        $('#rp-ll-modal .rp-editable').attr('contenteditable', 'true');
         $('#rp-ll-action-btn')
             .text('Save')
-            .removeClass('ce-btn-save')
+            .removeClass('ce-btn-save rp-btn-generate')
             .addClass('rp-btn-save-green');
-        // Focus the first editable field
-        $('#rp-ll-modal .rp-editable').first().focus();
+        // Host HTML marks editable sections with class="rp-editable" but no
+        // contenteditable attribute, keeping them read-only until Edit is clicked.
+        // enterLlEditMode() activates editing; exitLlEditMode() deactivates it.
+        var $body      = $('#rp-ll-body-content');
+        var $editables = $body.find('.rp-editable');
+        $editables.attr('contenteditable', 'true');
+        $editables.first().focus();
     }
 
     function exitLlEditMode(save) {
         if (!$('#rp-ll-modal').hasClass('edit-mode')) return;
+        var $body = $('#rp-ll-body-content');
         if (!save) {
-            // Revert each field to its original HTML
-            $('#rp-ll-modal .rp-editable').each(function() {
-                var orig = $(this).data('ll-original');
-                if (orig !== undefined) $(this).html(orig);
-            });
+            // Cancel — restore original HTML wholesale (discards any edits)
+            var orig = $body.data('ll-original');
+            if (orig !== undefined) $body.html(orig);
+        } else {
+            // Save — remove contenteditable from all editable sections
+            $body.find('.rp-editable').blur().attr('contenteditable', 'false');
         }
-        // Clear stored originals
-        $('#rp-ll-modal .rp-editable').removeData('ll-original').blur();
+        $body.removeData('ll-original');
         $('#rp-ll-modal').removeClass('edit-mode');
-        $('#rp-ll-modal .rp-editable').attr('contenteditable', 'false');
         $('#rp-ll-action-btn')
             .text('Edit')
-            .removeClass('rp-btn-save-green')
+            .removeClass('rp-btn-save-green rp-btn-generate')
             .addClass('ce-btn-save');
+    }
+
+    function _saveLlResearch() {
+        var cb   = window.profilePanelCallbacks;
+        var cid  = _currentContactData ? _currentContactData.id : null;
+        var $btn = $('#rp-ll-action-btn');
+        var html = $('#rp-ll-body-content').html();
+
+        // Show spinner while save is in progress
+        $btn.prop('disabled', true).html('<span class="ai-btn-spinner"></span>');
+
+        function _restoreSaveBtn() {
+            $btn.prop('disabled', false).text('Save');
+        }
+
+        if (cb && typeof cb.onSaveUserCompanyResearch === 'function') {
+            cb.onSaveUserCompanyResearch(cid, html, function(errMsg) {
+                if (errMsg) {
+                    _restoreSaveBtn();
+                    showPanelNotification(errMsg, { type: 'error' });
+                } else {
+                    exitLlEditMode(true);
+                    closeUserCompanyResearchModal();
+                }
+            });
+        } else {
+            exitLlEditMode(true);
+            closeUserCompanyResearchModal();
+        }
+    }
+
+    function _generateLlResearch() {
+        var cb  = window.profilePanelCallbacks;
+        var cid = _currentContactData ? _currentContactData.id : null;
+        if (cb && typeof cb.onGenerateUserCompanyResearch === 'function') {
+            $('#rp-ll-body-content').html('<div class="rp-ll-skeleton"></div>');
+            $('#rp-ll-action-btn').hide();
+            cb.onGenerateUserCompanyResearch(cid, function(html, message, canEdit) {
+                _renderUserCompanyResearch(html, message, canEdit);
+            });
+        }
     }
 
     // ─── Configure Engagement modal ─────────────────────────────────────────
@@ -2160,22 +2322,28 @@
 
     // ─── Engagement dropdown — dynamic item injection ─────────────────────────
     //
-    // Called once from setupPanelHandlers(). Reads profilePanelCallbacks.aiSectionTypes
-    // and injects:
-    //   • A horizontal rule after "Ping LinkedIn for posts"
-    //   • One menu item per aiSectionType entry (in array order)
-    //   • A "Generate ALL of the above" item (when ≥ 2 types are registered)
+    // Called from setupPanelHandlers() and may be called again by the host after
+    // setting profilePanelCallbacks.aiSectionTypes. Safe to call multiple times —
+    // previously injected items are cleared before re-injection.
+    //
+    // Injects between "Ping LinkedIn for posts" and "Configure Engagement":
+    //   • A horizontal rule (opening bracket)
+    //   • One menu item per aiSectionTypes entry (in array order)
+    //     — include "Generate ALL of the above" as the last array entry to show it
+    //   • A horizontal rule (closing bracket)
     //
     // Items are stamped with the standard arrow / spinner / check icon structure
     // so they participate in the existing dropdown-item state machine.
     //
     function _buildDropdownItemHtml(action, label) {
-        var ARROW = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ai-item-arrow" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
-        var CHECK = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="ai-item-check" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#22c55e"/><polyline points="7,13 10,16 17,8" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var ARROW   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ai-item-arrow" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+        var CHECK   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="ai-item-check" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#22c55e"/><polyline points="7,13 10,16 17,8" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var UNAVAIL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="ai-item-unavail" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#d1d5db" stroke-width="2"/><line x1="7.5" y1="16.5" x2="16.5" y2="7.5" stroke="#d1d5db" stroke-width="2" stroke-linecap="round"/></svg>';
         return '<li class="ai-dropdown-item" role="menuitem" data-ai-action="' + escHtml(action) + '">' +
             ARROW +
             '<span class="ai-item-spinner"><span class="ai-btn-spinner"></span></span>' +
             CHECK +
+            UNAVAIL +
             escHtml(label) +
         '</li>';
     }
@@ -2184,45 +2352,36 @@
         var cb    = window.profilePanelCallbacks;
         // Use host-supplied types when provided; fall back to hardcoded defaults so the
         // panel is functional out-of-the-box without host configuration.
-        // Entries with type === 'divider' render as HR separators and are skipped in all
-        // non-visual contexts (Generate ALL, draft type map, section ordering).
+        // Include 'generate-all' as the last entry to show "Generate ALL of the above".
         var types = (cb && cb.aiSectionTypes && cb.aiSectionTypes.length)
             ? cb.aiSectionTypes
             : [
-                { type: 'employer-challenges',   title: 'Employer Challenges',   action: 'employer-challenges'   },
-                { type: 'employer-competitors',  title: 'Employer Competitors',  action: 'employer-competitors'  },
-                { type: 'employer-announcement', title: 'Employer Announcement', action: 'employer-announcement' }
+                { type: 'employer-challenges',   title: 'Employer Challenges',        action: 'employer-challenges'   },
+                { type: 'employer-competitors',  title: 'Employer Competitors',        action: 'employer-competitors'  },
+                { type: 'employer-announcement', title: 'Employer Announcement',       action: 'employer-announcement' },
+                { type: 'generate-all',          title: 'Generate ALL of the above',   action: 'generate-all'          }
             ];
 
-        var $pingItem = $('#ai-engagement-dropdown [data-ai-action="ping-linkedin"]');
-        if (!$pingItem.length) return;
-        // Guard: the panel-managed HR immediately after ping-linkedin is the sentinel —
-        // if it already exists this function has already run.
-        if ($pingItem.next('.ai-dropdown-divider').length) return;
+        var $configItem = $('#ai-engagement-dropdown [data-ai-action="configure-engagement"]');
+        if (!$configItem.length) return;
 
-        // Count real (non-divider) types to decide whether "Generate ALL" is warranted.
-        var realTypeCount = 0;
-        $.each(types, function(i, t) { if (t.type !== 'divider') realTypeCount++; });
+        // Clear any previously injected items so this function is safe to call multiple times.
+        $('#ai-engagement-dropdown .ai-dropdown-injected').remove();
 
-        // ① Always inject HR immediately after ping-linkedin.
-        var $ref = $('<li class="ai-dropdown-divider" role="separator"></li>').insertAfter($pingItem);
+        // ① Opening HR — divider after "Ping LinkedIn for posts"
+        $('<li class="ai-dropdown-divider ai-dropdown-injected" role="separator"></li>')
+            .insertBefore($configItem);
 
-        // ② Inject type items and any host-controlled dividers in declared order.
+        // ② One item per type entry, in declared order
         $.each(types, function(i, t) {
-            if (t.type === 'divider') {
-                $ref = $('<li class="ai-dropdown-divider" role="separator"></li>').insertAfter($ref);
-            } else {
-                $ref = $(_buildDropdownItemHtml(t.action || t.type, t.title)).insertAfter($ref);
-            }
+            $(_buildDropdownItemHtml(t.action || t.type, t.title))
+                .addClass('ai-dropdown-injected')
+                .insertBefore($configItem);
         });
 
-        // ③ "Generate ALL of the above" when ≥ 2 real types are registered.
-        if (realTypeCount >= 2) {
-            $ref = $(_buildDropdownItemHtml('generate-all', 'Generate ALL of the above')).insertAfter($ref);
-        }
-
-        // ④ Always inject HR before configure-engagement.
-        $('<li class="ai-dropdown-divider" role="separator"></li>').insertAfter($ref);
+        // ③ Closing HR — divider before "Configure Engagement"
+        $('<li class="ai-dropdown-divider ai-dropdown-injected" role="separator"></li>')
+            .insertBefore($configItem);
     }
 
     // ⑤ All panel event handlers
@@ -2365,18 +2524,21 @@
         $(document).on('click', '#rp-employer-backdrop, #rp-employer-close-btn, #rp-employer-close-btn2',
             closeEmployerResearchModal);
 
-        // ── LeadLeaper Research modal ────────────────────────────────────────
+        // ── User-Company Research modal ──────────────────────────────────────
 
         // Backdrop + X close → close (discards edits)
-        $(document).on('click', '#rp-ll-backdrop, #rp-ll-close-btn-x', closeLeadLeaperResearchModal);
+        $(document).on('click', '#rp-ll-backdrop, #rp-ll-close-btn-x', closeUserCompanyResearchModal);
 
         // Close button in footer → also closes (discards edits)
-        $(document).on('click', '#rp-ll-close-btn', closeLeadLeaperResearchModal);
+        $(document).on('click', '#rp-ll-close-btn', closeUserCompanyResearchModal);
 
-        // Edit / Save toggle button
+        // Edit / Save / Generate button
         $(document).on('click', '#rp-ll-action-btn', function() {
+            var $btn = $(this);
             if ($('#rp-ll-modal').hasClass('edit-mode')) {
-                exitLlEditMode(true);   // save changes
+                _saveLlResearch();
+            } else if ($btn.hasClass('rp-btn-generate')) {
+                _generateLlResearch();
             } else {
                 enterLlEditMode();
             }
@@ -2776,7 +2938,7 @@
                         // can skip them and avoid duplicating content.
                         var pendingTypes = [];
                         $.each((cb.aiSectionTypes || []), function(i, t) {
-                            if (t.type === 'divider') return; // structural — not a generatable type
+                            if ((t.action || t.type) === 'generate-all') return; // not a generatable draft type
                             var alreadyDone = $.grep(_aiCurrentSections, function(s) {
                                 return s.type === t.type;
                             }).length > 0;
@@ -2807,8 +2969,9 @@
             if (_draftCb && _draftCb.aiSectionTypes && _draftCb.aiSectionTypes.length) {
                 _engDraftTypes = {};
                 $.each(_draftCb.aiSectionTypes, function(i, t) {
-                    if (t.type === 'divider') return; // structural — not an actionable draft type
-                    _engDraftTypes[t.action || t.type] = { type: t.type, title: t.title };
+                    var _a = t.action || t.type;
+                    if (_a === 'generate-all') return; // handled by its own click branch
+                    _engDraftTypes[_a] = { type: t.type, title: t.title };
                 });
             } else {
                 _engDraftTypes = {
@@ -2833,9 +2996,6 @@
             // ── AI+ Research: Employer Research ───────────────────────────────
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'employer-research') {
                 _runAuthChecks(_cid, aiAction, function() {
-                    if ($('#ai-research-dropdown').attr('data-state') === 'start') {
-                        setAiResearchState('active');
-                    }
                     // Open modal immediately (may already have cached employerResearch HTML)
                     openEmployerResearchModal(_currentContactData || {});
                     // Fire async load only if not already fetched (undefined = never loaded;
@@ -2855,7 +3015,7 @@
             // ── AI+ Research: User-Company Research ──────────────────────────
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'user-company-research') {
                 _runAuthChecks(_cid, aiAction, function() {
-                    openLeadLeaperResearchModal();
+                    openUserCompanyResearchModal();
                 });
                 return;
             }
@@ -2892,10 +3052,14 @@
     window.closeEmployerResearchModal  = closeEmployerResearchModal;
     window.openEmailReplyModal         = openEmailReplyModal;
     window.closeEmailReplyModal        = closeEmailReplyModal;
-    window.openLeadLeaperResearchModal = openLeadLeaperResearchModal;
-    window.closeLeadLeaperResearchModal= closeLeadLeaperResearchModal;
-    window.enterLlEditMode             = enterLlEditMode;
-    window.exitLlEditMode              = exitLlEditMode;
+    window.openUserCompanyResearchModal    = openUserCompanyResearchModal;
+    window.closeUserCompanyResearchModal   = closeUserCompanyResearchModal;
+    // Direct-call equivalent of the onLoadUserCompanyResearch done() callback.
+    // Opens the modal automatically if not already open, then renders content.
+    // Same contract as done(): supply exactly one of html or message (not both, not neither).
+    window.loadUserCompanyResearchContent  = _renderUserCompanyResearch;
+    window.enterLlEditMode                 = enterLlEditMode;
+    window.exitLlEditMode                  = exitLlEditMode;
     window.updatePanelContent          = updatePanelContent;
     window.loadPanelActivity           = loadPanelActivity;
     window.loadPanelResearch           = loadPanelResearch;
@@ -2903,9 +3067,9 @@
     window.setupPanelHandlers          = setupPanelHandlers;
     window.populateEngagementDropdown  = _populateEngagementDropdown;
     window.setAiEngagementState        = setAiEngagementState;
-    window.setAiResearchState          = setAiResearchState;
     window.setAiSlackState             = setAiSlackState;
-    window.setAiItemState              = _setEngagementItemState;  // manual per-item control
+    window.setAiItemState              = _setEngagementItemState;  // manual per-item control (engagement)
+    window.setResearchItemState        = setResearchItemState;     // manual per-item control (research)
     window.switchToAiView              = switchToAiView;
     window.switchToCrmView             = switchToCrmView;
     window.togglePanelView             = togglePanelView;
