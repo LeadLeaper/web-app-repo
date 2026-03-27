@@ -93,8 +93,8 @@
     //     Ignored when onLoadProfile is registered.
     //
     //   onLoadResearch(contactId, done)
-    //     Fired when the Employer Research modal is opened and no cached data
-    //     exists yet. Fetch and return the HTML string by calling done(htmlString).
+    //     Fired each time the Employer Research modal is opened.
+    //     Fetch and return the HTML string by calling done(htmlString).
     //
     //   onActivityAction(contactId, sectionKey)
     //     Fired when an action button in the Engagement History accordion is clicked.
@@ -274,12 +274,6 @@
             buildContactDetailsHTML(contactData) +
             buildActivitySkeletonHTML()
         );
-        // Use cached activity data if already loaded for this contact (e.g. same-contact
-        // refresh), otherwise fire the async callback and cache the result on arrival.
-        if (contactData.activityData !== undefined) {
-            loadPanelActivity(contactData.activityData);
-            return;
-        }
         var cb = window.profilePanelCallbacks;
         if (cb && typeof cb.onLoadProfile === 'function') {
             // onLoadProfile supplies both activityData and aiState in one cloud call.
@@ -746,16 +740,11 @@
             '</div>';
     }
 
-    // Replaces the skeleton (or existing accordion) with fully rendered activity data.
-    // Also caches the data on the current contact so same-contact refreshes skip
-    // the onLoadActivity callback entirely.
+    // Replaces the skeleton with fully rendered activity data.
     // Called by the host via the onLoadActivity done() callback.
     function loadPanelActivity(activityData) {
         var $accordion = $('.activity-accordion');
         if (!$accordion.length) return;
-        if (_currentContactData && _currentContactData.activityData === undefined) {
-            _currentContactData.activityData = activityData;
-        }
         $accordion.replaceWith(buildActivityAccordionHTML(activityData));
     }
 
@@ -826,17 +815,10 @@
         $('#er-backdrop').removeClass('open');
     }
 
-    // Patches the Employer Research modal with fetched HTML and caches it on the
-    // current contact so subsequent opens don't re-fire onLoadResearch.
+    // Populates the Employer Research modal with fetched HTML.
     // Called by the host via the onLoadResearch done() callback.
     function loadPanelResearch(htmlString) {
-        if (_currentContactData) {
-            _currentContactData.employerResearch = htmlString;
-        }
-        var content = htmlString ||
-            '<div class="rp-section"><p style="color:#a3a3a3;font-size:13px;">' +
-            'No employer research available for this contact yet.</p></div>';
-        $('#rp-employer-content').html(content);
+        $('#rp-employer-content').html(htmlString || '');
         $('#rp-employer-modal .rp-body').scrollTop(0);
     }
 
@@ -1399,12 +1381,11 @@
     //         [{id, preview, text, date}] = post cards
     //   Fires: profilePanelCallbacks.onGenerateReply(postId, postText, contactId)
     //   Host calls updateLinkedInPost(postId, {state, replyText}) to update button/reply state
-    //   When state='done' + replyText provided: fires onEditorMount then onEditorSetContent
-    //     using sectionId='reply-{postId}' — host initialises TinyMCE inside the mount el
+    //   When state='done' + replyText provided: fires onEditorSetContent
+    //     using sectionId='reply-{postId}'
     //
     // Zone 2 (Email Drafts) — addAiSection / updateAiSection / removeAiSection
     //   section: { id, type, title, subject, body, loading }
-    //   Fires on mount:   profilePanelCallbacks.onEditorMount(sectionId, mountEl)
     //   Fires on content: profilePanelCallbacks.onEditorSetContent(sectionId, html, mountEl)
     //   Fires on destroy: profilePanelCallbacks.onEditorDestroy(sectionId, mountEl)
     //   Fires on send:    profilePanelCallbacks.onSend(sectionId, subject, mountEl, contactId)
@@ -1712,18 +1693,22 @@
     // ── Zone 2: Email Drafts ──────────────────────────────────────────────────
 
     function addAiSection(section) {
+console.log('addAiSection:  section= ' + JSON.stringify(section));
         if ($('[data-section-id="' + section.id + '"].ai-section').length) return; // no duplicates
-        // Track section for persistence
-        var alreadyTracked = $.grep(_aiCurrentSections, function(s) { return s.id === section.id; }).length > 0;
-        if (!alreadyTracked) {
-            _aiCurrentSections.push({
-                id:      section.id,
-                type:    section.type  || section.id,
-                title:   section.title || '',
-                subject: section.subject || '',
-                body:    section.body    || null
-            });
+        // Collapse Zone 1 (LinkedIn Posts) so the user can focus on the new draft activity
+        var $postsZone = $('#ai-zone-posts');
+        if ($postsZone.length && !$postsZone.hasClass('collapsed')) {
+            $postsZone.addClass('collapsed');
+            $postsZone.find('> .ai-zone-body').slideUp(150);
         }
+        // Track section for persistence
+        _aiCurrentSections.push({
+            id:      section.id,
+            type:    section.type  || section.id,
+            title:   section.title || '',
+            subject: section.subject || '',
+            body:    section.body    || null
+        });
         var $view = $('#panel-ai-view');
         if (!$('#ai-zone-drafts').length) {
             $view.append(_buildDraftsZoneHtml());
@@ -1753,56 +1738,41 @@
         } else {
             $body.append(_sHtml);
         }
-        _updateZoneBadge('drafts', $body.find('.ai-section').length);
-        // Auto-expand zone if collapsed
-        var $zone = $('#ai-zone-drafts');
-        if ($zone.hasClass('collapsed')) {
-            $zone.removeClass('collapsed');
-            $zone.find('.ai-zone-header').attr('aria-expanded', 'true');
-            $body.show();
-        }
-        // Fire mount callback if already ready
-        if (!section.loading && section.body !== null) {
-            _fireMountCallback(section.id);
-            if (section.body) {
-                var cb = window.profilePanelCallbacks;
-                var mountEl = document.getElementById('ai-editor-mount-' + section.id);
-                if (mountEl && cb && typeof cb.onEditorSetContent === 'function') {
-                    cb.onEditorSetContent(section.id, section.body, mountEl);
-                }
-            }
-        }
     }
 
     function updateAiSection(id, updates) {
         var $section = $('.ai-section[data-section-id="' + id + '"]');
         if (!$section.length) return;
         // Track updates in internal model
-        var tracked = $.grep(_aiCurrentSections, function(s) { return s.id === id; })[0];
-        if (tracked) {
-            if (updates.subject !== undefined) tracked.subject = updates.subject;
-            if (updates.body    !== undefined) tracked.body    = updates.body;
-        }
+        var _sec = $.grep(_aiCurrentSections, function(s) { return s.id === id; })[0];
+        if (updates.subject !== undefined && _sec) _sec.subject = updates.subject;
+        if (updates.body    !== undefined && _sec) _sec.body    = updates.body;
         if (updates.title !== undefined) {
             $section.find('.ai-section-title').text(updates.title);
         }
-        // Transition loading → ready
+        // Update loading text mid-generation (before loading → ready transition)
+        if (updates.loadingText !== undefined) {
+            $section.find('.ai-section-loading-text').text(updates.loadingText);
+        }
+        // Transition loading → ready: reveal content without rebuilding DOM (preserves editor mount)
         if (updates.loading === false) {
             $section.find('.ai-section-status')
                 .removeClass('ai-section-status--loading')
                 .addClass('ai-section-status--ready')
                 .html('Ready');
-            $section.find('.ai-section-body').html(_buildSectionContentHtml(id, updates.subject || ''));
-            _fireMountCallback(id);
+            $section.find('.ai-section-loading').remove();
+            $section.find('.ai-section-content').show();
+            if (updates.subject !== undefined) {
+                $section.find('.ai-subject-input').val(updates.subject);
+            }
             // Mark the corresponding engagement dropdown item as done
-            // (works when section id matches the dropdown data-ai-action value)
             _setEngagementItemState(id, 'done');
         } else if (updates.subject !== undefined) {
             $section.find('.ai-subject-input').val(updates.subject);
         }
         if (updates.body !== undefined && updates.body !== null) {
             var cb = window.profilePanelCallbacks;
-            var mountEl = document.getElementById('ai-editor-mount-' + id);
+            var mountEl = document.getElementById(id + '_MOUNT');
             if (mountEl && cb && typeof cb.onEditorSetContent === 'function') {
                 cb.onEditorSetContent(id, updates.body, mountEl);
             }
@@ -1814,9 +1784,7 @@
         var $section = $('.ai-section[data-section-id="' + id + '"]');
         $section.remove();
         var $body = $('#ai-zone-drafts .ai-zone-body');
-        var remaining = $body.find('.ai-section').length;
-        _updateZoneBadge('drafts', remaining);
-        if (!remaining) { $('#ai-zone-drafts').remove(); }
+        if (!$body.find('.ai-section').length) { $('#ai-zone-drafts').remove(); }
     }
 
     function clearAiSections() {
@@ -1825,16 +1793,6 @@
         _aiEditorsMounted = {};
         $('#ai-zone-posts, #ai-zone-drafts').remove();
         _resetAiTracking();   // clear internal data model
-    }
-
-    function _fireMountCallback(sectionId) {
-        var mountEl = document.getElementById('ai-editor-mount-' + sectionId);
-        if (!mountEl) return;
-        var cb = window.profilePanelCallbacks;
-        if (cb && typeof cb.onEditorMount === 'function') {
-            _aiEditorsMounted[sectionId] = mountEl;
-            cb.onEditorMount(sectionId, mountEl);
-        }
     }
 
     function _destroyEditor(id) {
@@ -1861,7 +1819,7 @@
     }
 
     function _buildDraftsZoneHtml() {
-        return _buildZoneHtml('drafts', 'Email Drafts');
+        return '<div class="ai-zone" id="ai-zone-drafts"><div class="ai-zone-body"></div></div>';
     }
 
     function _updateZoneBadge(zoneId, count) {
@@ -1873,11 +1831,14 @@
     function _buildSectionHtml(section) {
         var isLoading = !!(section.loading || section.body === null);
         var statusHtml = isLoading
-            ? '<span class="ai-section-status ai-section-status--loading"><span class="ai-btn-spinner"></span>Generating\u2026</span>'
+            ? '<span class="ai-section-status ai-section-status--loading"></span>'
             : '<span class="ai-section-status ai-section-status--ready">Ready</span>';
         var bodyHtml = isLoading
-            ? '<div class="ai-section-skeleton"></div>'
-            : _buildSectionContentHtml(section.id, section.subject || '');
+            ? '<div class="ai-section-loading">' +
+                  '<span class="ai-btn-spinner"></span>' +
+                  '<span class="ai-section-loading-text">' + escHtml(section.loadingText || '') + '</span>' +
+              '</div>' + _buildSectionContentHtml(section.id, section.subject || '', true)
+            : _buildSectionContentHtml(section.id, section.subject || '', false);
         return '<div class="ai-section" data-section-id="' + escHtml(section.id) +
             '" data-section-type="' + escHtml(section.type || '') + '">' +
             '<div class="ai-section-header">' +
@@ -1889,14 +1850,21 @@
         '</div>';
     }
 
-    function _buildSectionContentHtml(sectionId, subject) {
+    function _buildSectionContentHtml(sectionId, subject, hidden) {
         var id = escHtml(sectionId);
-        return '<div class="ai-section-content">' +
+        return '<div class="ai-section-content" style="display:none;">' +
+            '<div class="ai-subject-field-label">Subject</div>' +
             '<div class="ai-subject-row">' +
-                '<input type="text" class="ai-subject-input" value="' + escHtml(subject) + '" placeholder="Email subject\u2026">' +
-                '<button type="button" class="ai-send-btn" data-section-id="' + id + '">SEND</button>' +
+                '<input type="text" id="' + id + '_SUB" class="ai-post-section-subject ai-subject-input" placeholder="Email subject\u2026">' +
+                '<button type="button" class="ai-send-btn" data-section-id="' + id + '" data-btn-state="idle">' +
+                    '<span class="snd-label">Send</span>' +
+                    '<span class="snd-spinner"><span class="ai-btn-spinner"></span></span>' +
+                    '<span class="snd-check">&#10003;</span>' +
+                '</button>' +
             '</div>' +
-            '<div class="ai-editor-mount" id="ai-editor-mount-' + id + '" data-section-id="' + id + '"></div>' +
+            '<div class="ai-editor-mount" id="' + id + '_MOUNT">' +
+                '<textarea id="' + id + '_MCE" class="' + id + '_MCE"></textarea>' +
+            '</div>' +
         '</div>';
     }
 
@@ -2093,14 +2061,7 @@
 
     function openEmployerResearchModal(contactData) {
         var company = (contactData && contactData.company) || '';
-        $('#rp-employer-subtitle').text(company ? '· ' + company : '');
-        var content = (contactData && contactData.employerResearch) || '';
-        if (!content) {
-            content = '<div class="rp-section"><p class="rp-empty-state">No employer research available for this contact yet.</p></div>';
-        }
-        $('#rp-employer-content').html(content);
-        // Reset scroll to top
-        $('#rp-employer-modal .rp-body').scrollTop(0);
+        $('#rp-employer-subtitle').text(company ? '\u00B7 ' + company : '');
         $('#rp-employer-modal').addClass('open').attr('aria-hidden', 'false');
         $('#rp-employer-backdrop').addClass('open');
         setTimeout(function() {
@@ -2136,17 +2097,13 @@
         // is discarded when it eventually fires.
         var myGen = ++_llLoadGen;
 
-        // Reset to loading state
+        // Discard any lingering edit state before fetching.
         exitLlEditMode(false);
-        $('#rp-ll-body-content').html('<div class="rp-ll-skeleton"></div>');
-        $('#rp-ll-action-btn').hide();
-        $('#rp-ll-modal').addClass('open').attr('aria-hidden', 'false');
-        $('#rp-ll-backdrop').addClass('open');
-        setTimeout(function() {
-            var btn = document.getElementById('rp-ll-close-btn-x');
-            if (btn) btn.focus();
-        }, 50);
 
+        // Fetch content first, open only when the callback returns — avoids the
+        // skeleton-then-resize flash that occurred when the modal opened before
+        // content was ready.  _renderUserCompanyResearch() handles the open + render
+        // in one step when the modal is not yet open.
         if (cb && typeof cb.onLoadUserCompanyResearch === 'function') {
             cb.onLoadUserCompanyResearch(cid, function(html, message, canEdit) {
                 // Discard if a newer request has been issued since this one started
@@ -2198,7 +2155,8 @@
         if (hasHtml) {
             $body.html(html);
             if (canEdit) {
-                $btn.text('Edit')
+                $btn.prop('disabled', false)
+                    .text('Edit')
                     .removeClass('rp-btn-save-green rp-btn-generate')
                     .addClass('ce-btn-save')
                     .show();
@@ -2209,7 +2167,8 @@
             // hasMsg
             $body.html('<div class="rp-ll-message">' + message + '</div>');
             if (canEdit) {
-                $btn.text('Generate')
+                $btn.prop('disabled', false)
+                    .text('Generate')
                     .removeClass('ce-btn-save rp-btn-save-green')
                     .addClass('rp-btn-generate')
                     .show();
@@ -2996,17 +2955,15 @@
             // ── AI+ Research: Employer Research ───────────────────────────────
             if (dropdownId === 'ai-research-dropdown' && aiAction === 'employer-research') {
                 _runAuthChecks(_cid, aiAction, function() {
-                    // Open modal immediately (may already have cached employerResearch HTML)
-                    openEmployerResearchModal(_currentContactData || {});
-                    // Fire async load only if not already fetched (undefined = never loaded;
-                    // null/'' = loaded with no data — both are valid cached states)
                     var cb = window.profilePanelCallbacks;
-                    if (_currentContactData &&
-                        _currentContactData.employerResearch === undefined &&
-                        cb && typeof cb.onLoadResearch === 'function') {
+                    if (cb && typeof cb.onLoadResearch === 'function' && _currentContactData) {
+                        // Fetch first, open only when content is ready — avoids resize flash
                         cb.onLoadResearch(_currentContactData.id, function(html) {
                             loadPanelResearch(html);
+                            openEmployerResearchModal(_currentContactData || {});
                         });
+                    } else {
+                        openEmployerResearchModal(_currentContactData || {});
                     }
                 });
                 return;

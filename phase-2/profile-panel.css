@@ -1523,11 +1523,12 @@ body.research-company-done
     align-items: center;
     gap: 8px;
     padding: 9px 12px 9px 14px;
+    background-color: #f0f1f3;
     cursor: pointer;
     user-select: none;
     transition: background-color 120ms ease;
 }
-.ai-section-header:hover { background-color: #fafafa; }
+.ai-section-header:hover { background-color: #eaebee; }
 
 .ai-section-chevron {
     flex-shrink: 0;
@@ -1553,28 +1554,44 @@ body.research-company-done
     font-size: 11px;
     font-weight: 500;
 }
-.ai-section-status--loading { color: #a3a3a3; }
-.ai-section-status--ready   { color: #22c55e; }
+.ai-section-status--loading { display: none; }
+.ai-section-status--ready   { display: none; }
 .ai-section-status--sent    { color: #08c; }
 
 .ai-section-body { display: flex; flex-direction: column; }
 .ai-section.collapsed .ai-section-body { display: none; }
 
-/* Loading skeleton — shimmer animation */
-.ai-section-skeleton {
-    margin: 12px 14px;
-    height: 160px;
-    border-radius: 4px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: ai-shimmer 1.4s ease-in-out infinite;
+/* Loading placeholder — static, centered spinner + text */
+.ai-section-loading {
+    border-top: 1px solid #e8e8e8;
+    min-height: 160px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
-@keyframes ai-shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+.ai-section-loading .ai-btn-spinner {
+    animation: ai-item-spin 0.7s linear infinite; /* pure rotation — no translate offset in flex column */
+}
+.ai-section-loading-text {
+    font-size: var(--text-sm, 13px);
+    color: #a3a3a3;
 }
 
-.ai-section-content { display: flex; flex-direction: column; }
+.ai-section-content {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid #e8e8e8;
+    background-color: #f8faff;
+    padding: 10px 14px 14px 14px;
+}
+.ai-subject-field-label {
+    font-size: var(--text-xs, 12px);
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
 
 /* ── Subject input row + SEND button ───────────────────────── */
 .ai-subject-row {
