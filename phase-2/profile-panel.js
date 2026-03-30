@@ -1090,9 +1090,8 @@
 
         // Read up-to-date subject, body, and send state values from DOM (user may have edited)
         var sections = $.map(_aiCurrentSections, function(sec) {
-            var $secEl  = $('.ai-section[data-section-id="' + sec.id + '"]');
-            var subject = $secEl.find('.ai-subject-input').val();
-            if (subject === undefined || subject === null) subject = sec.subject;
+            var subject = $('#' + sec.id + '_SUB').val();
+            if (!subject) subject = sec.subject;
             // Retrieve editor body via optional callback (production: tinyMCE getContent)
             var body = sec.body;
             var cb = window.profilePanelCallbacks;
@@ -1895,7 +1894,8 @@
                   '<span class="ai-section-loading-text">' + escHtml(section.loadingText || '') + '</span>' +
               '</div>' + _buildSectionContentHtml(section.id, section.subject || '', true)
             : _buildSectionContentHtml(section.id, section.subject || '', false);
-        return '<div class="ai-section" data-section-id="' + escHtml(section.id) +
+        return '<div class="ai-section" id="' + escHtml(section.id) +
+            '" data-section-id="' + escHtml(section.id) +
             '" data-section-type="' + escHtml(section.type || '') + '">' +
             '<div class="ai-section-header">' +
                 AI_SEC_CHEVRON +
@@ -1908,10 +1908,11 @@
 
     function _buildSectionContentHtml(sectionId, subject, hidden) {
         var id = escHtml(sectionId);
-        return '<div class="ai-section-content" style="display:none;">' +
+        return '<div class="ai-section-content"' + (hidden ? ' style="display:none;"' : '') + '>' +
             '<div class="ai-subject-field-label">Subject</div>' +
             '<div class="ai-subject-row">' +
-                '<input type="text" id="' + id + '_SUB" class="ai-post-section-subject ai-subject-input" placeholder="Email subject\u2026">' +
+                '<input type="text" id="' + id + '_SUB" class="ai-post-section-subject ai-subject-input" placeholder="Email subject\u2026"' +
+                    (subject ? ' value="' + escHtml(subject) + '"' : '') + '>' +
                 '<button type="button" class="ai-send-btn" data-section-id="' + id + '" data-btn-state="idle">' +
                     '<span class="snd-label">Send</span>' +
                     '<span class="snd-spinner"><span class="ai-btn-spinner"></span></span>' +

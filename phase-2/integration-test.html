@@ -1503,7 +1503,7 @@
     <script src="../phase-1/nav-left.js?v=2"></script>
     <!-- Host config — must load BEFORE profile-panel.js so $.extend preserves these values -->
     <script src="profilePanelCallbacks.js"></script>
-	<script src="profile-panel.js?v=50"></script>
+	<script src="profile-panel.js?v=54"></script>
 
     <!-- Section Switching Script -->
     <script>
@@ -1900,9 +1900,13 @@
             };
 
             // Called when the user clicks SEND on a draft section
-            window.profilePanelCallbacks.onSend = function(sectionId, subject, html, contactId) {
+            window.profilePanelCallbacks.onSend = function(sectionId, subject, mountEl, contactId, done) {
                 console.log('[demo] onSend:', { sectionId: sectionId, subject: subject, contactId: contactId });
-                window.showPanelNotification('Demo send: <strong>' + subject + '</strong>', { type: 'success' });
+                // Simulate async send — call done() on success to transition button to checkmark
+                setTimeout(function() {
+                    window.showPanelNotification('Demo send: <strong>' + subject + '</strong>', { type: 'success' });
+                    done();
+                }, 1200);
             };
 
             // Called when the user clicks Send in a post reply area.
