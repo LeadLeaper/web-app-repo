@@ -1079,15 +1079,10 @@
 
     // Persist current AI view state into the per-contact cache.
     // Call this BEFORE clearAiSections() so editor content is still accessible.
-    function _saveAiState(contactId, onComplete) {
-        if (!contactId) { if (onComplete) onComplete(); return; }
-        var _hasNewPostsWithReplies = $.grep(_aiCurrentPosts || [], function(p) {
-            var ps = _aiCurrentPostStates[p.id] || _aiCurrentPostStates[String(p.id)];
-            return ps && (ps.state === 'done' || ps.state === 'sent');
-        }).length > 0;
-        if (!_hasNewPostsWithReplies && !(_aiSavedPosts && _aiSavedPosts.length) &&
-                _aiCurrentSections.length === 0) { if (onComplete) onComplete(); return; }
-
+    // Reads live DOM values and module state to build a stateSnapshot object for the
+    // currently displayed profile.  Pure data — no cache writes, no cloud callbacks.
+    // Called by _saveAiState; the resulting snapshot is forwarded to onSaveAiState.
+    function _buildStateSnapshot() {
         // Read up-to-date subject, body, and send state values from DOM (user may have edited)
         var sections = $.map(_aiCurrentSections, function(sec) {
             var subject = $('#' + sec.id + '_SUB').val();
@@ -1152,12 +1147,24 @@
             }
         });
 
-        var stateSnapshot = {
+        return {
             posts:      savedPosts.length ? savedPosts : null,
             postStates: postStates,
             sections:   sections,
             itemStates: itemStates
         };
+    }
+
+    function _saveAiState(contactId, onComplete) {
+        if (!contactId) { if (onComplete) onComplete(); return; }
+        var _hasNewPostsWithReplies = $.grep(_aiCurrentPosts || [], function(p) {
+            var ps = _aiCurrentPostStates[p.id] || _aiCurrentPostStates[String(p.id)];
+            return ps && (ps.state === 'done' || ps.state === 'sent');
+        }).length > 0;
+        if (!_hasNewPostsWithReplies && !(_aiSavedPosts && _aiSavedPosts.length) &&
+                _aiCurrentSections.length === 0) { if (onComplete) onComplete(); return; }
+
+        var stateSnapshot = _buildStateSnapshot();
 
         // Update in-memory cache (skipped when caching is disabled)
         if (!_aiStateCacheDisabled) {
@@ -2715,11 +2722,13 @@
         });
 
         // Draft section header click — collapse/expand individual section
+        // (body visibility controlled by jQuery slideUp/Down, not CSS — mirrors Zone 1 pattern)
         $(document).on('click', '.ai-section-header', function() {
             var $section = $(this).closest('.ai-section');
+            var $body    = $section.find('> .ai-section-body');
             var closing  = !$section.hasClass('collapsed');
             $section.toggleClass('collapsed', closing);
-            $section.find('> .ai-section-body').slideToggle(150);
+            if (closing) { $body.slideUp(150); } else { $body.slideDown(150); }
         });
 
         // ── AI Reply button ───────────────────────────────────────────────────
