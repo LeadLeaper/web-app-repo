@@ -622,8 +622,8 @@
 }
 
 /* ── Per-item state control in AI+ Engagement dropdown ──────── */
-/* Three states: idle (default) | underway (spinner) | done (checkmark) */
-/* Controlled by data-item-state attribute on each <li>                  */
+/* Four states: idle (default) | underway (spinner) | done (checkmark) | unavailable (prohibition) */
+/* Controlled by data-item-state attribute on each <li>                                            */
 .ai-item-spinner {
     display: none;
     width: 16px;
@@ -634,8 +634,12 @@
 }
 .ai-dropdown-item[data-item-state="underway"] .ai-item-arrow   { display: none; }
 .ai-dropdown-item[data-item-state="underway"] .ai-item-spinner { display: inline-flex; }
-.ai-dropdown-item[data-item-state="done"]     .ai-item-arrow   { display: none; }
-.ai-dropdown-item[data-item-state="done"]     .ai-item-check   { display: block; }
+.ai-dropdown-item[data-item-state="done"]        .ai-item-arrow   { display: none; }
+.ai-dropdown-item[data-item-state="done"]        .ai-item-check   { display: block; }
+.ai-dropdown-item[data-item-state="unavailable"] .ai-item-arrow   { display: none; }
+.ai-dropdown-item[data-item-state="unavailable"] .ai-item-unavail { display: block; }
+.ai-dropdown-item[data-item-state="unavailable"]                  { color: #b0b0b0; cursor: default; }
+.ai-dropdown-item[data-item-state="unavailable"]:hover            { background-color: transparent; }
 /* Prohibition icon — hidden by default, shown in unavailable state */
 .ai-item-unavail {
     width: 16px;
@@ -1617,38 +1621,34 @@ body.research-company-done
 .ai-subject-input::placeholder { color: #a3a3a3; }
 .ai-subject-input:focus { background-color: #f8f9ff; }
 
-/* Base Send button — email draft sections */
+/* Base Send button — outlined style (Zone 1 + Zone 2) */
 .ai-send-btn {
     position: relative;
     padding: 8px 14px;
-    background-color: #08c;
-    color: #ffffff;
-    border: none;
+    background-color: #ffffff;
+    color: #08c;
+    border: 1px solid #08c;
     border-radius: 5px;
     cursor: pointer;
     font-size: var(--text-sm, 13px);
     font-weight: 700;
     letter-spacing: 0.3px;
-    transition: background-color 150ms ease, opacity 150ms ease;
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
     flex-shrink: 0;
     white-space: nowrap;
 }
-.ai-send-btn:hover { background-color: #0077b3; }
-
-/* Reply-area Send button — same outlined style as the Reply button */
-.ai-post-reply-area .ai-send-btn {
-    background-color: #ffffff;
-    color: #08c;
-    border: 1px solid #08c;
-    padding: 4px 10px;
-    font-size: var(--text-xs, 12px);
-}
-.ai-post-reply-area .ai-send-btn:hover:not([data-btn-state="underway"]):not([data-btn-state="done"]) {
+.ai-send-btn:hover:not([data-btn-state="underway"]):not([data-btn-state="done"]) {
     background-color: #08c;
     color: #ffffff;
 }
 
-/* Send button state machine (reply area only) */
+/* Reply-area Send button — smaller size only (style now inherits from base) */
+.ai-post-reply-area .ai-send-btn {
+    padding: 4px 10px;
+    font-size: var(--text-xs, 12px);
+}
+
+/* Send button state machine */
 .ai-send-btn .snd-spinner,
 .ai-send-btn .snd-check { display: none; }
 .ai-send-btn .snd-spinner { align-items: center; }
@@ -1663,7 +1663,7 @@ body.research-company-done
     align-items: center;
     justify-content: center;
 }
-.ai-post-reply-area .ai-send-btn[data-btn-state="underway"] {
+.ai-send-btn[data-btn-state="underway"] {
     color: #a3a3a3;
     border-color: #e0e0e0;
     cursor: default;
@@ -1671,7 +1671,7 @@ body.research-company-done
 
 .ai-send-btn[data-btn-state="done"] .snd-label  { display: none; }
 .ai-send-btn[data-btn-state="done"] .snd-check  { display: inline; }
-.ai-post-reply-area .ai-send-btn[data-btn-state="done"] {
+.ai-send-btn[data-btn-state="done"] {
     background-color: #f0fdf4;
     color: #22c55e;
     border-color: #86efac;

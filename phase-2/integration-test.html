@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../phase-1/nav-left.css?v=7">
 
     <!-- Phase 2 Profile Panel Styles -->
-    <link rel="stylesheet" href="profile-panel.css?v=48">
+    <link rel="stylesheet" href="profile-panel.css?v=49">
 
     <style>
         /* Test-specific styles for fixed nav with content card design */
@@ -1034,26 +1034,31 @@
         <!-- Action Buttons -->
         <div class="panel-actions">
 
-            <!-- Button A: AI+ Engagement dropdown trigger -->
-            <button type="button" class="panel-action-btn panel-action-ai"
-                    id="ai-engagement-btn"
-                    aria-haspopup="true" aria-expanded="false">
-                AI+ Engagement
-            </button>
+            <!-- Inner group — controls alignment and max-width as buttons are shown/hidden -->
+            <div class="panel-ai-btns">
 
-            <!-- Button B: AI+ Research dropdown trigger -->
-            <button type="button" class="panel-action-btn panel-action-research"
-                    id="ai-research-btn"
-                    aria-haspopup="true" aria-expanded="false">
-                AI+ Research
-            </button>
+                <!-- Button A: AI+ Engagement dropdown trigger -->
+                <button type="button" class="panel-action-btn panel-action-ai"
+                        id="ai-engagement-btn"
+                        aria-haspopup="true" aria-expanded="false">
+                    AI+ Engagement
+                </button>
 
-            <!-- Button C: Slack VSR dropdown trigger (right-anchored) -->
-            <button type="button" class="panel-action-btn panel-action-slack"
-                    id="ai-slack-btn"
-                    aria-haspopup="true" aria-expanded="false">
-                Slack VSR
-            </button>
+                <!-- Button B: AI+ Research dropdown trigger -->
+                <button type="button" class="panel-action-btn panel-action-research"
+                        id="ai-research-btn"
+                        aria-haspopup="true" aria-expanded="false">
+                    AI+ Research
+                </button>
+
+                <!-- Button C: Slack VSR dropdown trigger (right-anchored) -->
+                <button type="button" class="panel-action-btn panel-action-slack"
+                        id="ai-slack-btn"
+                        aria-haspopup="true" aria-expanded="false">
+                    Slack VSR
+                </button>
+
+            </div>
         </div>
 
         <!-- CRM view (existing) — populated dynamically by renderMainContent() -->

@@ -117,11 +117,12 @@
     //     close / next / prev after focus. Call done() on success or
     //     done(errorMessage) on failure.
     //
-    //   onToggleView(contactId, proceed)
+    //   onToggleView(contactId, toView, proceed)
     //     Fired when the Toggle View button is clicked before any view switch
-    //     occurs. Call proceed() to allow the switch. Omitting the call (or
-    //     not registering this callback) leaves the toggle disabled — register
-    //     it to gate AI view access per-user.
+    //     occurs. toView is 'ai' or 'crm' — the view the panel will enter if
+    //     proceed() is called. Call proceed() to allow the switch. Omitting
+    //     the call (or not registering this callback) leaves the toggle
+    //     disabled — register it to gate AI view access per-user.
     //
     //
     //   onSaveAiState(contactId, state, done)
@@ -227,7 +228,7 @@
         notesMode        : 'list', // 'list' | 'textarea'
         onSaveNote       : null,   // function(contactId, content, done)  — textarea mode only
         badgeStyle       : null,   // 'b' | 'd' — overrides the BADGE_STYLE constant when set
-        onToggleView     : null,   // function(contactId, proceed) — gate AI view access
+        onToggleView     : null,   // function(contactId, toView, proceed) — gate AI view access; toView: 'ai'|'crm'
         onSaveAiState    : null,   // function(contactId, state, done) — persist AI view state to cloud
         onLoadAiState    : null,   // function(contactId, done) — done(savedState|null) — ignored when onLoadProfile is registered
         aiSectionTypes   : null,   // [{type, title, action}] — Zone 2 order; include generate-all as last entry if desired
@@ -1042,7 +1043,7 @@
 
     // ─── Per-item engagement dropdown state ──────────────────────────────────
     // Sets the visual state of a single item in the AI+ Engagement dropdown.
-    // state: 'idle' (arrow) | 'underway' (spinner) | 'done' (green checkmark)
+    // state: 'idle' (arrow) | 'underway' (spinner) | 'done' (green checkmark) | 'unavailable' (grey prohibition icon + muted text)
     function _setEngagementItemState(aiAction, state) {
         var $item = $('#ai-engagement-dropdown .ai-dropdown-item[data-ai-action="' + aiAction + '"]');
         if (!$item.length) return;
@@ -2679,10 +2680,11 @@
         // If onToggleView is registered the host must call proceed() to allow the switch.
         $(document).on('click', '#panel-view-toggle', function(e) {
             e.stopPropagation();
-            var cb  = window.profilePanelCallbacks;
-            var cid = getCurrentContactData() ? getCurrentContactData().id : null;
+            var cb     = window.profilePanelCallbacks;
+            var cid    = getCurrentContactData() ? getCurrentContactData().id : null;
+            var toView = (panelCurrentView === 'crm') ? 'ai' : 'crm';
             if (cb && typeof cb.onToggleView === 'function') {
-                cb.onToggleView(cid, function() { togglePanelView(); });
+                cb.onToggleView(cid, toView, function() { togglePanelView(); });
             } else {
                 togglePanelView();
             }
@@ -2736,7 +2738,9 @@
         $(document).on('click', '.ai-post-reply-btn', function(e) {
             e.stopPropagation();
             var $btn = $(this);
-            // Prevent re-triggering while in progress or already done
+            // Prevent re-triggering while in progress or already done.
+            // Delegated handlers cannot be .off()'d per element; this guard
+            // is the correct mechanism — equivalent to removing the listener.
             var btnState = $btn.attr('data-btn-state');
             if (btnState === 'underway' || btnState === 'done') return;
             var $card        = $btn.closest('.ai-post-card');
@@ -2881,14 +2885,27 @@
                 $btn.removeClass('open').attr('aria-expanded', 'false');
                 $dropdown.removeClass('open').attr('aria-hidden', 'true');
             } else {
-                // Left-anchor: dropdown extends rightward from button's left edge
                 var rect = this.getBoundingClientRect();
-                $dropdown.css({
-                    top:   (rect.bottom + 4) + 'px',
-                    left:  rect.left + 'px',
-                    right: '',              // clear right positioning
-                    width: ''
-                });
+                // Right-anchor when 2-btn layout (panel-ai-2-btns) in CRM view:
+                // Research is the rightmost visible button so the dropdown would
+                // clip the panel edge if extended rightward — mirror Slack VSR behaviour.
+                if ($('body').hasClass('panel-ai-2-btns') && !$('.profile-panel').hasClass('ai-view-active')) {
+                    // Right-anchor: dropdown extends leftward from button's right edge
+                    $dropdown.css({
+                        top:   (rect.bottom + 4) + 'px',
+                        right: (window.innerWidth - rect.right) + 'px',
+                        left:  '',              // clear left positioning
+                        width: ''
+                    });
+                } else {
+                    // Left-anchor: dropdown extends rightward from button's left edge
+                    $dropdown.css({
+                        top:   (rect.bottom + 4) + 'px',
+                        left:  rect.left + 'px',
+                        right: '',              // clear right positioning
+                        width: ''
+                    });
+                }
                 $btn.addClass('open').attr('aria-expanded', 'true');
                 $dropdown.addClass('open').attr('aria-hidden', 'false');
             }
@@ -2977,9 +2994,17 @@
                         var pendingTypes = [];
                         $.each((cb.aiSectionTypes || []), function(i, t) {
                             if ((t.action || t.type) === 'generate-all') return; // not a generatable draft type
+                            // Exclude if an in-memory section already exists for this type
                             var alreadyDone = $.grep(_aiCurrentSections, function(s) {
                                 return s.type === t.type;
                             }).length > 0;
+                            // Also exclude if the dropdown item is marked done, underway, or unavailable
+                            // (covers the case where itemStates were restored from saved state
+                            // but _aiCurrentSections has not yet been repopulated in CRM view)
+                            if (!alreadyDone) {
+                                var itemState = $('#ai-engagement-dropdown .ai-dropdown-item[data-ai-action="' + (t.action || t.type) + '"]').attr('data-item-state');
+                                if (itemState === 'done' || itemState === 'underway' || itemState === 'unavailable') alreadyDone = true;
+                            }
                             if (!alreadyDone) pendingTypes.push(t);
                         });
                         cb.onGenerateAll(_cid, pendingTypes);
